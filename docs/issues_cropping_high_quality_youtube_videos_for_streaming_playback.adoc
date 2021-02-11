@@ -34,7 +34,7 @@ Info about the `--codec` flag:
           break playback of all your streams.
 ....
 
-Using `--codec avcodec,none` means we will be using software video decoding rather than hardware video decoding. Thus, CPU usage is much higher. In one test I performed, I found that `cvlc today.mp4` used ~8% CPU whereas `cvlc today.mp4 --codec avcodec,none` used ~20% CPU. Although we will not be able to use hardware video decoding, at least it works!
+Using `--codec avcodec,none` means we will be using software video decoding rather than hardware video decoding. Thus, CPU usage is much higher. In one test I performed, I found that `cvlc today.mp4` used ~8% CPU whereas `cvlc today.mp4 --codec avcodec,none` used ~20% CPU. This was on a video with 640x360 resolution. The higher the video resolution, the higher the CPU usage will be, especially when using software video decode. Although we will not be able to use hardware video decoding, at least it works!
 
 ## Problem 2: youtube-dl cannot stream high quality videos to stdout
 To stream the videos in real-time, we need https://github.com/ytdl-org/youtube-dl/[youtube-dl] to download the video and emit it to stdout. Then we can broadcast the video stream to all the receivers over UDP multicast. Since we will have a large array of TVs (3x3 or 4x4), we will want a high quality video to be downloaded so that video quality is still good on such a large TV wall.
@@ -133,3 +133,5 @@ This muxing solution seems to work great on local files, but our goal was to dow
 % yt_url="https://www.youtube.com/watch?v=hE2Ira-Cwxo" ; ffmpeg -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska - | cvlc - "--video-filter=croppadd{cropleft=1000}" --codec avcodec,none
 ....
 We are now able to stream the download of the "best video" and "best audio" options from youtube-dl, mux them together with ffmpeg, and play them cropped through VLC in real-time streaming fashion.
+
+CPU usage when running this command can be as high as 200% on the 1920x1080 video I was working with. ~180% for VLC, and ~20% for ffmpeg.
