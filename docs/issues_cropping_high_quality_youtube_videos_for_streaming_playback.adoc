@@ -82,9 +82,9 @@ ____
 
 So youtube-dl won't be able to mux the separate video and audio files together in real-time! Instead, it will wait till they are both fully downloaded before starting to mux them together. Not ideal for starting playback as soon as possible.
 
+### Muxing local files
 The solution we came up with was to mux them ourselves (https://superuser.com/questions/277642/how-to-merge-audio-and-video-file-in-ffmpeg[stackexchange]).
 
-### Muxing local files
 If we have the best video and best audio files downloaded already, they can be muxed and output to stdout via:
 ....
 % ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c copy -f matroska -
@@ -114,7 +114,7 @@ And it seems that vlc, when used with software video decode on the raspberry pi,
 
 Perhaps we can tell ffmpeg to transcode the audio to a different format:
 ....
-ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c:v copy -c:a aac -f matroska - | cvlc - "--video-filter=croppadd{cropleft=500}" --codec avcodec,none
+% ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c:v copy -c:a aac -f matroska - | cvlc - "--video-filter=croppadd{cropleft=500}" --codec avcodec,none
 ....
 Success! Now we are using ffmpeg to mux the best video and best audio together, and we can pipe that to VLC, which is able to crop and play the audio.
 
