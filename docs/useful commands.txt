@@ -1,0 +1,34 @@
+sudo iwconfig wlan0
+sudo iw wlan0 info
+sudo iw reg get
+
+# hmm not necessary to join the group because listening with vlc "autojoins" it?
+sudo ip addr add 239.0.1.23/32 dev wlan0 autojoin
+sudo ip maddr show
+dsh -r ssh -c -M -m pi@piwall1.local,pi@piwall2.local,pi@piwall3.local "sudo ip maddr show" 2>/dev/null
+
+# leader
+youtube-dl -f 'best[ext=mp4]' -o - https://www.youtube.com/watch\?v\=4aeETEoNfOg | ffmpeg -re -i - -c:v copy -f avi -c:a copy udp://239.0.1.23:1234
+
+# follower
+cvlc udp://@239.0.1.23:1234
+cvlc video.mp4 "--video-filter=croppadd{cropleft=1000}" --codec avcodec,none
+
+
+
+# turn off / on wifi
+dsh -r ssh -c -M -m pi@piwall1.local,pi@piwall2.local,pi@piwall3.local "sudo ifconfig wlan0 off" 2>/dev/null
+dsh -r ssh -c -M -m pi@piwall1.local,pi@piwall2.local,pi@piwall3.local "sudo ifconfig wlan0 on" 2>/dev/null
+
+Got multicast over ethernet working. Still laggy, but it improves after maybe 30s or so. Cropping vlc on command line isnt working, might not be supported on raspberry pi. Can reproduce locally w/o multicast shit.
+
+
+
+
+
+ffmpeg -i Khalid\ -\ Talk\ \(Official\ Video\)-hE2Ira-Cwxo.f137.mp4 -i Khalid\ -\ Talk\ \(Official\ Video\)-hE2Ira-Cwxo.f251.webm -c:v copy -c:a aac -f ismv - | cvlc - "--video-filter=croppadd{cropleft=1000}" --codec avcodec,none
+
+youtube-dl https://www.youtube.com/watch\?v\=hE2Ira-Cwxo -f 'bestvideo+bestaudio' -k
+
+
+yt_url="https://www.youtube.com/watch?v=hE2Ira-Cwxo" ; ffmpeg -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska - | cvlc - "--video-filter=croppadd{cropleft=1000}" --codec avcodec,none

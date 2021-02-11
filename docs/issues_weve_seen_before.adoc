@@ -1,0 +1,14 @@
+# Issues we've seen before
+:toc:
+:toclevels: 5
+
+## Slow wifi 1
+https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=302370
+
+## Slow wifi 2
+If you are
+1. using an older version of the raspberry pi 4 and
+1. using 2.4 ghz wifi and
+1. using hdmi output at a resolution of 2,560 x 1,440 or above
+
+then it could be https://www.zdnet.com/article/raspberry-pi-4-wi-fi-problem-firmware-update-will-fix-your-screen-resolution-bug/
