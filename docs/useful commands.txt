@@ -37,6 +37,13 @@ yt_url="https://www.youtube.com/watch?v=hE2Ira-Cwxo" ; ffmpeg -i <(youtube-dl $y
 # broadcaster (now we need ffmpeg's `-re` flag because the network doesn't provide backpressure like the pipe output did)
 yt_url="https://www.youtube.com/watch?v=hE2Ira-Cwxo" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska udp://239.0.1.23:1234
 
+#mpeg-ts broadcaster? Allows restarting the receiver during the same broadcast, unlike mkv broadcaster. But receiver won't be in sync with sibling receivers after restart
+yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a mp2 -b:a 192k -f mpegts udp://239.0.1.23:1234
+
 # receiver, for 1920x1080 video (16:9)
+# video stutters / choppy in beginning. Adjusting `--network-caching 6000` does not help
 cvlc udp://@239.0.1.23:1234 "--video-filter=croppadd{cropright=960,croptop=270,cropbottom=270}" --codec avcodec,none
 cvlc udp://@239.0.1.23:1234 "--video-filter=croppadd{cropleft=960,croptop=270,cropbottom=270}" --codec avcodec,none
+
+# python UDP receiver solves lag problem:
+python3 receiver.py | cvlc - "--video-filter=croppadd{cropright=960,croptop=270,cropbottom=270}" --codec avcodec,none
