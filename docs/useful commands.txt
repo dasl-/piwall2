@@ -17,8 +17,8 @@ cvlc video.mp4 "--video-filter=croppadd{cropleft=1000}" --codec avcodec,none
 
 
 # turn off / on wifi
-dsh -r ssh -c -M -m pi@piwall1.local,pi@piwall2.local,pi@piwall3.local "sudo ifconfig wlan0 off" 2>/dev/null
-dsh -r ssh -c -M -m pi@piwall1.local,pi@piwall2.local,pi@piwall3.local "sudo ifconfig wlan0 on" 2>/dev/null
+dsh -r ssh -c -M -m pi@piwall1.local,pi@piwall2.local,pi@piwall3.local "sudo ifconfig wlan0 down" 2>/dev/null
+dsh -r ssh -c -M -m pi@piwall1.local,pi@piwall2.local,pi@piwall3.local "sudo ifconfig wlan0 up" 2>/dev/null
 
 Got multicast over ethernet working. Still laggy, but it improves after maybe 30s or so. Cropping vlc on command line isnt working, might not be supported on raspberry pi. Can reproduce locally w/o multicast shit.
 
@@ -47,3 +47,10 @@ cvlc udp://@239.0.1.23:1234 "--video-filter=croppadd{cropleft=960,croptop=270,cr
 
 # python UDP receiver solves lag problem:
 python3 receiver.py | cvlc - "--video-filter=croppadd{cropright=960,croptop=270,cropbottom=270}" --codec avcodec,none
+
+
+# left column
+python3 receiver.py | tee >(cvlc - --mmal-display hdmi-1 "--video-filter=croppadd{cropright=960,croptop=540}" --codec avcodec,none) >(cvlc - --mmal-display hdmi-2 "--video-filter=croppadd{cropright=960,cropbottom=540}" --codec avcodec,none) > /dev/null
+
+# right column
+python3 receiver.py | tee >(cvlc - --mmal-display hdmi-1 "--video-filter=croppadd{cropleft=960,croptop=540}" --codec avcodec,none) >(cvlc - --mmal-display hdmi-2 "--video-filter=croppadd{cropleft=960,cropbottom=540}" --codec avcodec,none) > /dev/null
