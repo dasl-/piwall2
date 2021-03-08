@@ -1,0 +1,65 @@
+# Video formats and hardware acceleration
+:toc:
+:toclevels: 5
+
+## The environment we have to work with
+### Raspberry pi
+According to a https://www.raspberrypi.org/forums/viewtopic.php?t=268356[raspberry pi developer]:
+----
+Pi0-3 have hardware accelerated decode for H264, MPEG4, H263, and through optional codec licences for MPEG2 and VC1.
+Pi4 has the same hardware accelerated decode for H264, but not the other codecs. It also has a separate block for HEVC.
+----
+
+HEVC is also known as https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding[H265].
+
+### youtube / youtube-dl
+Youtube does not encode videos with https://www.reddit.com/r/youtubedl/comments/k2qgsp/x265_content_via_youtubedl/[HEVC / H265]. Thus, if we want a hardware decode for video direct from youtube on the pi4, we must use H264. H264 is also known as https://en.wikipedia.org/wiki/Advanced_Video_Coding[AVC1]. To download the best quality H264 video from youtube via youtube-dl, pass a format string: `-f 'bestvideo[vcodec^=avc1]'`.
+
+Note that sometimes the best quality video option is not available in H264. For example:
+....
+% youtube-dl -F https://www.youtube.com/watch\?v\=1lyu1KKwC74
+...
+format code  extension  resolution note
+249          webm       audio only tiny   51k , opus @ 50k (48000Hz), 1.57MiB
+250          webm       audio only tiny   68k , opus @ 70k (48000Hz), 2.10MiB
+140          m4a        audio only tiny  128k , m4a_dash container, mp4a.40.2@128k (44100Hz), 4.17MiB
+251          webm       audio only tiny  134k , opus @160k (48000Hz), 4.19MiB
+394          mp4        256x144    144p   82k , av01.0.00M.08, 25fps, video only, 2.37MiB
+278          webm       256x144    144p   90k , webm container, vp9, 25fps, video only, 2.83MiB
+160          mp4        256x144    144p  113k , avc1.4d400c, 25fps, video only, 3.64MiB
+395          mp4        426x240    240p  174k , av01.0.00M.08, 25fps, video only, 5.00MiB
+242          webm       426x240    240p  195k , vp9, 25fps, video only, 6.07MiB
+133          mp4        426x240    240p  255k , avc1.4d4015, 25fps, video only, 8.07MiB
+396          mp4        640x360    360p  366k , av01.0.01M.08, 25fps, video only, 10.08MiB
+243          webm       640x360    360p  411k , vp9, 25fps, video only, 12.78MiB
+134          mp4        640x360    360p  633k , avc1.4d401e, 25fps, video only, 19.24MiB
+397          mp4        854x480    480p  656k , av01.0.04M.08, 25fps, video only, 17.81MiB
+244          webm       854x480    480p  762k , vp9, 25fps, video only, 22.66MiB
+135          mp4        854x480    480p 1187k , avc1.4d401e, 25fps, video only, 36.29MiB
+398          mp4        1280x720   720p 1228k , av01.0.05M.08, 25fps, video only, 32.54MiB
+247          webm       1280x720   720p 1523k , vp9, 25fps, video only, 43.33MiB
+399          mp4        1920x1080  1080p 2114k , av01.0.08M.08, 25fps, video only, 56.20MiB
+136          mp4        1280x720   720p 2403k , avc1.4d401f, 25fps, video only, 70.45MiB
+248          webm       1920x1080  1080p 2684k , vp9, 25fps, video only, 79.74MiB
+137          mp4        1920x1080  1080p 4513k , avc1.640028, 25fps, video only, 140.40MiB
+400          mp4        2560x1440  1440p 7644k , av01.0.12M.08, 25fps, video only, 201.37MiB
+271          webm       2560x1440  1440p 8969k , vp9, 25fps, video only, 269.54MiB
+401          mp4        3840x2160  2160p 17119k , av01.0.12M.08, 25fps, video only, 432.08MiB
+313          webm       3840x2160  2160p 17888k , vp9, 25fps, video only, 577.87MiB
+18           mp4        640x360    360p  722k , avc1.42001E, 25fps, mp4a.40.2@ 96k (44100Hz), 23.71MiB (best)
+....
+
+## What about transcoding?
+I attempted to transcode a 1920x1080 webm vp9 encoded video with ffmpeg on a pi4.
+
+Converting to h264 was quite slow, `speed=0.189x`:
+....
+ffmpeg -i Verve248.webm -vcodec libx264 -c:a aac -f matroska verve_to_h264.mkv
+....
+
+Converting to h265 was even slower, `speed=0.0198x`:
+....
+ffmpeg -i Verve248.webm -vcodec libx265 -c:a aac -f matroska verve_to_h265.mkv
+....
+
+Thus, transcoding does not seem like a viable option, given it's slowness.
