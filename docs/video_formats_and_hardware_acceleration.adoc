@@ -5,10 +5,10 @@
 ## The environment we have to work with
 ### Raspberry pi
 According to a https://www.raspberrypi.org/forums/viewtopic.php?t=268356[raspberry pi developer]:
-----
+____
 Pi0-3 have hardware accelerated decode for H264, MPEG4, H263, and through optional codec licences for MPEG2 and VC1.
 Pi4 has the same hardware accelerated decode for H264, but not the other codecs. It also has a separate block for HEVC.
-----
+____
 
 HEVC is also known as https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding[H265].
 
