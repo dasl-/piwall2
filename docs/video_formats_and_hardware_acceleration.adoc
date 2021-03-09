@@ -114,7 +114,7 @@ Increasing `gpu_mem` to `128` allows the dual 1080p videos to begin playing in e
 Although playing two 1080p videos does not work, playing a single 1080p video works, as does playing two 720p videos. This holds for both vlc and omxplayer. We can do both of these without modifying the default `gpu_mem` value.
 
 ### Best software decoded video resolution
-We know that when playing two h264 videos via hardware decode, we are limited to a maximum resolution of 720p. Can we do any better via software decode?
+We know that when playing two h264 videos via hardware decode, we are limited to a maximum resolution of 720p. Can we do any better via software decode? (Note: omxplayer does not support software decode, so we only test with vlc in this section)
 
 Using 1080p vp9, which will be software decoded by default:
 ....
