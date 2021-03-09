@@ -66,6 +66,7 @@ ffmpeg -i Verve248.webm -vcodec libx265 -c:a aac -f matroska verve_to_h265.mkv
 Thus, transcoding does not seem like a viable option, given it's slowness.
 
 ## Video resolution
+### Best hardware decoded video resolution
 So we now know that H264 and H265 are the only game in town for hardware accelerated video playback on the pi 4. What resolutions are supported? And can we playback two videos, one through each of the two hdmi outputs?
 
 In the https://www.raspberrypi.org/products/raspberry-pi-4-model-b/specifications/[raspberry pi 4 model b specifications], it states:
@@ -112,3 +113,29 @@ Increasing `gpu_mem` to `128` allows the dual 1080p videos to begin playing in e
 
 Although playing two 1080p videos does not work, playing a single 1080p video works, as does playing two 720p videos. This holds for both vlc and omxplayer. We can do both of these without modifying the default `gpu_mem` value.
 
+### Best software decoded video resolution
+We know that when playing two h264 videos via hardware decode, we are limited to a maximum resolution of 720p. Can we do any better via software decode?
+
+Using 1080p vp9, which will be software decoded by default:
+....
+% yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; ffmpeg  -i <(youtube-dl $yt_url -f '248' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska pet_fox_248_1080p.mkv
+% ffprobe pet_fox_248_1080p.mkv
+...
+    Stream #0:0(eng): Video: vp9 (Profile 0), yuv420p(tv, bt709), 1920x1080, SAR 1:1 DAR 16:9, 29.97 fps, 29.97 tbr, 1k tbn, 1k tbc (default)
+...
+% cat pet_fox_248_1080p.mkv | tee >(cvlc - --mmal-display hdmi-1 ) >(cvlc - --mmal-display hdmi-2 ) > /dev/null
+....
+
+Using 1080p h264, which we can force to be software decoded via `--codec avcodec`:
+....
+% yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; ffmpeg  -i <(youtube-dl $yt_url -f '137' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska pet_fox_137_1080p.mkv
+% ffprobe pet_fox_137_1080p.mkv
+...
+    Stream #0:0: Video: h264 (High), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 29.97 fps, 29.97 tbr, 1k tbn, 59.94 tbc (default)
+...
+% cat pet_fox_137_1080p.mkv | tee >(cvlc - --mmal-display hdmi-1 --codec avcodec) >(cvlc - --mmal-display hdmi-2 --codec avcodec) > /dev/null
+....
+
+Both of these are little bit finnicky, but they kinda work most of the time! It uses ~200-400% CPU though, depending on the complexity of the part of the video that is being played. Since we can come very close to maxing out the pi's CPU, I'd be worried about finding the occasional complex video that stresses the CPU too much and starts dropping frames. Once we add cropping of the video later, this CPU usage will only get worse. Furthermore, the audio / video synchronization often seems very slightly off in both of these examples.
+
+We came close to doing two 1080p videos via software decode, but occasional lags / frame drops would likely prevent us from seriously considering this option. If doing further testing of software decode, remember to test on a variety of videos. Some "simple" videos perform fine.
