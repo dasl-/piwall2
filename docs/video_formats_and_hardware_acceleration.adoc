@@ -75,7 +75,7 @@ ____
 
 Given that we want to stream videos from youtube, the best we can hope to use is H264 1080p. Would it be possible to play two h264 1080p videos over both HDMI outputs?
 
-First we download a 1080p video:
+First we download a 1080p h264 video:
 ....
 % yt_url="https://www.youtube.com/watch?v=ucZl6vQ_8Uo" ; ffmpeg  -i <(youtube-dl $yt_url -f 'bestvideo[vcodec^=avc1][height=1080]' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska sync_test_1080p.mkv
 ....
