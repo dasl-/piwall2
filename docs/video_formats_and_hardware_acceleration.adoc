@@ -64,3 +64,51 @@ ffmpeg -i Verve248.webm -vcodec libx265 -c:a aac -f matroska verve_to_h265.mkv
 ....
 
 Thus, transcoding does not seem like a viable option, given it's slowness.
+
+## Video resolution
+So we now know that H264 and H265 are the only game in town for hardware accelerated video playback on the pi 4. What resolutions are supported? And can we playback two videos, one through each of the two hdmi outputs?
+
+In the https://www.raspberrypi.org/products/raspberry-pi-4-model-b/specifications/[raspberry pi 4 model b specifications], it states:
+____
+H.265 (4kp60 decode), H264 (1080p60 decode, 1080p30 encode)
+____
+
+Given that we want to stream videos from youtube, the best we can hope to use is H264 1080p. Would it be possible to play two h264 1080p videos over both HDMI outputs?
+
+First we download a 1080p video:
+____
+% yt_url="https://www.youtube.com/watch?v=ucZl6vQ_8Uo" ; ffmpeg  -i <(youtube-dl $yt_url -f 'bestvideo[vcodec^=avc1][height=1080]' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska sync_test_1080p.mkv
+____
+
+
+Confirm it has the desired properties (1080p, h264):
+____
+% ffprobe sync_test_1080p.mkv
+...
+    Stream #0:0: Video: h264 (High), yuv420p(tv, bt709, progressive), 1920x1080 [SAR 1:1 DAR 16:9], 30 fps, 30 tbr, 1k tbn, 60 tbc (default)
+...
+____
+
+Try to play it over both HDMI outputs (https://gist.github.com/dasl-/80cd06fb24aeeb7b87edb0782a77e604[full output]):
+____
+% cat sync_test_1080p.mkv | tee >(cvlc --mmal-display hdmi-1 - ) >(cvlc --mmal-display hdmi-2 - ) >/dev/null
+...
+[b284db90] mmal_codec decoder error: MMAL error 2 "ENOSPC"
+____
+Googling this error suggests a lack of gpu memory.
+
+We get the similar failures using `omxplayer`:
+____
+% cat sync_test_1080p.mkv | tee >(omxplayer --display 2 --no-keys pipe:0 - ) >(omxplayer --display 7 --no-keys pipe:0 - ) >/dev/null
+...
+COMXAudio::Decode timeout
+...
+____
+
+
+A raspberry pi developer has https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1590911[more details] about the hardware decode capabilities. https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1587437[He suggestes] that making use of the https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem` config option] may help.
+
+Increasing `gpu_mem` to `128` allows the dual 1080p videos to play in either vlc or omxplayer, but they quickly stall out and being to stutter, dropping frames. Trying values of `256` or `512` does not make this any better.
+
+Although playing two 1080p videos does not work, playing a single 1080p video works, as does playing two 720p videos. We can do both of these without modifying the default `gpu_mem` value.
+
