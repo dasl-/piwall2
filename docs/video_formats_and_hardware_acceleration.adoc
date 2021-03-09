@@ -110,5 +110,5 @@ A raspberry pi developer has https://www.raspberrypi.org/forums/viewtopic.php?t=
 
 Increasing `gpu_mem` to `128` allows the dual 1080p videos to begin playing in either vlc or omxplayer, but they quickly stall out and being to stutter, dropping frames. Trying values of `256` or `512` does not make this any better.
 
-Although playing two 1080p videos does not work, playing a single 1080p video works, as does playing two 720p videos. We can do both of these without modifying the default `gpu_mem` value.
+Although playing two 1080p videos does not work, playing a single 1080p video works, as does playing two 720p videos. This holds for both vlc and omxplayer. We can do both of these without modifying the default `gpu_mem` value.
 
