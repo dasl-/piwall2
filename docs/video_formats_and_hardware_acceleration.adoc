@@ -108,7 +108,7 @@ COMXAudio::Decode timeout
 
 A raspberry pi developer has https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1590911[more details] about the hardware decode capabilities. https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1587437[He suggestes] that making use of the https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem` config option] may help.
 
-Increasing `gpu_mem` to `128` allows the dual 1080p videos to play in either vlc or omxplayer, but they quickly stall out and being to stutter, dropping frames. Trying values of `256` or `512` does not make this any better.
+Increasing `gpu_mem` to `128` allows the dual 1080p videos to begin playing in either vlc or omxplayer, but they quickly stall out and being to stutter, dropping frames. Trying values of `256` or `512` does not make this any better.
 
 Although playing two 1080p videos does not work, playing a single 1080p video works, as does playing two 720p videos. We can do both of these without modifying the default `gpu_mem` value.
 
