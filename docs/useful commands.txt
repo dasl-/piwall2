@@ -35,7 +35,10 @@ youtube-dl https://www.youtube.com/watch\?v\=hE2Ira-Cwxo -f 'bestvideo+bestaudio
 yt_url="https://www.youtube.com/watch?v=hE2Ira-Cwxo" ; ffmpeg -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska - | cvlc - "--video-filter=croppadd{cropleft=1000}" --codec avcodec,none
 
 # broadcaster (now we need ffmpeg's `-re` flag because the network doesn't provide backpressure like the pipe output did)
-yt_url="https://www.youtube.com/watch?v=hE2Ira-Cwxo" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska udp://239.0.1.23:1234
+yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo[vcodec^=avc1][height<=720]' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska udp://239.0.1.23:1234
+
+# vp9 broadcaster (1080p fast software decode)
+yt_url="https://www.youtube.com/watch?v=ucZl6vQ_8Uo" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo[vcodec=vp9][height<=1080]' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska udp://239.0.1.23:1234
 
 #mpeg-ts broadcaster? Allows restarting the receiver during the same broadcast, unlike mkv broadcaster. But receiver won't be in sync with sibling receivers after restart
 yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a mp2 -b:a 192k -f mpegts udp://239.0.1.23:1234
@@ -49,8 +52,42 @@ cvlc udp://@239.0.1.23:1234 "--video-filter=croppadd{cropleft=960,croptop=270,cr
 python3 receiver.py | cvlc - "--video-filter=croppadd{cropright=960,croptop=270,cropbottom=270}" --codec avcodec,none
 
 
+# omx:
+requires /boot/config.txt:
+
 # left column
-python3 receiver.py | tee >(cvlc - --mmal-display hdmi-1 "--video-filter=croppadd{cropright=960,croptop=540}" --codec avcodec,none) >(cvlc - --mmal-display hdmi-2 "--video-filter=croppadd{cropright=960,cropbottom=540}" --codec avcodec,none) > /dev/null
+    # vlc 1080p
+    python3 receiver.py | tee >(cvlc - --mmal-display hdmi-1 "--video-filter=croppadd{cropright=960,croptop=540}" --codec avcodec,none) >(cvlc - --mmal-display hdmi-2 "--video-filter=croppadd{cropright=960,cropbottom=540}" --codec avcodec,none) > /dev/null
+
+    # omx 1080p
+    python3 receiver.py | tee >(omxplayer --crop '0,0,960,540' --display 7 --no-keys pipe:0) >(omxplayer --crop '0,540,960,1080' --display 2 --no-keys pipe:0) >/dev/null
+
+    # omx 720p
+    python3 receiver.py | tee >(omxplayer --crop '0,0,640,360' --display 7 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '0,360,640,720' --display 2 --no-keys --threshold 3 pipe:0) >/dev/null
 
 # right column
-python3 receiver.py | tee >(cvlc - --mmal-display hdmi-1 "--video-filter=croppadd{cropleft=960,croptop=540}" --codec avcodec,none) >(cvlc - --mmal-display hdmi-2 "--video-filter=croppadd{cropleft=960,cropbottom=540}" --codec avcodec,none) > /dev/null
+    # vlc 1080p
+    python3 receiver.py | tee >(cvlc - --mmal-display hdmi-1 "--video-filter=croppadd{cropleft=960,croptop=540}" --codec avcodec,none) >(cvlc - --mmal-display hdmi-2 "--video-filter=croppadd{cropleft=960,cropbottom=540}" --codec avcodec,none) > /dev/null
+
+    # omx 1080p
+    python3 receiver.py | tee >(omxplayer --crop '960,0,1920,540' --display 7 --no-keys pipe:0) >(omxplayer --crop '960,540,1920,1080' --display 2 --no-keys pipe:0) >/dev/null
+
+    # omx 720p
+    python3 receiver.py | tee >(omxplayer --crop '640,0,1280,360' --display 7 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '640,360,1280,720' --display 2 --no-keys --threshold 3 pipe:0) >/dev/null
+
+
+# TODO:
+investigate omxplayer --live ?? https://github.com/popcornmix/omxplayer/issues/165
+
+current options:
+    * single 1080p omxplayer
+    * single 1080p vlc
+    * dual 720p omxplayer
+
+we can play two 720p videos with omx (hw decode)
+
+we can play one 1080p video with omx (hw decode). Playing two would lag sometimes.
+
+* cropping hi res hevc w/ hardware decode is possible, but it's closed source: https://info-beamer.com/blog/dual-display-or-4k-and-hevc-on-the-pi-4
+
+* could this help us crop in VLC? https://github.com/raspberrypi/userland/pull/624
