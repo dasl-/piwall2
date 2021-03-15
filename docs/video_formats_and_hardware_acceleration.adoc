@@ -63,7 +63,7 @@ Converting to h265 was even slower, `speed=0.0198x`:
 ffmpeg -i Verve248.webm -vcodec libx265 -c:a aac -f matroska verve_to_h265.mkv
 ....
 
-Thus, transcoding does not seem like a viable option, given it's slowness. A raspberry pi https://www.raspberrypi.org/forums/viewtopic.php?t=243873[engineer confirms] that the pi 4 only supports hardware accelerated h265 decode. Encoding h265 will not be hardware accelerated.
+Thus, transcoding does not seem like a viable option, given it's slowness. A https://www.raspberrypi.org/forums/viewtopic.php?t=243873[raspberry pi engineer confirms] that the pi 4 only supports hardware accelerated h265 decode. Encoding h265 will not be hardware accelerated.
 
 ## Video resolution
 ### Best hardware decoded video resolution
