@@ -44,7 +44,7 @@ format code  extension  resolution note
 
 The "best" format (#18) is only 640x360, which probably won't look great across an array of 3x3 or 4x4 TVs! Luckily there are separate "video only" and "audio only" formats we can download and then mux together. This would allow us to download a 1920x1080 video, which would look much better.
 
-But there's a problem:
+But there's a problem (from the youtube-dl docs linked above):
 ____
 Note that if you use youtube-dl to stream to stdout (and most likely to pipe it to your media player then), i.e. you explicitly specify output template as `-o -`, youtube-dl still uses `-f best` format selection in order to start content delivery immediately to your player and not to wait until bestvideo and bestaudio are downloaded and muxed.
 ____
