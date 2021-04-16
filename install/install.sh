@@ -18,6 +18,7 @@ updateAndInstallPackages(){
 disableWifi(){
     # TODO: automate setting this: https://raspberrypi.stackexchange.com/a/62522
     # dtoverlay=disable-wifi
+    :
 }
 
 main
