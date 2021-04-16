@@ -41,4 +41,67 @@ Ok, let's stress test this. Let's work with an https://www.youtube.com/watch?v=u
 
 We'll be working with AVC1 (H264) video, as that is the link:video_formats_and_hardware_acceleration.adoc[preferable format to use] to take advantage of the raspberry pi's hardware acceleration.
 ....
+% # download audio / video sync test
 % youtube-dl https://www.youtube.com/watch\?v\=ucZl6vQ_8Uo -f 'bestvideo[vcodec^=avc1][height=1080]+bestaudio'
+%
+% # confirm video format
+% ffprobe Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4
+...
+    Stream #0:0(und): Video: h264 (High) (avc1 / 0x31637661), yuv420p(tv, bt709), 1920x1080 [SAR 1:1 DAR 16:9], 295 kb/s, 30 fps, 30 tbr, 15360 tbn, 60 tbc (default
+...
+%
+% # play video with vlc without cropping
+% cvlc Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4
+....
+Playing the video without cropping works fine: everything is in sync.
+
+Let's see how it performs with cropping:
+....
+% cvlc Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4 "--video-filter=croppadd{cropright=200,croptop=200}" --codec avcodec,none
+....
+Everything is out of sync! From visual inspection, it appears that the click sound is aligned with the green circle set to approximately 3 o'clock, rather than 12 o'clock, as it should be. Furthermore, the video seems slightly choppy.
+
+Even if we use software decoding without any cropping, there are still issues:
+....
+% cvlc Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4 --codec avcodec,none
+....
+The video is less choppy, but the audio and video are still out of sync
+
+## Cropping videos with omxplayer
+https://github.com/popcornmix/omxplayer/#readme[omxplayer is deprecated], but it still works... for now.
+
+Let's try plaing the video with omxplayer without cropping:
+....
+% omxplayer Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4
+....
+All good so far! Let's add cropping:
+....
+% omxplayer Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4 --crop '0,0,1720,880'
+....
+There are no audio / video synchronization issues when using omxplayer's cropping! Omxplayer appears to be able to use with hardware decoding, even when doing cropping. Omxplayer's CPU usage while cropping this video is around 2-3%, whereas with vlc, CPU usage while cropping this video was around 150%.
+
+### Is it ok that omxplayer is deprecated?
+https://www.raspberrypi.org/forums/viewtopic.php?t=227185[VLC uses the MMAL API] for hardware accelerated video playback, whereas https://github.com/popcornmix/omxplayer/#readme[omxplayer uses the OpenMAX API] for hardware accelerated video playback. A https://www.raspberrypi.org/forums/viewtopic.php?t=281884[raspberry pi engineer seems to suggest that eventually even MMAL will be replaced by V4L2]. He also says that OMX will not be ported to a 64 bit environment (https://www.raspberrypi.org/forums/viewtopic.php?t=252369[raspbian still runs as a 32 bit OS], despite the fact that the hardware supports 64 bit).
+
+https://www.raspberrypi.org/forums/viewtopic.php?t=206310[More info on MMAL vs V4L2].
+
+It will likely be necessary to migrate off of omxplayer in the future, but for now it works, and, importantly, it's the only thing I've found that works.
+
+## Alternatives?
+In one of the above linked forum threads, https://www.raspberrypi.org/forums/viewtopic.php?t=281884#p1752570[a raspberry pi engineer mentioned using gstreamer to play videos]. I experimented with this:
+....
+% sudo apt-get install gstreamer1.0-tools gstreamer1.0-plugins-base-apps gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
+...
+% gst-launch-1.0 -e -vvv filesrc location=Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4 ! qtdemux ! h264parse ! v4l2h264dec ! kmssink
+....
+Playback did not have the correct aspect ratio (this is likely fixable with some command line option), but more crucially, playback was a bit choppy. CPU usage was low though, around 2%. Oh, and there was no audio (this is also likely fixable).
+
+I found a https://gstreamer.freedesktop.org/data/doc/gstreamer/head/gst-plugins-good/html/gst-plugins-good-plugins-videocrop.html[gstreamer crop plugin]. This appears to work:
+....
+% gst-launch-1.0 -e -vvv filesrc location=Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4 ! qtdemux ! h264parse ! v4l2h264dec ! videocrop top=200 left=200 ! kmssink
+....
+CPU usage is low, around 10%. But the lack of audio and choppiness remains a problem. When cropping, I notice that the command line is visible "behind the screen". Perhaps this too is fixable.
+
+It is likely worth exploring gstreamer as a solution here, especially if / when omxplayer stops working. https://stackoverflow.com/a/63263102/627663[Others have noted] that gstreamer playback on raspberry pis can be laggy, but perhaps this will improve in the future.
+
+I https://www.raspberrypi.org/forums/viewtopic.php?f=67&t=309723[created a forum post] to ask if anyone knows what the deal is with gstreamer's laggy playback.
