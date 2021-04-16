@@ -14,7 +14,7 @@ ____
 HEVC is also known as https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding[H265].
 
 ### youtube / youtube-dl
-Youtube does not encode videos with https://www.reddit.com/r/youtubedl/comments/k2qgsp/x265_content_via_youtubedl/[HEVC / H265]. Thus, if we want a hardware decode for video direct from youtube on the pi4, we must use H264. H264 is also known as https://en.wikipedia.org/wiki/Advanced_Video_Coding[AVC1]. To download the best quality H264 video from youtube via youtube-dl, pass a format string: `-f 'bestvideo[vcodec^=avc1]'`.
+Youtube does not encode videos with https://www.reddit.com/r/youtubedl/comments/k2qgsp/x265_content_via_youtubedl/[HEVC / H265]. Thus, if we want a hardware decode for video direct from youtube on the pi4, we must use H264. H264 is also known as https://en.wikipedia.org/wiki/Advanced_Video_Coding[AVC1]. To download the best quality H264 video from youtube via youtube-dl, pass a https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection[format string]: `-f 'bestvideo[vcodec^=avc1]'`.
 
 Note that sometimes the best quality video option is not available in H264. For example:
 ....
@@ -50,6 +50,8 @@ format code  extension  resolution note
 18           mp4        640x360    360p  722k , avc1.42001E, 25fps, mp4a.40.2@ 96k (44100Hz), 23.71MiB (best)
 ....
 
+In this example, the best quality video is options 401 or 313 (3840x2160 / 2160p). Using the youtube-dl format string `-f 'bestvideo[vcodec^=avc1]'`, we'd get 137 (1920x1080 / 1080p). In my experience, youtube never has avc1 options that are better quality than 1080p.
+
 ## What about transcoding?
 I attempted to transcode a 1920x1080 webm vp9 encoded video with ffmpeg on a pi4.
 
@@ -74,7 +76,7 @@ ____
 H.265 (4kp60 decode), H264 (1080p60 decode, 1080p30 encode)
 ____
 
-Given that we want to stream videos from youtube, the best we can hope to use is H264 1080p. Would it be possible to play two h264 1080p videos over both HDMI outputs?
+Given that we want to stream videos from youtube, the best we can hope to use is H264 1080p (because youtube doesn't offer H265 encoded videos). Would it be possible to play two H264 1080p videos over both HDMI outputs?
 
 First we download a 1080p h264 video:
 ....
@@ -107,9 +109,9 @@ COMXAudio::Decode timeout
 ....
 
 
-A raspberry pi developer has https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1590911[more details] about the hardware decode capabilities. https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1587437[He suggestes] that making use of the https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem` config option] may help.
+A raspberry pi developer has https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1590911[more details] about the hardware decode capabilities. https://www.raspberrypi.org/forums/viewtopic.php?t=260599#p1587437[He suggests] that making use of the https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem` config option] may help.
 
-Increasing `gpu_mem` to `128` allows the dual 1080p videos to begin playing in either vlc or omxplayer, but they quickly stall out and being to stutter, dropping frames. Trying values of `256` or `512` does not make this any better.
+Increasing `gpu_mem` to `128` allows the dual 1080p videos to begin playing in either vlc or omxplayer, but they quickly stall out and begin to stutter, dropping frames. Trying values of `256` or `512` does not make this any better.
 
 Although playing two 1080p videos does not work, playing a single 1080p video works, as does playing two 720p videos. This holds for both vlc and omxplayer. We can do both of these without modifying the default `gpu_mem` value.
 
@@ -139,3 +141,6 @@ Using 1080p h264, which we can force to be software decoded via `--codec avcodec
 Both of these are little bit finnicky, but they kinda work most of the time! It uses ~200-400% CPU though, depending on the complexity of the part of the video that is being played. Since we can come very close to maxing out the pi's CPU, I'd be worried about finding the occasional complex video that stresses the CPU too much and starts dropping frames. Once we add cropping of the video later, this CPU usage will only get worse. Furthermore, the audio / video synchronization often seems very slightly off in both of these examples.
 
 We came close to doing two 1080p videos via software decode, but occasional lags / frame drops would likely prevent us from seriously considering this option. If doing further testing of software decode, remember to test on a variety of videos. Some "simple" videos perform fine.
+
+## The bottom line
+If using one TV per raspberry pi, you can work with 1080p H264 (avc1) video from youtube. If using two TVs per raspberry pi (the raspberry pi 4 has two hdmi outputs), you can work with 720p H264 (avc1) video from youtube.

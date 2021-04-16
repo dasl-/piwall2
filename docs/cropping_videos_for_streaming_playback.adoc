@@ -19,8 +19,8 @@ The audio will play, but no video is displayed.
 
 Googling the errors, we find a https://forum.videolan.org/viewtopic.php?t=149455[solution from a VLC developer]. And some more https://github.com/RPi-Distro/vlc/issues/2#issuecomment-535591883[info from raspberry pi employees on github].
 
-### Solution
-The full solution:
+### Potential solution
+The full (potential) solution:
 ....
 % cvlc today.mp4 "--video-filter=croppadd{cropleft=300}" --codec avcodec,none
 ....
@@ -35,3 +35,10 @@ Info about the `--codec` flag:
 ....
 
 Using `--codec avcodec,none` means we will be using software video decoding rather than hardware video decoding. Thus, CPU usage is much higher. In one test I performed, I found that `cvlc today.mp4` used ~8% CPU whereas `cvlc today.mp4 --codec avcodec,none` used ~20% CPU. This was on a video with 640x360 resolution. The higher the video resolution, the higher the CPU usage will be, especially when using software video decode. Although we will not be able to use hardware video decoding, at least it works!
+
+Ok, let's stress test this. Let's work with an https://www.youtube.com/watch?v=ucZl6vQ_8Uo[audio / video sync test] to confirm the latency / synchronization is ok with this approach.
+
+
+We'll be working with AVC1 (H264) video, as that is the video_formats_and_hardware_acceleration.adoc[preferable format to use] to take advantage of the raspberry pi's hardware acceleration.
+....
+% youtube-dl https://www.youtube.com/watch\?v\=ucZl6vQ_8Uo -f 'bestvideo[vcodec^=avc1][height=1080]+bestaudio'
