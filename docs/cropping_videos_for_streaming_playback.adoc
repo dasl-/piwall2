@@ -39,6 +39,6 @@ Using `--codec avcodec,none` means we will be using software video decoding rath
 Ok, let's stress test this. Let's work with an https://www.youtube.com/watch?v=ucZl6vQ_8Uo[audio / video sync test] to confirm the latency / synchronization is ok with this approach.
 
 
-We'll be working with AVC1 (H264) video, as that is the video_formats_and_hardware_acceleration.adoc[preferable format to use] to take advantage of the raspberry pi's hardware acceleration.
+We'll be working with AVC1 (H264) video, as that is the link:video_formats_and_hardware_acceleration.adoc[preferable format to use] to take advantage of the raspberry pi's hardware acceleration.
 ....
 % youtube-dl https://www.youtube.com/watch\?v\=ucZl6vQ_8Uo -f 'bestvideo[vcodec^=avc1][height=1080]+bestaudio'
