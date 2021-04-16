@@ -1,4 +1,4 @@
-# Issues cropping videos for streaming playback
+# Cropping videos for streaming playback
 :toc:
 :toclevels: 5
 
