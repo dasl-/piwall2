@@ -1,11 +1,11 @@
-# Issues cropping high quality youtube videos for streaming playback
+# Issues cropping videos for streaming playback
 :toc:
 :toclevels: 5
 
 ## Background
 We will have an array of TVs in the video wall, potentially 9 (3x3) or 16 (4x4) TVs. We want to stream youtube videos to playback onto them. Each TV will display a fraction of the full video (one ninth or one sixteenth). There will be one "broadcaster" and N (9 or 16) "receiver" raspberry pis. Each receiver is responsible for displaying the video on its corresponding TV.
 
-## Problem 1: Cropping videos with VLC
+## Cropping videos with VLC
 Each receiver raspberry pi will receive the full video sent by the broadcaster raspberry pi. The receiver is responsible for cropping the video such that it displays only a fraction (one ninth or one sixteenth) of the full video.
 
 VLC has the ability to crop videos: https://wiki.videolan.org/VLC_HowTo/Crop/
@@ -35,103 +35,3 @@ Info about the `--codec` flag:
 ....
 
 Using `--codec avcodec,none` means we will be using software video decoding rather than hardware video decoding. Thus, CPU usage is much higher. In one test I performed, I found that `cvlc today.mp4` used ~8% CPU whereas `cvlc today.mp4 --codec avcodec,none` used ~20% CPU. This was on a video with 640x360 resolution. The higher the video resolution, the higher the CPU usage will be, especially when using software video decode. Although we will not be able to use hardware video decoding, at least it works!
-
-## Problem 2: youtube-dl cannot stream high quality videos to stdout
-To stream the videos in real-time, we need https://github.com/ytdl-org/youtube-dl/[youtube-dl] to download the video and emit it to stdout. Then we can broadcast the video stream to all the receivers over UDP multicast. Since we will have a large array of TVs (3x3 or 4x4), we will want a high quality video to be downloaded so that video quality is still good on such a large TV wall.
-
-From https://github.com/ytdl-org/youtube-dl/blob/master/README.md#format-selection[youtube-dl docs]:
-____
-Since the end of April 2015 and version 2015.04.26, youtube-dl uses `-f bestvideo+bestaudio/best` as the default format selection (see #5447, #5456). If ffmpeg or avconv are installed this results in downloading bestvideo and bestaudio separately and muxing them together into a single file giving the best overall quality available. Otherwise it falls back to best and results in downloading the best available quality served as a single file.
-____
-Ok cool, so youtube has various video formats that you can download:
-....
-% youtube-dl https://www.youtube.com/watch\?v\=hE2Ira-Cwxo -F
-[youtube] hE2Ira-Cwxo: Downloading webpage
-[info] Available formats for hE2Ira-Cwxo:
-format code  extension  resolution note
-249          webm       audio only tiny   58k , opus @ 50k (48000Hz), 1.26MiB
-250          webm       audio only tiny   76k , opus @ 70k (48000Hz), 1.65MiB
-140          m4a        audio only tiny  130k , m4a_dash container, mp4a.40.2@128k (44100Hz), 2.98MiB
-251          webm       audio only tiny  144k , opus @160k (48000Hz), 3.21MiB
-394          mp4        256x144    144p   74k , av01.0.00M.08, 24fps, video only, 1.48MiB
-160          mp4        256x144    144p   90k , avc1.4d400c, 24fps, video only, 1.40MiB
-278          webm       256x144    144p   97k , webm container, vp9, 24fps, video only, 2.02MiB
-395          mp4        426x240    240p  142k , av01.0.00M.08, 24fps, video only, 2.63MiB
-133          mp4        426x240    240p  165k , avc1.4d4015, 24fps, video only, 2.61MiB
-242          webm       426x240    240p  216k , vp9, 24fps, video only, 3.63MiB
-396          mp4        640x360    360p  295k , av01.0.01M.08, 24fps, video only, 5.19MiB
-243          webm       640x360    360p  387k , vp9, 24fps, video only, 6.55MiB
-134          mp4        640x360    360p  422k , avc1.4d401e, 24fps, video only, 6.54MiB
-397          mp4        854x480    480p  521k , av01.0.04M.08, 24fps, video only, 9.09MiB
-244          webm       854x480    480p  652k , vp9, 24fps, video only, 10.85MiB
-135          mp4        854x480    480p  844k , avc1.4d401e, 24fps, video only, 12.53MiB
-398          mp4        1280x720   720p  917k , av01.0.05M.08, 24fps, video only, 16.70MiB
-247          webm       1280x720   720p 1254k , vp9, 24fps, video only, 20.23MiB
-399          mp4        1920x1080  1080p 1518k , av01.0.08M.08, 24fps, video only, 27.00MiB
-136          mp4        1280x720   720p 1535k , avc1.4d401f, 24fps, video only, 22.82MiB
-137          mp4        1920x1080  1080p 2587k , avc1.640028, 24fps, video only, 40.35MiB
-18           mp4        640x360    360p  474k , avc1.42001E, 24fps, mp4a.40.2@ 96k (44100Hz), 10.91MiB (best)
-....
-
-The "best" format (#18) is only 640x360, which probably won't look great across an array of 3x3 or 4x4 TVs! Luckily there are separate "video only" and "audio only" formats we can download and then mux together. This would allow us to download a 1920x1080 video, which would look much better.
-
-But there's a problem:
-____
-Note that if you use youtube-dl to stream to stdout (and most likely to pipe it to your media player then), i.e. you explicitly specify output template as `-o -`, youtube-dl still uses `-f best` format selection in order to start content delivery immediately to your player and not to wait until bestvideo and bestaudio are downloaded and muxed.
-____
-
-So youtube-dl won't be able to mux the separate video and audio files together in real-time! Instead, it will wait till they are both fully downloaded before starting to mux them together. Not ideal for starting playback as soon as possible.
-
-### Muxing local files
-The solution we came up with was to mux them ourselves (https://superuser.com/questions/277642/how-to-merge-audio-and-video-file-in-ffmpeg[stackexchange]).
-
-If we have the best video and best audio files downloaded already, they can be muxed and output to stdout via:
-....
-% ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c copy -f matroska -
-....
-
-We can attempt to pipe this to VLC:
-....
-% ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c copy -f matroska - | cvlc -
-....
-Success!
-
-But if we try to add cropping into the mix, the video works, but no audio is output:
-....
-% ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c copy -f matroska - | cvlc - "--video-filter=croppadd{cropleft=500}" --codec avcodec,none
-...
-[b27c8168] avcodec decoder error: cannot start codec (opus)
-[b27c8168] main decoder error: Codec `Opus' (Opus Audio) is not supported.
-[b27c8168] main decoder error: Codec not supported
-[b27c8168] main decoder error: VLC could not decode the format "Opus" (Opus Audio)
-....
-Dang! It seems that the "bestaudio" format that youtube-dl selected was a webm Opus format:
-....
-251          webm       audio only tiny  144k , opus @160k (48000Hz), 3.21MiB
-....
-
-And it seems that vlc, when used with software video decode on the raspberry pi, does not support this audio format.
-
-Perhaps we can tell ffmpeg to transcode the audio to a different format:
-....
-% ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c:v copy -c:a aac -f matroska - | cvlc - "--video-filter=croppadd{cropleft=500}" --codec avcodec,none
-....
-Success! Now we are using ffmpeg to mux the best video and best audio together, and we can pipe that to VLC, which is able to crop and play the audio.
-
-For the record, using `mp4` as the container failed:
-....
-% ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c:v copy -c:a aac -f mp4 -
-...
-[mp4 @ 0x21b3f80] muxer does not support non seekable output
-....
-
-Using https://stackoverflow.com/a/59428514/627663[`ismv` worked] though, so that could potentially be an alternative to using `matroska` format.
-
-### Solution: Muxing a streaming download
-This muxing solution seems to work great on local files, but our goal was to download and stream the video in real time. How can we do this? https://tldp.org/LDP/abs/html/process-sub.html[Bash process substitution] to the rescue!
-....
-% yt_url="https://www.youtube.com/watch?v=hE2Ira-Cwxo" ; ffmpeg -i <(youtube-dl $yt_url -f 'bestvideo' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska - | cvlc - "--video-filter=croppadd{cropleft=1000}" --codec avcodec,none
-....
-We are now able to stream the download of the "best video" and "best audio" options from youtube-dl, mux them together with ffmpeg, and play them cropped through VLC in real-time streaming fashion.
-
-CPU usage when running this command can be as high as 200% on the 1920x1080 video I was working with. ~180% for VLC, and ~20% for ffmpeg.
