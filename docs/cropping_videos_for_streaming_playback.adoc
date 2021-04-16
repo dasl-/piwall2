@@ -83,7 +83,7 @@ There are no audio / video synchronization issues when using omxplayer's croppin
 ### Is it ok that omxplayer is deprecated?
 https://www.raspberrypi.org/forums/viewtopic.php?t=227185[VLC uses the MMAL API] for hardware accelerated video playback, whereas https://github.com/popcornmix/omxplayer/#readme[omxplayer uses the OpenMAX API] for hardware accelerated video playback. A https://www.raspberrypi.org/forums/viewtopic.php?t=281884[raspberry pi engineer seems to suggest that eventually even MMAL will be replaced by V4L2]. He also says that OMX will not be ported to a 64 bit environment (https://www.raspberrypi.org/forums/viewtopic.php?t=252369[raspbian still runs as a 32 bit OS], despite the fact that the hardware supports 64 bit).
 
-https://www.raspberrypi.org/forums/viewtopic.php?t=206310[More info on MMAL vs V4L2].
+https://www.raspberrypi.org/forums/viewtopic.php?t=206310[More info on MMAL vs V4L2]. And https://www.raspberrypi.org/forums/viewtopic.php?t=268356[some more].
 
 It will likely be necessary to migrate off of omxplayer in the future, but for now it works, and, importantly, it's the only thing I've found that works.
 
