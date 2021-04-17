@@ -20,7 +20,7 @@ hdmi_group:1=1
 hdmi_mode:0=1
 hdmi_mode:1=1
 ....
-After doing this, the TVs displayed the correct resolution. Whether you need to add these stanzas and if so, what their values should be, may vary depending on what sort of TVs you are using and if you have any HDMI to RCA converters in your signal path.
+After doing this, the TVs displayed the correct resolution. Whether you need to add these stanzas and if so, what their values should be, may vary depending on what sort of TVs you are using and if you have any HDMI to RCA converters in your signal path. See these https://www.raspberrypi.org/documentation/configuration/hdmi-config.md[raspberry pi docs for more info about what hdmi modes your device supports].
 
 ### Video players
 The below demonstrations use the following test videos (also https://www.youtube.com/watch?v=ucZl6vQ_8Uo[available on youtube]):
