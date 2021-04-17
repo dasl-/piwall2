@@ -5,7 +5,7 @@ cd /home/pi
 git clone https://github.com/popcornmix/omxplayer.git
 cd omxplayer
 
-sudo apt-get update && sudo apt install -y git libasound2-dev libva2 libpcre3-dev libidn11-dev libboost-dev libdbus-1-dev libssh-dev libsmbclient-dev libssl1.0-dev #libavutil-dev libavcodec-dev libavformat-dev libswscale-dev
+sudo apt-get update && sudo apt install -y git libasound2-dev libva2 libpcre3-dev libidn11-dev libboost-dev libdbus-1-dev libssh-dev libsmbclient-dev libssl-dev
 
 # see https://github.com/popcornmix/omxplayer/issues/731
 sed -i -e 's/git-core/git/g' prepare-native-raspbian.sh
