@@ -79,15 +79,6 @@ requires /boot/config.txt:
 # TODO:
 investigate omxplayer --live ?? https://github.com/popcornmix/omxplayer/issues/165
 
-current options:
-    * single 1080p omxplayer
-    * single 1080p vlc
-    * dual 720p omxplayer
-
-we can play two 720p videos with omx (hw decode)
-
-we can play one 1080p video with omx (hw decode). Playing two would lag sometimes.
-
 * cropping hi res hevc w/ hardware decode is possible, but it's closed source: https://info-beamer.com/blog/dual-display-or-4k-and-hevc-on-the-pi-4
 
-* could this help us crop in VLC? https://github.com/raspberrypi/userland/pull/624
+* could this help us crop in VLC? https://github.com/raspberrypi/userland/pull/624 ask 6by9,  jc-kynesim , or dom
