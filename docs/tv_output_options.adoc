@@ -132,6 +132,6 @@ This will play video with sound through the raspberry pi's first hdmi output.
 ##### Two TVs per raspberry pi
 As with omxplayer, we can use https://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture[ALSA] to route the sound. I am not aware of any non-ALSA sound routing methods for using both hdmi ports with VLC.
 ....
-cat sync_test_720p.mkv | tee >(cvlc - --mmal-display hdmi-1 -A alsa --alsa-audio-device default:CARD=b1) >(cvlc - --mmal-display hdmi-2 -A alsa --alsa-audio-device default:CARD=b2) >/dev/null
+% cat sync_test_720p.mkv | tee >(cvlc - --mmal-display hdmi-1 -A alsa --alsa-audio-device default:CARD=b1) >(cvlc - --mmal-display hdmi-2 -A alsa --alsa-audio-device default:CARD=b2) >/dev/null
 ....
 Somewhat anecdotally, sometimes this method would result in the two vlc players being slightly out of sync with each other (half a second or so). This happened maybe one in every ten attempts. With this method, CPU usage is around 15-25% playing both videos.
