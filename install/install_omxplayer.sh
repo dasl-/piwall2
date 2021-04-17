@@ -16,7 +16,6 @@ sed -i -e 's/--enable-libsmbclient/--disable-libsmbclient/g' Makefile.ffmpeg
 ./prepare-native-raspbian.sh
 make ffmpeg
 
-
 # see https://github.com/popcornmix/omxplayer/commit/6d186be9d15c3d2ee8a4256afd26cddebbd8251e
 # https://www.raspberrypi.org/forums/viewtopic.php?t=258647
 git apply <(curl https://github.com/popcornmix/omxplayer/commit/6d186be9d15c3d2ee8a4256afd26cddebbd8251e.patch)
@@ -24,4 +23,3 @@ git apply <(curl https://github.com/popcornmix/omxplayer/commit/6d186be9d15c3d2e
 make -j$(nproc)
 make dist
 sudo make install
-# wtf it still doesnt work on hdmi1. No error message, but no sound either
