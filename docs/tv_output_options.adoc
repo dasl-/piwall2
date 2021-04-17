@@ -34,8 +34,14 @@ The conversion from mp4 to mkv container format is necessary because mp4 apparen
 ....
 
 #### https://github.com/popcornmix/omxplayer/[omxplayer]
+Due to our cropping needs, link:cropping_videos_for_streaming_playback.adoc[omxplayer is the preferred software to use for videoplayback in this project].
 
-##### One TV per raspberry pif
+omxplayer may be installed via:
+....
+% sudo apt -y install omxplayer
+....
+
+##### One TV per raspberry pi
 This will play video with sound through the raspberry pi's first hdmi output.
 ....
 % omxplayer -o hdmi sync_test_1080p.mp4
@@ -108,3 +114,19 @@ Now we can play two videos in sync with omxplayer, with sound outputting through
 % cat sync_test_720p.mkv | tee >(omxplayer -o hdmi0 --display 2 --no-keys pipe:0) >(omxplayer -o hdmi1 --display 7 --no-keys pipe:0) >/dev/null
 ....
 With this method, CPU usage is around 5% playing both videos.
+
+#### vlc
+Due to our cropping needs, link:cropping_videos_for_streaming_playback.adoc[vlc is not the preferred software to use for videoplayback in this project].
+
+vlc may be installed via:
+....
+% sudo apt -y install vlc
+....
+
+##### One TV per raspberry pi
+This will play video with sound through the raspberry pi's first hdmi output.
+....
+% omxplayer -o hdmi sync_test_1080p.mp4
+....
+
+##### Two TVs per raspberry pi
