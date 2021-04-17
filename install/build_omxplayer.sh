@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# See: https://github.com/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#with-native-hdmi-sound-output
 set -eou pipefail
 
 cd /home/pi

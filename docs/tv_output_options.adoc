@@ -75,7 +75,7 @@ Now let's put all this together to play two videos in sync with omxplayer:
 ....
 % cat sync_test_720p.mkv | tee >(omxplayer -o alsa:default:CARD=b1 --display 2 --no-keys pipe:0) >(omxplayer -o alsa:default:CARD=b2 --display 7 --no-keys pipe:0) >/dev/null
 ....
-We have working synchronized video playing with sound outputting through both TVs!
+We have working synchronized video playing with sound outputting through both TVs! With this method, CPU usage is around 10% playing both videos (although once I saw it constantly pegged at 100% for the second omxplayer process??).
 
 ###### With native HDMI sound output
 As mentioned above, the latest version of omxplayer does not natively support outputting audio through the raspberry pi 4's second hdmi output. Indeed, if you try to specify an hdmi port number in omxplayer's sound output option, you get an error:
@@ -85,3 +85,26 @@ Bad argument for -o: Output device must be `local', `hdmi', `both' or `alsa'
 ....
 But, if we build a fork of omxplayer, we can unlock this feature. A https://www.raspberrypi.org/forums/viewtopic.php?t=258647#p1578284[raspberry pi engineer commented that omxplayer has not been updated to support sound on the second hdmi port of the raspberry pi 4], so he made a https://github.com/popcornmix/omxplayer/pull/754[pull request to add this feature]. Unfortunately, as https://github.com/popcornmix/omxplayer#readme[omxplayer is now deprecated], this pull request has not been merged. We can build it ourselves though with link:../install/build_omxplayer.sh[this omxplayer build script].
 
+After building this version of omxplayer, you can check that omxplayer is now a newer version (your "Build date" may be different):
+....
+% omxplayer --version
+omxplayer - Commandline multimedia player for the Raspberry Pi
+        Build date: Sat, 17 Apr 2021 06:26:28 +0100
+        Version   : 1f1d0cc [master]
+        Repository: https://github.com/popcornmix/omxplayer.git
+....
+
+Whereas before building this fork of omxplayer, your version output likely looked like this (if installed via `sudo apt install omxplayer`):
+....
+% omxplayer --version
+omxplayer - Commandline multimedia player for the Raspberry Pi
+        Build date: Thu, 01 Aug 2019 12:50:43 +0000
+        Version   : f543a0d [master]
+        Repository: https://github.com/popcornmix/omxplayer.git
+....
+
+Now we can play two videos in sync with omxplayer, with sound outputting through both TVs:
+....
+% cat sync_test_720p.mkv | tee >(omxplayer -o hdmi0 --display 2 --no-keys pipe:0) >(omxplayer -o hdmi1 --display 7 --no-keys pipe:0) >/dev/null
+....
+With this method, CPU usage is around 5% playing both videos.
