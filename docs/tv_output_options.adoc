@@ -23,6 +23,56 @@ hdmi_mode:1=1
 After doing this, the TVs displayed the correct resolution. Whether you need to add these stanzas and if so, what their values should be, may vary depending on what sort of TVs you are using and if you have any HDMI to RCA converters in your signal path.
 
 ### Video players
-#### omxplayer
-##### one TV per raspberry pi
-test
+The below demonstrations use the following test videos (also https://www.youtube.com/watch?v=ucZl6vQ_8Uo[available on youtube]):
+....
+% youtube-dl https://www.youtube.com/watch\?v\=ucZl6vQ_8Uo -f 'bestvideo[vcodec^=avc1][height=1080]+bestaudio' --merge-output-format mkv -o sync_test_1080p.mkv
+% youtube-dl https://www.youtube.com/watch\?v\=ucZl6vQ_8Uo -f 'bestvideo[vcodec^=avc1][height=720]+bestaudio' --merge-output-format mkv -o sync_test_720p.mkv
+....
+The conversion from mp4 to mkv container format is necessary because mp4 apparently isn't the best streaming container format (necessary when playing videos through pipes):
+....
+[mp4 @ 0xd6c0a0] muxer does not support non seekable output
+....
+
+#### https://github.com/popcornmix/omxplayer/[omxplayer]
+
+##### One TV per raspberry pi
+This will play video with sound through the raspberry pi's first hdmi output.
+....
+% omxplayer -o hdmi sync_test_1080p.mp4
+....
+
+##### Two TVs per raspberry pi
+###### With ALSA sound
+The latest version of omxplayer https://www.raspberrypi.org/forums/viewtopic.php?t=258647#p1578284[does not natively support outputting audio through the raspberry pi 4's second hdmi output]. As an alternative, we can rely on https://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture[ALSA] to route the audio via omxplayer's `-o` option. Furthermore, we must now specify which hdmi port each omxplayer process will output through via omxplayer's `--display` option.
+
+First, let's determine the ALSA device identifiers to use:
+....
+% aplay -L
+...
+default:CARD=b1
+    bcm2835 HDMI 1, bcm2835 HDMI 1
+    Default Audio Device
+...
+default:CARD=b2
+    bcm2835 HDMI 2, bcm2835 HDMI 2
+    Default Audio Device
+...
+....
+
+Next, let's determine the display numbers to use:
+....
+% tvservice -l
+2 attached device(s), display ID's are :
+Display Number 2, type HDMI 0
+Display Number 7, type HDMI 1
+....
+These shouldn't change, because https://github.com/raspberrypi/userland/blob/3fd8527eefd8790b4e8393458efc5f94eb21a615/interface/vmcs_host/vc_dispmanx_types.h#L54-L68[they are constants].
+
+You can see that some programs (like `aplay`) label the first hdmi port as `HDMI 1` whereas others (like `tvservice`) label it as `HDMI 0`. A little confusing, but oh well.
+
+Now let's put all this together to play two videos in sync with omxplayer:
+....
+% cat sync_test_720p.mkv | tee >(omxplayer -o alsa:default:CARD=b1 --display 2 --no-keys pipe:0) >(omxplayer -o alsa:default:CARD=b2 --display 7 --no-keys pipe:0) >/dev/null
+....
+We have working synchronized video playing with sound outputting through both TVs!
+
