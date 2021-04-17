@@ -35,7 +35,7 @@ The conversion from mp4 to mkv container format is necessary because mp4 apparen
 
 #### https://github.com/popcornmix/omxplayer/[omxplayer]
 
-##### One TV per raspberry pi
+##### One TV per raspberry pif
 This will play video with sound through the raspberry pi's first hdmi output.
 ....
 % omxplayer -o hdmi sync_test_1080p.mp4
@@ -77,7 +77,7 @@ Now let's put all this together to play two videos in sync with omxplayer:
 ....
 We have working synchronized video playing with sound outputting through both TVs! With this method, CPU usage is around 10% playing both videos (although once I saw it constantly pegged at 100% for the second omxplayer process??).
 
-###### With native HDMI sound output
+###### With native HDMI sound
 As mentioned above, the latest version of omxplayer does not natively support outputting audio through the raspberry pi 4's second hdmi output. Indeed, if you try to specify an hdmi port number in omxplayer's sound output option, you get an error:
 ....
 % omxplayer -o hdmi0 today.mp4
