@@ -1,0 +1,28 @@
+# TV output options
+:toc:
+:toclevels: 5
+
+## HDMI output options
+### One vs two TVs per receiver raspberry pi
+The raspberry pi 4 has two hdmi outputs. Thus, we could conceivably connect up to two TVs per receiver raspberry pi. There are pros and cons of connecting one vs two TVs per raspberry pi.
+
+Using two TVs per raspberry pi allows you purchase fewer raspberry pis to control your TVs.
+
+Using two TVs per raspberry pi means we will only be able to work with link:video_formats_and_hardware_acceleration.adoc#video-resolution[720p video at best] when playing two videos, whereas with one TV per raspberry pi, we can work with up to 1080p video.
+
+### HDMI config options
+If your HDMI display's resolution was not automatically detected (I use a https://amzn.to/3wWHE7T[HDMI to RCA converter] to power CRT TVs -- the resolution of my TVs was not automatically properly detected, perhaps because of the use of this converter), you may need to edit `/boot/config.txt`.
+
+In my case, I had to add stanzas for `hdmi_group` and `hdmi_mode` (https://www.raspberrypi.org/documentation/configuration/config-txt/video.md[docs]):
+....
+hdmi_group:0=1
+hdmi_group:1=1
+hdmi_mode:0=1
+hdmi_mode:1=1
+....
+After doing this, the TVs displayed the correct resolution. Whether you need to add these stanzas and if so, what their values should be, may vary depending on what sort of TVs you are using and if you have any HDMI to RCA converters in your signal path.
+
+### Video players
+#### omxplayer
+##### one TV per raspberry pi
+test
