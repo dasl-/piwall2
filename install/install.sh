@@ -16,10 +16,13 @@ updateAndInstallPackages(){
 }
 
 disableWifi(){
-    # TODO: automate setting this: https://raspberrypi.stackexchange.com/a/62522
-    # dtoverlay=disable-wifi
-    # TODO: automate setting hdmi modes? https://www.raspberrypi.org/documentation/configuration/config-txt/video.md
-    :
+    # see: https://raspberrypi.stackexchange.com/a/62522
+    if ! grep -q '^dtoverlay=disable-wifi' /boot/config.txt ; then
+        echo 'disabling wifi...'
+        echo 'dtoverlay=disable-wifi' | sudo tee -a /boot/config.txt >/dev/null
+    else
+        echo 'wifi already disabled...'
+    fi
 }
 
 main
