@@ -75,6 +75,11 @@ requires /boot/config.txt:
     # omx 720p
     python3 receiver.py | tee >(omxplayer --crop '640,360,1280,720' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '640,0,1280,360' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null
 
+# top right:
+    python3 receiver.py | omxplayer --crop '960,0,1920,540' --display 7 --no-keys pipe:0
+
+# bottom right
+    python3 receiver.py | omxplayer --crop '960,540,1920,1080' --display 2 --no-keys pipe:0
 
 # TODO:
 investigate omxplayer --live ?? https://github.com/popcornmix/omxplayer/issues/165
