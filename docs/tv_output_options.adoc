@@ -80,6 +80,8 @@ This will play video with sound through the raspberry pi's first hdmi output.
 % omxplayer -o local sync_test_1080p.mkv
 ....
 
+Note: comparing composite output to HDMI output through the HDMI to RCA converter, the composite output images are bigger because the composite output image overlaps the edges of the screen due to overscan.
+
 #### Two TVs per raspberry pi
 
 ##### With ALSA sound
@@ -119,7 +121,7 @@ We have working synchronized video playing with sound outputting through both TV
 ##### With native HDMI sound
 As mentioned above, the latest version of omxplayer does not natively support outputting audio through the raspberry pi 4's second hdmi output. Indeed, if you try to specify an hdmi port number in omxplayer's sound output option, you get an error:
 ....
-% omxplayer -o hdmi0 today.mp4
+% omxplayer -o hdmi0 sync_test_1080p.mkv
 Bad argument for -o: Output device must be `local', `hdmi', `both' or `alsa'
 ....
 But, if we build a fork of omxplayer, we can unlock this feature. A https://www.raspberrypi.org/forums/viewtopic.php?t=258647#p1578284[raspberry pi engineer commented that omxplayer has not been updated to support sound on the second hdmi port of the raspberry pi 4], so he made a https://github.com/popcornmix/omxplayer/pull/754[pull request to add this feature]. Unfortunately, as https://github.com/popcornmix/omxplayer#readme[omxplayer is now deprecated], this pull request has not been merged. We can build it ourselves though with link:../install/build_omxplayer.sh[this omxplayer build script].
@@ -166,8 +168,10 @@ This will play video with sound through the raspberry pi's first hdmi output.
 
 ##### Composite video output
 ....
-% omxplayer -o local sync_test_1080p.mp4
+% cvlc sync_test_1080p.mkv
 ....
+
+Note: comparing composite vlc output to HDMI vlc output through the HDMI to RCA converter, the former stretches the screen if the aspect ratio differs. The sync test "circles" were slightly too tall through composite output!
 
 #### Two TVs per raspberry pi
 As with omxplayer, we can use https://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture[ALSA] to route the sound. I am not aware of any non-ALSA sound routing methods for using both hdmi ports with VLC.
