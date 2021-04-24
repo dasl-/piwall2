@@ -22,7 +22,7 @@ hdmi_mode:1=1
 ....
 After doing this, the TVs displayed the correct resolution. Whether you need to add these stanzas and if so, what their values should be, may vary depending on what sort of TVs you are using and if you have any HDMI to RCA converters in your signal path. See these https://www.raspberrypi.org/documentation/configuration/hdmi-config.md[raspberry pi docs for more info about what hdmi modes your device supports].
 
-### Video players
+## Video players
 The below demonstrations use the following test videos (also https://www.youtube.com/watch?v=ucZl6vQ_8Uo[available on youtube]):
 ....
 % youtube-dl https://www.youtube.com/watch\?v\=ucZl6vQ_8Uo -f 'bestvideo[vcodec^=avc1][height=1080]+bestaudio' --merge-output-format mkv -o sync_test_1080p.mkv
@@ -33,7 +33,7 @@ The conversion from mp4 to mkv container format is necessary because mp4 apparen
 [mp4 @ 0xd6c0a0] muxer does not support non seekable output
 ....
 
-#### https://github.com/popcornmix/omxplayer/[omxplayer]
+### https://github.com/popcornmix/omxplayer/[omxplayer]
 Due to our cropping needs, link:cropping_videos_for_streaming_playback.adoc[omxplayer is the preferred software to use for videoplayback in this project].
 
 omxplayer may be installed via:
@@ -41,15 +41,15 @@ omxplayer may be installed via:
 % sudo apt -y install omxplayer
 ....
 
-##### One TV per raspberry pi
+#### One TV per raspberry pi
 This will play video with sound through the raspberry pi's first hdmi output.
 ....
 % omxplayer -o hdmi sync_test_1080p.mp4
 ....
 
-##### Two TVs per raspberry pi
+#### Two TVs per raspberry pi
 
-###### With ALSA sound
+##### With ALSA sound
 The latest version of omxplayer https://www.raspberrypi.org/forums/viewtopic.php?t=258647#p1578284[does not natively support outputting audio through the raspberry pi 4's second hdmi output]. As an alternative, we can rely on https://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture[ALSA] to route the audio via omxplayer's `-o` option. Furthermore, we must now specify which hdmi port each omxplayer process will output through via omxplayer's `--display` option.
 
 First, let's determine the ALSA device identifiers to use:
@@ -83,7 +83,7 @@ Now let's put all this together to play two videos in sync with omxplayer:
 ....
 We have working synchronized video playing with sound outputting through both TVs! With this method, CPU usage is around 10% playing both videos (although once I saw it constantly pegged at 100% for the second omxplayer process??).
 
-###### With native HDMI sound
+##### With native HDMI sound
 As mentioned above, the latest version of omxplayer does not natively support outputting audio through the raspberry pi 4's second hdmi output. Indeed, if you try to specify an hdmi port number in omxplayer's sound output option, you get an error:
 ....
 % omxplayer -o hdmi0 today.mp4
@@ -115,7 +115,7 @@ Now we can play two videos in sync with omxplayer, with sound outputting through
 ....
 With this method, CPU usage is around 5% playing both videos.
 
-#### vlc
+### vlc
 Due to our cropping needs, link:cropping_videos_for_streaming_playback.adoc[vlc is not the preferred software to use for videoplayback in this project].
 
 vlc may be installed via:
@@ -123,18 +123,18 @@ vlc may be installed via:
 % sudo apt -y install vlc
 ....
 
-##### One TV per raspberry pi
+#### One TV per raspberry pi
 This will play video with sound through the raspberry pi's first hdmi output.
 ....
 % cvlc sync_test_1080p.mkv
 ....
 
-##### Two TVs per raspberry pi
+#### Two TVs per raspberry pi
 As with omxplayer, we can use https://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture[ALSA] to route the sound. I am not aware of any non-ALSA sound routing methods for using both hdmi ports with VLC.
 ....
 % cat sync_test_720p.mkv | tee >(cvlc - --mmal-display hdmi-1 -A alsa --alsa-audio-device default:CARD=b1) >(cvlc - --mmal-display hdmi-2 -A alsa --alsa-audio-device default:CARD=b2) >/dev/null
 ....
 Somewhat anecdotally, sometimes this method would result in the two vlc players being slightly out of sync with each other (half a second or so). This happened maybe one in every ten attempts. With this method, CPU usage is around 15-25% playing both videos.
 
-#### gstreamer
+### gstreamer
 Potentially gstreamer could be an option. See https://www.raspberrypi.org/forums/viewtopic.php?f=67&t=309723[my forum post]. And link:cropping_videos_for_streaming_playback.adoc#alternatives[more info in our docs].

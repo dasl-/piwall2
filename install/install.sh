@@ -20,6 +20,7 @@ disableWifi(){
     if ! grep -q '^dtoverlay=disable-wifi' /boot/config.txt ; then
         echo 'disabling wifi...'
         echo 'dtoverlay=disable-wifi' | sudo tee -a /boot/config.txt >/dev/null
+        # TODO : reboot if wifi disabled
     else
         echo 'wifi already disabled...'
     fi
