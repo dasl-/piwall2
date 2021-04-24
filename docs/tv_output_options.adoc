@@ -41,15 +41,6 @@ In anecdotal testing, I have found that when using CRT TVs, I have slightly bett
 
 For more on video calibration, see link:tv_calibration.adoc[the tv calibration docs].
 
-## Video calibration
-Ensure the calibration test image is properly centered:
-....
-% sudo fbi -T 1 -noverbose docs/img/crt_calibration_test_480p.jpg
-%
-% # fbi keyboard controls don't work over ssh, so you may exit the image viewer program via:
-% sudo kill $(pgrep fbi)
-....
-
 ## Video players
 The below demonstrations use the following test videos (also https://www.youtube.com/watch?v=ucZl6vQ_8Uo[available on youtube]):
 ....

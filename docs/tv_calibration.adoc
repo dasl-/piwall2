@@ -1,0 +1,26 @@
+# TV calibration
+:toc:
+:toclevels: 5
+
+## Background
+As noted in link:tv_output_options.adoc#general-video-options[the tv output options documentation], you may experience https://www.raspberrypi.org/documentation/configuration/raspi-config.md#underscan[overscan / underscan] issues. As noted there, you may attempt to fix these with various `/boot/config.txt` settings, or your TV may have various settings that can be tweaked to adjust vertical / horizontal positioning. It will be helpful then, to have various test videos that can help you determine when you have properly centered your video image.
+
+## calibration
+Ensure the calibration test image is properly centered:
+....
+% sudo fbi -T 1 -noverbose docs/img/crt_calibration_test_480p.jpg
+%
+% # fbi keyboard controls don't work over ssh, so you may exit the image viewer program via:
+% sudo kill $(pgrep fbi)
+....
+
+We also provide a calibration video, generated via:
+....
+% ffmpeg -loop 1 -i crt_calibration_test_480p.jpg -c:v libx264 -t 300 -pix_fmt yuv420p crt_calibration_test_480p.mkv
+....
+This can be helpful to determine if various video players (vlc vs omxplayer) have different display scaling.
+
+And a calibration video with audio sync overlayed:
+....
+% ffmpeg -i crt_calibration_test_480p.mkv -i sync_test_1080p.mkv -filter_complex "[0:v]setpts=PTS-STARTPTS, scale=640x480[top]; [1:v]setpts=PTS-STARTPTS, scale=640x480, format=yuva420p,colorchannelmixer=aa=0.5[bottom]; [top][bottom]overlay=shortest=1" -c:a aac -vcodec libx264 crt_calibration_with_sync_test_480p.mkv
+....
