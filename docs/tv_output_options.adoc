@@ -39,6 +39,8 @@ When displaying video, you may notice https://www.raspberrypi.org/documentation/
 
 In anecdotal testing, I have found that when using CRT TVs, I have slightly better aligned pictures when using the raspberry pi's HDMI output via an HDMI to RCA converter than when using the raspberry pi's composite video output.
 
+For more on video calibration, see link:tv_calibration.adoc[the tv calibration docs].
+
 ## Video calibration
 Ensure the calibration test image is properly centered:
 ....
