@@ -18,12 +18,17 @@ main(){
 updateAndInstallPackages(){
     echo -e "\\nUpdating and installing packages..."
     sudo apt update
-    sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi
+    sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi jq
     sudo apt -y full-upgrade
     sudo pip3 install --upgrade youtube_dl
 }
 
-# see: https://raspberrypi.stackexchange.com/a/62522
+# We disable wifi because multicast doesn't work well over wifi. Since the TV wall
+# transmits the video from the broadcaster to the receivers over multicast, we want to
+# ensure we are using the ethernet connection.
+#
+# See: https://tools.ietf.org/id/draft-mcbride-mboned-wifi-mcast-problem-statement-01.html
+# See: https://raspberrypi.stackexchange.com/a/62522
 disableWifi(){
     if ! grep -q '^dtoverlay=disable-wifi' $CONFIG ; then
         echo 'disabling wifi...'

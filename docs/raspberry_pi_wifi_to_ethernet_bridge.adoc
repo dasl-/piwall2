@@ -1,0 +1,129 @@
+# raspberry pi wifi to ethernet bridge
+:toc:
+:toclevels: 5
+
+## Overview
+Optionally, you may use a raspberry pi as a (https://github.com/dasl-/pitools/tree/main/wifi-ethernet-bridge#wifi-to-ethernet-bridge)[wifi to ethernet bridge]. The TV wall multicast setup requires ethernet connections for all the raspberry pis. If your TV wall is far from a router, running an ethernet cable from the TV wall to the router may be inconvenient. Thus it may be nice to have a wifi to ethernet bridge that allows you to go from a wifi connection to a wired connection at the TV wall. See the setup diagram in the previous link.
+
+## Setup
+Follow the (https://github.com/dasl-/pitools/blob/main/wifi-ethernet-bridge/readme.md#installation)[installation instructions] in the repo. We have chosen to setup the bridge on the broadcaster pi.
+
+## Fixing multicast transmission
+When installing the TV wall software on your pis, we typically (https://github.com/dasl-/piwall2/blob/8999174478b658d579b520f4a4d63b6d92cbc245/install/install.sh#L27)[disable wifi], because multicast doesn't work well over wifi. But the wifi to ethernet bridge requires re-enabling wifi. Once it is setup, both wifi and ethernet will be active.
+
+Typically, the broadcaster will run a command like this to broadcast the video over multicast:
+....
+% yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo[vcodec^=avc1][height<=720]' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska udp://239.0.1.23:1234
+....
+
+When running this broadcast command after the wifi to ethernet bridge is setup, I found that it defaults to transmitting the video over `wlan0` rather than `eth0`:
+....
+% sudo tcpdump -i wlan0 'port not 22'
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on wlan0, link-type EN10MB (Ethernet), capture size 262144 bytes
+22:36:59.509817 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34636: Flags [.], ack 3038510611, win 272, options [nop,nop,TS val 3075936604 ecr 504381798], length 0
+22:36:59.509878 IP 192.168.1.6.34636 > r1-srp5-0.dr.hcvlny.cv.net.https: Flags [.], ack 1, win 0, options [nop,nop,TS val 504382124 ecr 3075936228], length 0
+22:36:59.512194 IP 192.168.1.6.39591 > 192.168.1.1.domain: 21547+ PTR? 81.12.206.167.in-addr.arpa. (44)
+22:36:59.529941 IP 192.168.1.1.domain > 192.168.1.6.39591: 21547 1/0/0 PTR r1-srp5-0.dr.hcvlny.cv.net. (84)
+22:36:59.530324 IP 192.168.1.6.49031 > 192.168.1.1.domain: 17132+ PTR? 6.1.168.192.in-addr.arpa. (42)
+22:36:59.533752 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.533819 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.550024 IP 192.168.1.6.59962 > 192.168.1.1.domain: 7839+ PTR? 1.1.168.192.in-addr.arpa. (42)
+22:36:59.576739 IP 192.168.1.1.domain > 192.168.1.6.59962: 7839 NXDomain 0/0/0 (42)
+22:36:59.577463 IP 192.168.1.6.46868 > 192.168.1.1.domain: 15668+ PTR? 23.1.0.239.in-addr.arpa. (41)
+22:36:59.656222 IP 192.168.1.1.domain > 192.168.1.6.46868: 15668 NXDomain 0/1/0 (98)
+22:36:59.704406 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.704669 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.704738 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.704935 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.705018 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.705072 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+22:36:59.705125 IP 192.168.1.6.54604 > 239.0.1.23.1234: UDP, length 1472
+...
+
+% sudo tcpdump -i eth0 'port not 22'
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
+22:37:36.945109 ARP, Request who-has 192.168.1.1 tell 192.168.1.1, length 28
+22:37:41.984978 ARP, Request who-has 192.168.1.1 tell 192.168.1.1, length 28
+...
+....
+
+I found that my receivers were not even receiving the video when transmitted in this manner. I'm not sure why -- perhaps something to do with the bridge setup.
+
+Luckily, ffmpeg allows us to specify the IP address of the network interface to use. See the `localaddr` option in the (https://ffmpeg.org/ffmpeg-protocols.html#udp)[ffmpeg documentation].
+
+Which IP address should we use? Here are the details of the network interfaces that are active on the broadcaster raspberry pi after the wifi to ethernet bridge is setup:
+....
+% ip addr show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether dc:a6:32:b6:a3:a3 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.6/32 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::dea6:32ff:feb6:a3a3/64 scope link
+       valid_lft forever preferred_lft forever
+3: wlan0: <BROADCAST,MULTICAST,PROMISC,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether dc:a6:32:b6:a3:a4 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.6/24 brd 192.168.1.255 scope global dynamic noprefixroute wlan0
+       valid_lft 73618sec preferred_lft 62818sec
+    inet6 fe80::3754:1664:fa28:fe75/64 scope link
+       valid_lft forever preferred_lft forever
+....
+
+Note that the wlan0 and eth0 interfaces both use the same IP address (192.168.1.6 in this case)! I think this is because the interfaces are "bridged", although I don't understand how the bridging works in enough detail to be able to fully explain this. One might think that this means we cannot select the correct interface via IP address, but I figured it was still worth a shot.
+
+I modified the broadcast command to make use of ffmpeg's `localaddr` option:
+....
+% yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo[vcodec^=avc1][height<=720]' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska 'udp://239.0.1.23:1234?localaddr=192.168.1.6'
+....
+
+This time, while the video is of course downloaded over wifi, the multicast transmission goes through eth0 as desired:
+....
+% sudo tcpdump -i wlan0 'port not 22'
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on wlan0, link-type EN10MB (Ethernet), capture size 262144 bytes
+22:50:38.716509 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34648: Flags [.], ack 2873562734, win 272, options [nop,nop,TS val 3076755820 ecr 505199882], length 0
+22:50:38.716567 IP 192.168.1.6.34648 > r1-srp5-0.dr.hcvlny.cv.net.https: Flags [.], ack 1, win 0, options [nop,nop,TS val 505201331 ecr 3076754068], length 0
+22:50:38.718988 IP 192.168.1.6.52305 > 192.168.1.1.domain: 6614+ PTR? 81.12.206.167.in-addr.arpa. (44)
+22:50:38.735761 IP 192.168.1.1.domain > 192.168.1.6.52305: 6614 1/0/0 PTR r1-srp5-0.dr.hcvlny.cv.net. (84)
+22:50:38.736239 IP 192.168.1.6.51458 > 192.168.1.1.domain: 35093+ PTR? 6.1.168.192.in-addr.arpa. (42)
+22:50:38.749579 IP 192.168.1.1.domain > 192.168.1.6.51458: 35093 NXDomain 0/0/0 (42)
+22:50:38.750115 IP 192.168.1.6.35132 > 192.168.1.1.domain: 47711+ PTR? 1.1.168.192.in-addr.arpa. (42)
+22:50:38.763257 IP 192.168.1.1.domain > 192.168.1.6.35132: 47711 NXDomain 0/0/0 (42)
+22:50:38.823128 IP 192.168.1.6.34650 > r1-srp5-0.dr.hcvlny.cv.net.https: Flags [.], ack 1781634310, win 362, options [nop,nop,TS val 505201437 ecr 3076754125], length 0
+22:50:38.827376 IP 192.168.1.6.34650 > r1-srp5-0.dr.hcvlny.cv.net.https: Flags [.], ack 1, win 784, options [nop,nop,TS val 505201442 ecr 3076754125], length 0
+22:50:38.841049 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34650: Flags [.], seq 1:1449, ack 0, win 272, options [nop,nop,TS val 3076755945 ecr 505201437], length 1448
+22:50:38.841107 IP 192.168.1.6.34650 > r1-srp5-0.dr.hcvlny.cv.net.https: Flags [.], ack 1449, win 777, options [nop,nop,TS val 505201455 ecr 3076755945], length 0
+22:50:38.844260 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34650: Flags [.], seq 1449:2897, ack 0, win 272, options [nop,nop,TS val 3076755945 ecr 505201437], length 1448
+22:50:38.844306 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34650: Flags [.], seq 2897:4345, ack 0, win 272, options [nop,nop,TS val 3076755946 ecr 505201437], length 1448
+22:50:38.844337 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34650: Flags [.], seq 4345:5793, ack 0, win 272, options [nop,nop,TS val 3076755946 ecr 505201437], length 1448
+22:50:38.844366 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34650: Flags [.], seq 5793:7241, ack 0, win 272, options [nop,nop,TS val 3076755947 ecr 505201437], length 1448
+22:50:38.844406 IP r1-srp5-0.dr.hcvlny.cv.net.https > 192.168.1.6.34650: Flags [.], seq 7241:8689, ack 0, win 272, options [nop,nop,TS val 3076755947 ecr 505201437], length 1448
+
+% sudo tcpdump -i eth0 'port not 22'
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
+22:50:50.697585 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:50.697691 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:50.697776 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:50.697864 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:50.697941 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:50.698014 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:50.698086 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:50.784633 ARP, Request who-has 192.168.1.1 tell 192.168.1.1, length 28
+22:50:51.036393 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:51.036493 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:51.036639 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+22:50:51.036718 IP 192.168.1.6.34142 > 239.0.1.23.1234: UDP, length 1472
+....
+
+We can wrap finding eth0's IP address into the broadcast command with this one-liner:
+....
+yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; eth0_ip=$(ip -json -pretty addr show eth0 | jq -c --raw-output '.[] | select(.ifname != null) | select(.ifname | contains("eth0")) | .addr_info | .[] | select(.family == "inet") | .local') ; ffmpeg -re -i <(youtube-dl $yt_url -f 'bestvideo[vcodec^=avc1][height<=720]' -o -) -i <(youtube-dl $yt_url -f 'bestaudio' -o -) -c:v copy -c:a aac -f matroska "udp://239.0.1.23:1234?localaddr=$eth0_ip"
+....
