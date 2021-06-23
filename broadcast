@@ -11,5 +11,6 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+
 args = parseArgs()
 Broadcaster().broadcast(args.url)
