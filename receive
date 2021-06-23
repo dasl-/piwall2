@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-from piwall2.broadcaster import Broadcaster
+from piwall2.receiver import Receiver
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video broadcaster')
-    parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
-        help='youtube video url. default: The Smashing Pumpkins - Today.')
+    parser.add_argument('--crop-string', dest='crop_string', action='store', default='640,0,1120,360',
+        help='crop box')
 
     args = parser.parse_args()
     return args
 
 
 args = parseArgs()
-Broadcaster().broadcast(args.url)
+Receiver().receive(args.crop_string)
