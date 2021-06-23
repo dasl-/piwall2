@@ -23,5 +23,5 @@ class Broadcaster:
                 "-c:v copy -c:a aac -f matroska 'udp://239.0.1.23:1234?localaddr=$eth0_ip'"
         )
         proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/env bash', start_new_session = True
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
