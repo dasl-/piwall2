@@ -63,7 +63,7 @@ requires /boot/config.txt:
     python3 receiver.py | tee >(omxplayer --crop '0,0,960,540' --display 7 --no-keys pipe:0) >(omxplayer --crop '0,540,960,1080' --display 2 --no-keys pipe:0) >/dev/null
 
     # omx 720p
-    python3 receiver.py | tee >(omxplayer --crop '0,0,640,360' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '0,360,640,720' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null
+    python3 receiver.py | tee >(omxplayer --crop '160,0,640,360' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '160,360,640,720' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null
 
 # right column
     # vlc 1080p
@@ -73,21 +73,21 @@ requires /boot/config.txt:
     python3 receiver.py | tee >(omxplayer --crop '960,0,1920,540' --display 7 --no-keys pipe:0) >(omxplayer --crop '960,540,1920,1080' --display 2 --no-keys pipe:0) >/dev/null
 
     # omx 720p
-    python3 receiver.py | tee >(omxplayer --crop '640,360,1280,720' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '640,0,1280,360' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null
+    python3 receiver.py | tee >(omxplayer --crop '640,360,1120,720' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '640,0,1120,360' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null
 
 # top right:
     # omx 1080p
     python3 receiver.py | omxplayer --crop '960,0,1920,540' -o local --no-keys --threshold 3 pipe:0
 
     # omx 720p
-    python3 receiver.py | omxplayer --crop '640,0,1280,360' -o local --no-keys --threshold 3 pipe:0
+    python3 receiver.py | omxplayer --crop '640,0,1120,360' -o local --no-keys --threshold 3 pipe:0
 
 # bottom right
     # omx 1080p
     python3 receiver.py | omxplayer --crop '960,540,1920,1080' -o local --no-keys --threshold 3 --no-keys pipe:0
 
     # omx 720p
-    python3 receiver.py | omxplayer --crop '640,360,1280,720' -o local --no-keys --threshold 3 --no-keys pipe:0
+    python3 receiver.py | omxplayer --crop '640,360,1120,720' -o local --no-keys --threshold 3 --no-keys pipe:0
 
 
 # TODO:
