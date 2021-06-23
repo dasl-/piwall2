@@ -24,7 +24,7 @@ class Receiver:
 
         cmd = f"omxplayer --crop {shlex.quote(crop_string)} -o local --no-keys --threshold 3 pipe:0"
         proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/env bash', start_new_session = True, stdin = subprocess.PIPE
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
         )
         while True:
             ret = sock.recv(4096)
