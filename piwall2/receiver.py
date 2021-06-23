@@ -3,6 +3,9 @@ import struct
 import sys
 import shlex
 import subprocess
+import os
+import signal
+import time
 
 from piwall2.broadcaster import Broadcaster
 
@@ -29,7 +32,21 @@ class Receiver:
         while True:
             ret = sock.recv(4096)
             print(str(len(ret)), file=sys.stderr, flush = True)
+            print(ret, file=sys.stderr, flush = True)
             if not has_set_timeout:
                 sock.settimeout(self.__SOCKET_TIMEOUT_S)
-            proc.communicate(ret)
-            # print(ret, end = '', flush = True)
+
+            # todo: guard against magic bytes being sent in more than one packet
+            if ret == Broadcaster.END_OF_VIDEO_MAGIC_BYTES:
+                # os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                proc.stdin.close()
+                break
+
+            proc.stdin.write(ret)
+            proc.stdin.flush()
+
+        while proc.poll() is None:
+            print('.')
+            time.sleep(0.1)
+
+        print("done!")
