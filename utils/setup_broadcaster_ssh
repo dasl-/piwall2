@@ -36,7 +36,7 @@ def generate_ssh_key(file):
     )
 
 def authorize_ssh_key(file, password):
-    print("Authorizing ssh key...")
+    print("Getting list of receivers from config...")
     receivers = ' '.join(Piwall2ConfigLoader().get_receivers())
     authorize_ssh_key_cmd = (
         f"sshpass -p '{password}' " +
@@ -47,6 +47,8 @@ def authorize_ssh_key(file, password):
         "-o LogLevel=ERROR " +
         f"-i {file} " + "pi@{}"
     )
+
+    print(f"Authorizing ssh key on receivers: {receivers}")
 
     parallel_cmd = (
         f"parallel --will-cite --max-procs 16 " +
@@ -68,3 +70,4 @@ def authorize_ssh_key(file, password):
 args = parse_args()
 generate_ssh_key(args.file)
 authorize_ssh_key(args.file, args.receiver_ssh_password)
+print("Success!")
