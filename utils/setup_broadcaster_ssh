@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+from piwall2.piwall2configloader import Piwall2ConfigLoader
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Setup passwordless SSH for piwall2 video broadcaster. " +
+        "Run this on the pi that you will be using as the broadcaster.")
+    parser.add_argument('--file', dest='file', action='store', default='/home/pi/.ssh/piwall2_broadcaster_id_ed25519',
+        help='Destination for the generated ssh key.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--receiver-ssh-password', dest='receiver_ssh_password', action='store', required=True,
+        help="SSH password for logging into the receiver raspberry pis. If you haven't changed this, it will be 'raspberry'.")
+    args = parser.parse_args()
+    return args
+
+# generate the SSH key that the broadcaster will use for passwordless SSH
+def generate_ssh_key(file):
+    print(f"Generating ssh key: {file} ...")
+
+    # https://stackoverflow.com/a/43235320/627663
+    output = (subprocess
+        .check_output(
+            f"ssh-keygen -q -t ed25519 -N '' -f {file} <<<y >/dev/null 2>&1",
+            shell = True,
+            executable = '/bin/bash',
+            stderr = subprocess.STDOUT
+        )
+    )
+
+def authorize_ssh_key(file, password):
+    print("Authorizing ssh key...")
+    receivers = ' '.join(Piwall2ConfigLoader.get_receivers())
+    authorize_ssh_key_cmd = (
+        f"sshpass -p '{password}' " +
+        "ssh-copy-id " +
+        "-o ConnectTimeout=5 " +
+        "-o UserKnownHostsFile=/dev/null " +
+        "-o StrictHostKeyChecking=no " +
+        "-o LogLevel=ERROR " +
+        f"-i {file} " + "pi@{}"
+    )
+
+    parallel_cmd = (
+        f"parallel --will-cite --max-procs 16 " +
+        # exit when the first job fails. Kill running jobs.
+        # If fail=1 is used, the exit status will be the exit status of the failing job.
+        "--halt now,fail=1 " +
+        f'"{authorize_ssh_key_cmd}" ::: {receivers}'
+    )
+    output = (subprocess
+        .check_output(
+            parallel_cmd,
+            shell = True,
+            executable = '/bin/bash',
+            stderr = subprocess.STDOUT
+        )
+    )
+
+
+args = parse_args()
+generate_ssh_key(args.file)
+authorize_ssh_key(args.file, args.receiver_ssh_password)

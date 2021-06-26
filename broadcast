@@ -13,4 +13,4 @@ def parseArgs():
 
 
 args = parseArgs()
-Broadcaster().broadcast(args.url)
+Broadcaster(args.url).broadcast()
