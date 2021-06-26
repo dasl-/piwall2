@@ -9,6 +9,7 @@ class ParallelRunner:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
+    # todo: possible to prefix output with machine name?
     def run_cmds(self, cmds):
         parallel_cmd = (
             "parallel --will-cite " +
