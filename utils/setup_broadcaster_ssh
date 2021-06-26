@@ -4,6 +4,7 @@ import argparse
 import subprocess
 import os
 import sys
+import shlex
 
 # This is necessary for the import below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
@@ -28,7 +29,7 @@ def generate_ssh_key(file):
     # https://stackoverflow.com/a/43235320/627663
     output = (subprocess
         .check_output(
-            f"ssh-keygen -q -t ed25519 -N '' -f {file} <<<y >/dev/null 2>&1",
+            f"ssh-keygen -q -t ed25519 -N '' -f {shlex.quote(file)} <<<y >/dev/null 2>&1",
             shell = True,
             executable = '/bin/bash',
             stderr = subprocess.STDOUT
@@ -37,15 +38,19 @@ def generate_ssh_key(file):
 
 def authorize_ssh_key(file, password):
     print("Getting list of receivers from config...")
-    receivers = ' '.join(Piwall2ConfigLoader().get_receivers())
+    receivers = ''
+    for receiver in Piwall2ConfigLoader().get_receivers():
+        receivers += shlex.quote(receiver) + ' '
+    receivers = receivers.strip()
+
     authorize_ssh_key_cmd = (
-        f"sshpass -p '{password}' " +
+        f"sshpass -p {shlex.quote(password)}' " +
         "ssh-copy-id " +
         "-o ConnectTimeout=5 " +
         "-o UserKnownHostsFile=/dev/null " +
         "-o StrictHostKeyChecking=no " +
         "-o LogLevel=ERROR " +
-        f"-i {file} " + "pi@{}"
+        f"-i {shlex.quote(file)} " + "pi@{}"
     )
 
     print(f"Authorizing ssh key on receivers: {receivers}")
