@@ -131,3 +131,27 @@ yt_url="https://www.youtube.com/watch?v=CcazSboibcA" ; eth0_ip=$(ip -json -prett
 I am not sure why specifying the IP address routes the traffic over eth0, despite the fact that both eth0 and wlan0 share the same IP address. Perhaps it has something to do with the order in which the network interfaces were registered, perhaps it is randomly choosing one, or perhaps something else entirely. If this solution turns out not to work in all cases, we could try an approach like this instead: https://superuser.com/a/575254 .
 
 TODO: another approach we could take is connect all the pis to wifi, but also connect them to one another via switch. Then route all the multicast traffic thru the ethernet ports via ip routes? This removes the need for bridging the internet connection to a wired connection...
+
+UPDATE: after rebooting a few times (router + pi?), the pi's eth0 and wlan0 network interfaces no longer share the same IP address. Perhaps this is better because we can refer to them without the potential for ambiguity. But I am not sure how to ensure that they will always have unique IP addresses. Previously they shared the same IP address. Here is what I found:
+
+....
+% ip addr show
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether dc:a6:32:b6:a3:a3 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.7/32 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::dea6:32ff:feb6:a3a3/64 scope link
+       valid_lft forever preferred_lft forever
+3: wlan0: <BROADCAST,MULTICAST,PROMISC,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether dc:a6:32:b6:a3:a4 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.15/24 brd 192.168.1.255 scope global dynamic noprefixroute wlan0
+       valid_lft 59991sec preferred_lft 49191sec
+    inet6 fe80::3754:1664:fa28:fe75/64 scope link
+       valid_lft forever preferred_lft forever
+....
