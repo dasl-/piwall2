@@ -53,7 +53,7 @@ class Broadcaster:
         cmd = ("ip -json -pretty addr show eth0 | jq -c --raw-output '.[] | " +
             "select(.ifname != null) | select(.ifname | contains(\"eth0\")) | .addr_info | .[] | " +
             "select(.family == \"inet\") | .local'")
-        return (subprocess.check_output(cmd, shell = True, executable = '/usr/bin/bash').decode("utf-8"))
+        return (subprocess.check_output(cmd, shell = True, executable = '/usr/bin/bash').decode("utf-8")).strip()
 
     def broadcast(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
@@ -100,7 +100,7 @@ class Broadcaster:
         for receiver in self.__receivers:
             receiver_cmd = self.__get_receiver_cmd(receiver)
             cmds.append(
-                f"ssh {ssh_opts} pi@receiver -- {receiver_cmd}"
+                f"ssh {ssh_opts} pi@{receiver} {shlex.quote(receiver_cmd)}\n".encode()
             )
         return ParallelRunner().run_cmds(cmds)
 
@@ -108,7 +108,7 @@ class Broadcaster:
     def __get_receiver_cmd(self, receiver):
         receiver_config = self.__config[receiver]
         if receiver == 'piwall2.local':
-            return "/home/pi/piwall2/receive --command \"tee >(omxplayer --crop '640,360,1120,720' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '640,0,1120,360' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null\""
+            return "/home/pi/piwall2/receive --command \"tee >(omxplayer --crop '160,0,640,360' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '160,360,640,720' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null\""
         if receiver == 'piwall3.local':
             return "/home/pi/piwall2/receive --command \"omxplayer --crop '640,0,1120,360' -o local --no-keys --threshold 3 pipe:0\""
         if receiver == 'piwall4.local':
@@ -140,7 +140,7 @@ class Broadcaster:
         max_attempts = 2
         for attempt in range(1, (max_attempts + 1)):
             try:
-                self.__video_info = ydl.extract_info(self.__url, download = False)
+                self.__video_info = ydl.extract_info(self.__video_url, download = False)
             except Exception as e:
                 caught_or_raising = "Raising"
                 if attempt < max_attempts:
