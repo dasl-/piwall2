@@ -36,6 +36,7 @@ class Piwall2ConfigLoader:
         config_path = DirectoryUtils().root_dir + '/' + self.__CONFIG_FILE_NAME
         self.__logger.info(f"Loading piwall2 config from: {config_path}.")
         config = toml.load(config_path)
+        self.__logger.info(f"Validating piwall2 config: {config}")
 
         is_any_receiver_dual_video_out = False
         receivers = []
@@ -76,7 +77,6 @@ class Piwall2ConfigLoader:
 
         self.__config = config
         self.__receivers = receivers
-        self.__logger.info(f"Loaded piwall2 config: {self.__config}")
 
         if is_any_receiver_dual_video_out:
             self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=720]'

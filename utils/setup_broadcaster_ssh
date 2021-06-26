@@ -2,13 +2,20 @@
 
 import argparse
 import subprocess
+import os
+import sys
+
+# This is necessary for the import below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
 from piwall2.piwall2configloader import Piwall2ConfigLoader
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Setup passwordless SSH for piwall2 video broadcaster. " +
-        "Run this on the pi that you will be using as the broadcaster.")
+        "Run this on the pi that you will be using as the broadcaster.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--file', dest='file', action='store', default='/home/pi/.ssh/piwall2_broadcaster_id_ed25519',
-        help='Destination for the generated ssh key.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        help='Destination for the generated ssh key.')
     parser.add_argument('--receiver-ssh-password', dest='receiver_ssh_password', action='store', required=True,
         help="SSH password for logging into the receiver raspberry pis. If you haven't changed this, it will be 'raspberry'.")
     args = parser.parse_args()
@@ -30,7 +37,7 @@ def generate_ssh_key(file):
 
 def authorize_ssh_key(file, password):
     print("Authorizing ssh key...")
-    receivers = ' '.join(Piwall2ConfigLoader.get_receivers())
+    receivers = ' '.join(Piwall2ConfigLoader().get_receivers())
     authorize_ssh_key_cmd = (
         f"sshpass -p '{password}' " +
         "ssh-copy-id " +
