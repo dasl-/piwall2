@@ -16,7 +16,7 @@ class Receiver:
     def __init__(self):
         pass
 
-    def receive(self, crop_string):
+    def receive(self, cmd):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind((Broadcaster.MULTICAST_ADDRESS, Broadcaster.MULTICAST_PORT))
@@ -25,7 +25,6 @@ class Receiver:
 
         has_set_timeout = False
 
-        cmd = f"omxplayer --crop {shlex.quote(crop_string)} -o local --no-keys --threshold 3 pipe:0"
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
         )

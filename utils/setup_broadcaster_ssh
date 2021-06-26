@@ -10,7 +10,7 @@ import shlex
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 from piwall2.piwall2configloader import Piwall2ConfigLoader
-from piwall2.dshrunner import DshRunner
+from piwall2.parallelrunner import ParallelRunner
 from piwall2.broadcaster import Broadcaster
 
 def parse_args():
@@ -48,7 +48,7 @@ def generate_ssh_key(file):
 
 def authorize_ssh_key(file, password):
     print("Getting list of receivers from config...")
-    receivers = DshRunner().quote_machines(Piwall2ConfigLoader().get_receivers(), sep=' ')
+    receivers = ParallelRunner().quote_machines(Piwall2ConfigLoader().get_receivers())
     authorize_ssh_key_cmd = (
         f"sshpass -p {shlex.quote(password)} " +
         "ssh-copy-id " +

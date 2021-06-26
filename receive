@@ -5,12 +5,12 @@ from piwall2.receiver import Receiver
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video broadcaster')
-    parser.add_argument('--crop-string', dest='crop_string', action='store', default='640,0,1120,360',
-        help='crop box')
+    parser.add_argument('--command', dest='command', action='store', required=True,
+        help='command to run')
 
     args = parser.parse_args()
     return args
 
 
 args = parseArgs()
-Receiver().receive(args.crop_string)
+Receiver().receive(args.command)
