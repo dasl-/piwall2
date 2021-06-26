@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
+import os
+
+# This is necessary for the import below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
 from piwall2.broadcaster import Broadcaster
 
 def parseArgs():
