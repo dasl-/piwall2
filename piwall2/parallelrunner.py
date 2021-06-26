@@ -1,7 +1,6 @@
 import shlex
 import subprocess
 from piwall2.logger import Logger
-from piwall2.broadcaster import Broadcaster
 
 class ParallelRunner:
 
