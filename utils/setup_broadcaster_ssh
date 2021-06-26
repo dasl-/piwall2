@@ -10,12 +10,13 @@ import shlex
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 from piwall2.piwall2configloader import Piwall2ConfigLoader
+from piwall2.dshrunner import DshRunner
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Setup passwordless SSH for piwall2 video broadcaster. " +
         "Run this on the pi that you will be using as the broadcaster.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--file', dest='file', action='store', default='/home/pi/.ssh/piwall2_broadcaster_id_ed25519',
+    parser.add_argument('--file', dest='file', action='store', default='/home/pi/.ssh/piwall2_broadcaster/id_ed25519',
         help='Destination for the generated ssh key.')
     parser.add_argument('--receiver-ssh-password', dest='receiver_ssh_password', action='store', required=True,
         help="SSH password for logging into the receiver raspberry pis. If you haven't changed this, it will be 'raspberry'.")
@@ -25,6 +26,16 @@ def parse_args():
 # generate the SSH key that the broadcaster will use for passwordless SSH
 def generate_ssh_key(file):
     print(f"Generating ssh key: {file} ...")
+
+    dirname = os.path.dirname(file)
+    output = (subprocess
+        .check_output(
+            f"mkdir -p {shlex.quote(dirname)}",
+            shell = True,
+            executable = '/bin/bash',
+            stderr = subprocess.STDOUT
+        )
+    )
 
     # https://stackoverflow.com/a/43235320/627663
     output = (subprocess
@@ -38,11 +49,7 @@ def generate_ssh_key(file):
 
 def authorize_ssh_key(file, password):
     print("Getting list of receivers from config...")
-    receivers = ''
-    for receiver in Piwall2ConfigLoader().get_receivers():
-        receivers += shlex.quote(receiver) + ' '
-    receivers = receivers.strip()
-
+    receivers = DshRunner().quote_machines(Piwall2ConfigLoader().get_receivers(), sep=' ')
     authorize_ssh_key_cmd = (
         f"sshpass -p {shlex.quote(password)} " +
         "ssh-copy-id " +
