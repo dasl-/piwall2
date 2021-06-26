@@ -81,7 +81,6 @@ class Broadcaster:
         video_width = self.__get_video_info()['width']
         video_height = self.__get_video_info()['height']
 
-
     # Lazily populate video_info from youtube. This takes a couple seconds.
     def __get_video_info(self):
         if self.__video_info:
