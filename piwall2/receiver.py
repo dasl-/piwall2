@@ -1,20 +1,22 @@
 import socket
 import struct
 import sys
-import shlex
 import subprocess
-import os
-import signal
+import string
 import time
+import random
 
 from piwall2.broadcaster import Broadcaster
+from piwall2.logger import Logger
 
 class Receiver:
 
     __SOCKET_TIMEOUT_S = 10
+    __logger = None
 
     def __init__(self):
-        pass
+        log_namespace_unique_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
+        self.__logger = Logger().set_namespace(self.__class__.__name__ + "__" + log_namespace_unique_id)
 
     def receive(self, cmd):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -30,8 +32,8 @@ class Receiver:
         )
         while True:
             ret = sock.recv(4096)
-            print(str(len(ret)), file=sys.stderr, flush = True)
-            print(ret, file=sys.stderr, flush = True)
+
+            self.__logger.debug(f"Received {len(ret)} bytes")
             if not has_set_timeout:
                 sock.settimeout(self.__SOCKET_TIMEOUT_S)
 
