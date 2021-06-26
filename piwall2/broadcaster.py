@@ -9,6 +9,7 @@ import youtube_dl
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.piwall2configloader import Piwall2ConfigLoader
+from piwall2.parallelrunner import ParallelRunner
 
 class Broadcaster:
 
@@ -28,6 +29,7 @@ class Broadcaster:
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
 
     __config = None
+    __receivers = None
     __logger = None
     __eth0_ip_addr = None
     __youtube_dl_video_format = None
@@ -44,6 +46,7 @@ class Broadcaster:
         self.__eth0_ip_addr = self.__get_eth0_ip_addr()
         config_loader = Piwall2ConfigLoader()
         self.__config = config_loader.get_config()
+        self.__receivers = config_loader.get_receivers()
         self.__youtube_dl_video_format = config_loader.get_youtube_dl_video_format()
         self.__video_url = video_url
 
@@ -55,7 +58,7 @@ class Broadcaster:
 
     def broadcast(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
-        self.__start_receivers()
+        receivers_proc = self.__start_receivers()
 
         # Mix the best audio with the video and send via multicast
         cmd = ("ffmpeg -re " +
@@ -81,9 +84,36 @@ class Broadcaster:
         # "bytes-like object is required" msg (https://stackoverflow.com/a/42612820)
         sock.sendto(self.END_OF_VIDEO_MAGIC_BYTES, (self.MULTICAST_ADDRESS, self.MULTICAST_PORT))
 
+        receivers_proc.wait()
+
     def __start_receivers(self):
         video_width = self.__get_video_info()['width']
         video_height = self.__get_video_info()['height']
+        ssh_opts = (
+            "-o ConnectTimeout=5 " +
+            "-o UserKnownHostsFile=/dev/null " +
+            "-o StrictHostKeyChecking=no " +
+            "-o LogLevel=ERROR " +
+            "-o PasswordAuthentication=no " +
+            f"-o IdentityFile={shlex.quote(self.SSH_KEY_PATH)} "
+        )
+        cmds = []
+        for receiver in self.__receivers:
+            receiver_cmd = self.__get_receiver_cmd(receiver)
+            cmds.append(
+                f"ssh {ssh_opts} pi@receiver -- {receiver_cmd}"
+            )
+        return ParallelRunner().run_cmds(cmds)
+
+    # TODO: make this actually work
+    def __get_receiver_cmd(self, receiver):
+        receiver_config = self.__config[receiver]
+        if receiver == 'piwall2.local':
+            return "/home/pi/piwall2/receive --command \"tee >(omxplayer --crop '640,360,1120,720' -o hdmi0 --display 2 --no-keys --threshold 3 pipe:0) >(omxplayer --crop '640,0,1120,360' -o hdmi1 --display 7 --no-keys --threshold 3 pipe:0) >/dev/null\""
+        if receiver == 'piwall3.local':
+            return "/home/pi/piwall2/receive --command \"omxplayer --crop '640,0,1120,360' -o local --no-keys --threshold 3 pipe:0\""
+        if receiver == 'piwall4.local':
+            return "/home/pi/piwall2/receive --command \"omxplayer --crop '640,360,1120,720' -o local --no-keys --threshold 3 --no-keys pipe:0\""
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
     def __get_video_info(self):
