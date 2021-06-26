@@ -26,6 +26,7 @@ class DshRunner:
         # subprocess.
         
     def quote_machines(self, machines, sep = ','):
+        ret = ''
         for machine in machines:
-            machines += shlex.quote(machine) + ' '
-        return machines.strip()
+            ret += shlex.quote(machine) + ' '
+        return ret.strip()
