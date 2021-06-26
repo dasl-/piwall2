@@ -11,13 +11,12 @@ root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 from piwall2.piwall2configloader import Piwall2ConfigLoader
 from piwall2.dshrunner import DshRunner
+from piwall2.broadcaster import Broadcaster
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Setup passwordless SSH for piwall2 video broadcaster. " +
         "Run this on the pi that you will be using as the broadcaster.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--file', dest='file', action='store', default='/home/pi/.ssh/piwall2_broadcaster/id_ed25519',
-        help='Destination for the generated ssh key.')
     parser.add_argument('--receiver-ssh-password', dest='receiver_ssh_password', action='store', required=True,
         help="SSH password for logging into the receiver raspberry pis. If you haven't changed this, it will be 'raspberry'.")
     args = parser.parse_args()
@@ -32,7 +31,7 @@ def generate_ssh_key(file):
         .check_output(
             f"mkdir -p {shlex.quote(dirname)}",
             shell = True,
-            executable = '/bin/bash',
+            executable = '/usr/bin/bash',
             stderr = subprocess.STDOUT
         )
     )
@@ -42,7 +41,7 @@ def generate_ssh_key(file):
         .check_output(
             f"ssh-keygen -q -t ed25519 -N '' -f {shlex.quote(file)} <<<y >/dev/null 2>&1",
             shell = True,
-            executable = '/bin/bash',
+            executable = '/usr/bin/bash',
             stderr = subprocess.STDOUT
         )
     )
@@ -73,13 +72,13 @@ def authorize_ssh_key(file, password):
         .check_output(
             parallel_cmd,
             shell = True,
-            executable = '/bin/bash',
+            executable = '/usr/bin/bash',
             stderr = subprocess.STDOUT
         )
     )
 
 
 args = parse_args()
-generate_ssh_key(args.file)
-authorize_ssh_key(args.file, args.receiver_ssh_password)
+generate_ssh_key(Broadcaster.SSH_KEY_PATH)
+authorize_ssh_key(Broadcaster.SSH_KEY_PATH, args.receiver_ssh_password)
 print("Success!")

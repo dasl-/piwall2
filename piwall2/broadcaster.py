@@ -15,6 +15,10 @@ class Broadcaster:
     MULTICAST_ADDRESS = '239.0.1.23'
     MULTICAST_PORT = 1234
 
+    # For passwordless ssh from the broadcaster to the receivers.
+    # See: https://github.com/dasl-/piwall2/blob/main/utils/setup_broadcaster_ssh
+    SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
+
     # regarding socket.IP_MULTICAST_TTL
     # ---------------------------------
     # for all packets sent, after two hops on the network the packet will not
@@ -47,7 +51,7 @@ class Broadcaster:
         cmd = ("ip -json -pretty addr show eth0 | jq -c --raw-output '.[] | " +
             "select(.ifname != null) | select(.ifname | contains(\"eth0\")) | .addr_info | .[] | " +
             "select(.family == \"inet\") | .local'")
-        return (subprocess.check_output(cmd, shell = True, executable = '/bin/bash').decode("utf-8"))
+        return (subprocess.check_output(cmd, shell = True, executable = '/usr/bin/bash').decode("utf-8"))
 
     def broadcast(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
@@ -120,7 +124,7 @@ class Broadcaster:
                         .check_output(
                             'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
                             shell = True,
-                            executable = '/bin/bash',
+                            executable = '/usr/bin/bash',
                             stderr = subprocess.STDOUT
                         )
                         .decode("utf-8"))
