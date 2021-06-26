@@ -42,7 +42,6 @@ class Broadcaster:
     def __init__(self, video_url):
         log_namespace_unique_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
         self.__logger = Logger().set_namespace(self.__class__.__name__ + "__" + log_namespace_unique_id)
-        self.__populateConfigAndYoutubeDlFormat()
         self.__eth0_ip_addr = self.__get_eth0_ip_addr()
         config_loader = Piwall2ConfigLoader()
         self.__config = config_loader.get_config()
