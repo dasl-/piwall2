@@ -1,7 +1,7 @@
 import shlex
 import subprocess
-from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
+from piwall2.broadcaster import Broadcaster
 
 class DshRunner:
 
@@ -19,11 +19,12 @@ class DshRunner:
             "--remoteshellopt '-o StrictHostKeyChecking=no' " + 
             "--remoteshellopt '-o LogLevel=ERROR' " + 
             "--remoteshellopt '-o PasswordAuthentication=no' " +
+            f"--remoteshellopt \"-o IdentityFile={shlex.quote(Broadcaster.SSH_KEY_PATH)}\" " +
             f"--machine '{machines}' " +
             f"-- {cmd}"
         )
 
-        # subprocess.
+        return subprocess.Popen(dsh_cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True)
         
     def quote_machines(self, machines, sep = ','):
         ret = ''
