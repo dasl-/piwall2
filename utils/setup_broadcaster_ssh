@@ -44,7 +44,7 @@ def authorize_ssh_key(file, password):
     receivers = receivers.strip()
 
     authorize_ssh_key_cmd = (
-        f"sshpass -p {shlex.quote(password)}' " +
+        f"sshpass -p {shlex.quote(password)} " +
         "ssh-copy-id " +
         "-o ConnectTimeout=5 " +
         "-o UserKnownHostsFile=/dev/null " +
