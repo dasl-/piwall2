@@ -18,9 +18,9 @@ main(){
 updateAndInstallPackages(){
     echo -e "\\nUpdating and installing packages..."
     sudo apt update
-    sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi jq
+    sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi jq parallel dsh sshpass
     sudo apt -y full-upgrade
-    sudo pip3 install --upgrade youtube_dl
+    sudo pip3 install --upgrade youtube_dl toml
 }
 
 # We disable wifi because multicast doesn't work well over wifi. Since the TV wall
