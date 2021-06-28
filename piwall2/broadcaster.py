@@ -245,7 +245,7 @@ class Broadcaster:
         self.__logger.info("Downloading and populating video metadata...")
         ydl_opts = {
             'format': self.__config_loader.get_youtube_dl_video_format(),
-            'logger': Logger(),
+            'logger': Logger().set_namespace('youtube_dl'),
             'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
         }
         ydl = youtube_dl.YoutubeDL(ydl_opts)
