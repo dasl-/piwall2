@@ -1,10 +1,7 @@
 import socket
 import struct
-import sys
 import subprocess
-import string
 import time
-import random
 
 from piwall2.broadcaster import Broadcaster
 from piwall2.logger import Logger
@@ -15,8 +12,7 @@ class Receiver:
     __logger = None
 
     def __init__(self):
-        log_namespace_unique_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
-        self.__logger = Logger().set_namespace(self.__class__.__name__ + "__" + log_namespace_unique_id)
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def receive(self, cmd):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
