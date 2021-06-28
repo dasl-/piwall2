@@ -2,15 +2,19 @@
 
 import argparse
 from piwall2.receiver import Receiver
+from piwall2.logger import Logger
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video broadcaster')
     parser.add_argument('--command', dest='command', action='store', required=True,
         help='command to run')
+    parser.add_argument('--log-uuid', dest='log_uuid', action='store',
+        help='Logger UUID')
 
     args = parser.parse_args()
     return args
 
 
 args = parseArgs()
+Logger.set_uuid(args.log_uuid)
 Receiver().receive(args.command)
