@@ -117,6 +117,8 @@ class Broadcaster:
             receiver_cmd = receiver_cmd_template.format(tee_cmd)
         else:
             receiver_cmd = receiver_cmd_template.format(omx_cmd)
+
+        self.__logger.debug(f"Using receiver command for {receiver}: {receiver_cmd}")
         return receiver_cmd
 
     def __get_adevs_for_receiver(self, receiver, receiver_config):
@@ -133,11 +135,11 @@ class Broadcaster:
         adev2 = None
         if receiver_config['is_dual_video_output']:
             if receiver_config['audio2'] == 'hdmi1':
-                adev = 'hdmi1'
+                adev2 = 'hdmi1'
             elif receiver_config['audio2'] == 'headphone':
-                adev = 'local'
+                adev2 = 'local'
             elif receiver_config['audio'] == 'hdmi1_alsa':
-                adev = 'alsa:default:CARD=b2'
+                adev2 = 'alsa:default:CARD=b2'
             else:
                 raise Exception(f"Unexpected audio2 config value for receiver: {receiver}, value: {receiver_config['audio2']}")
 
@@ -155,7 +157,7 @@ class Broadcaster:
         display2 = None
         if receiver_config['is_dual_video_output']:
             if receiver_config['video2'] == 'hdmi1':
-                display = '7'
+                display2 = '7'
             else:
                 raise Exception(f"Unexpected video2 config value for receiver: {receiver}, value: {receiver_config['video2']}")
 
@@ -222,7 +224,7 @@ class Broadcaster:
             x0_2 = x_offset + ((receiver_config['x2'] / wall_width) * displayable_video_width)
             y0_2 = y_offset + ((receiver_config['y2'] / wall_height) * displayable_video_height)
             x1_2 = x_offset + (((receiver_config['x2'] + receiver_config['width2']) / wall_width) * displayable_video_width)
-            y1_2 = y_offset + (((receiver_config['y'] + receiver_config['height2']) / wall_height) * displayable_video_height)
+            y1_2 = y_offset + (((receiver_config['y2'] + receiver_config['height2']) / wall_height) * displayable_video_height)
 
             if x0_2 > video_width:
                 self.__logger.warn(f"The crop x0_2 coordinate ({x0_2}) " +

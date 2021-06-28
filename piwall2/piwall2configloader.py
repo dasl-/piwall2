@@ -65,8 +65,7 @@ class Piwall2ConfigLoader:
 
             self.__assert_receiver_config_valid(receiver, receiver_config, is_this_receiver_dual_video_out)
 
-            if is_this_receiver_dual_video_out:
-                receiver_config['is_dual_video_output'] = True
+            receiver_config['is_dual_video_output'] = is_this_receiver_dual_video_out
 
             wall_width_at_this_receiver = receiver_config['x'] + receiver_config['width']
             wall_height_at_this_receiver = receiver_config['y'] + receiver_config['height']
