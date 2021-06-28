@@ -70,13 +70,7 @@ class Broadcaster:
         while proc.poll() is None:
             time.sleep(0.1)
 
-        self.__logger.info("Sending end of video magic bytes to receivers...")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.MULTICAST_TTL)
-
-        # For Python 3, change next line to 'sock.sendto(b"robot", ...' to avoid the
-        # "bytes-like object is required" msg (https://stackoverflow.com/a/42612820)
-        sock.sendto(self.END_OF_VIDEO_MAGIC_BYTES, (self.MULTICAST_ADDRESS, self.MULTICAST_PORT))
+        self.__send_end_of_video_magic_bytes()
 
         receivers_proc.wait()
 
@@ -297,3 +291,23 @@ class Broadcaster:
             f"{self.__video_info['width']}x{self.__video_info['height']}")
 
         return self.__video_info
+
+    def __send_end_of_video_magic_bytes(self):
+        self.__logger.info("Sending end of video magic bytes to receivers...")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.MULTICAST_TTL)
+
+        magic_bytes = self.END_OF_VIDEO_MAGIC_BYTES
+        i = 0
+        max_attempts = 100
+        while True:
+            bytes_sent = sock.sendto(magic_bytes, (self.MULTICAST_ADDRESS, self.MULTICAST_PORT))
+            if bytes_sent < len(magic_bytes):
+                magic_bytes = magic_bytes[bytes_sent:]
+            else:
+                break
+
+            i += 1
+            if i > max_attempts:
+                self.__logger.warn(f"Unable to send all magic bytes after {i} attempts.")
+                break
