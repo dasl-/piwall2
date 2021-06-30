@@ -17,16 +17,12 @@ class Receiver:
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
         )
-
-        if not self.__has_lowered_receive_video_timeout:
-            # Subsequent bytes after the first packet should be received very quickly
-            self.__receive_video_socket.settimeout(1)
-
         last_video_bytes = b''
         while True:
             video_bytes = multicast_helper.receive_video()
 
             if not has_lowered_timeout:
+                # Subsequent bytes after the first packet should be received very quickly
                 socket.settimeout(1)
                 has_lowered_timeout = True
 
