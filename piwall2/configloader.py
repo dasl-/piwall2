@@ -2,7 +2,7 @@ import toml
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 
-class Piwall2ConfigLoader:
+class ConfigLoader:
 
     __CONFIG_FILE_NAME = 'config.toml'
 
