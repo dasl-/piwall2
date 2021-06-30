@@ -179,10 +179,10 @@ class Broadcaster:
         x_offset = (video_width - displayable_video_width) / 2
         y_offset = (video_height - displayable_video_height) / 2
 
-        x0 = x_offset + ((receiver_config['x'] / wall_width) * displayable_video_width)
-        y0 = y_offset + ((receiver_config['y'] / wall_height) * displayable_video_height)
-        x1 = x_offset + (((receiver_config['x'] + receiver_config['width']) / wall_width) * displayable_video_width)
-        y1 = y_offset + (((receiver_config['y'] + receiver_config['height']) / wall_height) * displayable_video_height)
+        x0 = round(x_offset + ((receiver_config['x'] / wall_width) * displayable_video_width))
+        y0 = round(y_offset + ((receiver_config['y'] / wall_height) * displayable_video_height))
+        x1 = round(x_offset + (((receiver_config['x'] + receiver_config['width']) / wall_width) * displayable_video_width))
+        y1 = round(y_offset + (((receiver_config['y'] + receiver_config['height']) / wall_height) * displayable_video_height))
 
         if x0 > video_width:
             self.__logger.warn(f"The crop x0 coordinate ({x0}) " +
@@ -201,10 +201,10 @@ class Broadcaster:
 
         crop2 = None
         if receiver_config['is_dual_video_output']:
-            x0_2 = x_offset + ((receiver_config['x2'] / wall_width) * displayable_video_width)
-            y0_2 = y_offset + ((receiver_config['y2'] / wall_height) * displayable_video_height)
-            x1_2 = x_offset + (((receiver_config['x2'] + receiver_config['width2']) / wall_width) * displayable_video_width)
-            y1_2 = y_offset + (((receiver_config['y2'] + receiver_config['height2']) / wall_height) * displayable_video_height)
+            x0_2 = round(x_offset + ((receiver_config['x2'] / wall_width) * displayable_video_width))
+            y0_2 = round(y_offset + ((receiver_config['y2'] / wall_height) * displayable_video_height))
+            x1_2 = round(x_offset + (((receiver_config['x2'] + receiver_config['width2']) / wall_width) * displayable_video_width))
+            y1_2 = round(y_offset + (((receiver_config['y2'] + receiver_config['height2']) / wall_height) * displayable_video_height))
 
             if x0_2 > video_width:
                 self.__logger.warn(f"The crop x0_2 coordinate ({x0_2}) " +
