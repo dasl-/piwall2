@@ -19,7 +19,7 @@ class Receiver:
         )
         last_video_bytes = b''
         while True:
-            video_bytes = multicast_helper.receive_video()
+            video_bytes = multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
 
             if not has_lowered_timeout:
                 # Subsequent bytes after the first packet should be received very quickly
