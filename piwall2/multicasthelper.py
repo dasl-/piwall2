@@ -30,14 +30,12 @@ class MulticastHelper:
         self.__send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.__send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.TTL)
 
-        self.__receive_video_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.__receive_video_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.__receive_video_socket.bind((self.ADDRESS, self.VIDEO_PORT))
-        mreq = struct.pack("4sl", socket.inet_aton(self.ADDRESS), socket.INADDR_ANY)
-        self.__receive_video_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        self.__receive_video_socket = self.__make_receive_socket(self.ADDRESS, self.VIDEO_PORT)
 
         # set a higher timeout while we wait for the first packet of the video to be sent
         self.__receive_video_socket.settimeout(60)
+
+        self.__receive_control_socket = self.__make_receive_socket(self.ADDRESS, self.CONTROL_PORT)
 
     def send(self, msg, msg_type):
         if msg_type == self.MSG_TYPE_VIDEO_STREAM:
@@ -70,3 +68,11 @@ class MulticastHelper:
             if i > max_attempts:
                 self.__logger.warn(f"Unable to send full message ({msg}) after {i} attempts.")
                 break
+
+    def __make_receive_socket(self, address, port):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((self.ADDRESS, self.VIDEO_PORT))
+        mreq = struct.pack("4sl", socket.inet_aton(self.ADDRESS), socket.INADDR_ANY)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        return sock
