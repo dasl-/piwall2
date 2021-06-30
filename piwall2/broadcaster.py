@@ -6,7 +6,7 @@ import youtube_dl
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
-from piwall2.piwall2configloader import Piwall2ConfigLoader
+from piwall2.configloader import ConfigLoader
 from piwall2.parallelrunner import ParallelRunner
 
 class Broadcaster:
@@ -20,7 +20,7 @@ class Broadcaster:
     def __init__(self, video_url):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         Logger.set_uuid(Logger.make_uuid())
-        self.__config_loader = Piwall2ConfigLoader()
+        self.__config_loader = ConfigLoader()
         self.__video_url = video_url
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
