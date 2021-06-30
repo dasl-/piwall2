@@ -4,8 +4,6 @@ from piwall2.logger import Logger
 
 class ParallelRunner:
 
-    __logger = None
-
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 

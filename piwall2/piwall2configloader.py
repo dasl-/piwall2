@@ -5,12 +5,6 @@ from piwall2.logger import Logger
 class Piwall2ConfigLoader:
 
     __CONFIG_FILE_NAME = 'config.toml'
-    __receivers_config = None
-    __wall_width = None
-    __wall_height = None
-    __youtube_dl_video_format = None
-    __receivers = None
-    __is_loaded = None
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)

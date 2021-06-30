@@ -1,45 +1,44 @@
-import socket
-import struct
 import subprocess
 import time
 
 from piwall2.broadcaster import Broadcaster
 from piwall2.logger import Logger
+from piwall2.multicasthelper import MulticastHelper
 
 class Receiver:
-
-    __SOCKET_TIMEOUT_S = 10
-    __logger = None
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def receive(self, cmd):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((Broadcaster.MULTICAST_ADDRESS, Broadcaster.MULTICAST_PORT))
-        mreq = struct.pack("4sl", socket.inet_aton(Broadcaster.MULTICAST_ADDRESS), socket.INADDR_ANY)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-
-        has_set_timeout = False
-
+        multicast_helper = MulticastHelper()
+        socket = multicast_helper.get_receive_video_socket()
+        has_lowered_timeout = False
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
         )
+
+        if not self.__has_lowered_receive_video_timeout:
+            # Subsequent bytes after the first packet should be received very quickly
+            self.__receive_video_socket.settimeout(1)
+
+        last_video_bytes = b''
         while True:
-            ret = sock.recv(4096)
+            video_bytes = multicast_helper.receive_video()
 
-            self.__logger.debug(f"Received {len(ret)} bytes")
-            if not has_set_timeout:
-                sock.settimeout(self.__SOCKET_TIMEOUT_S)
+            if not has_lowered_timeout:
+                socket.settimeout(1)
+                has_lowered_timeout = True
 
-            # todo: guard against magic bytes being sent in more than one packet
-            if ret == Broadcaster.END_OF_VIDEO_MAGIC_BYTES:
+            last_video_bytes += video_bytes[-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):]
+            if len(last_video_bytes) > len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):
+                last_video_bytes = last_video_bytes[-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):]
+            if last_video_bytes == Broadcaster.END_OF_VIDEO_MAGIC_BYTES:
                 # os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 proc.stdin.close()
                 break
 
-            proc.stdin.write(ret)
+            proc.stdin.write(video_bytes)
             proc.stdin.flush()
 
         while proc.poll() is None:

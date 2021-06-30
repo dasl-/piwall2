@@ -1,44 +1,30 @@
 import shlex
 import subprocess
 import time
-import socket
 import traceback
 import youtube_dl
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
+from piwall2.multicasthelper import MulticastHelper
 from piwall2.piwall2configloader import Piwall2ConfigLoader
 from piwall2.parallelrunner import ParallelRunner
 
 class Broadcaster:
 
-    MULTICAST_ADDRESS = '239.0.1.23'
-    MULTICAST_PORT = 1234
-
     # For passwordless ssh from the broadcaster to the receivers.
     # See: https://github.com/dasl-/piwall2/blob/main/utils/setup_broadcaster_ssh
     SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
 
-    # regarding socket.IP_MULTICAST_TTL
-    # ---------------------------------
-    # for all packets sent, after two hops on the network the packet will not
-    # be re-sent/broadcast (see https://www.tldp.org/HOWTO/Multicast-HOWTO-6.html)
-    MULTICAST_TTL = 2
-
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
-
-    __config_loader = None
-    __logger = None
-
-    # Metadata about the video we are using, such as title, resolution, file extension, etc
-    # Access should go through self.__get_video_info() to populate it lazily
-    __video_info = None
-    __video_url = None
 
     def __init__(self, video_url):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         Logger.set_uuid(Logger.make_uuid())
         self.__config_loader = Piwall2ConfigLoader()
         self.__video_url = video_url
+
+        # Metadata about the video we are using, such as title, resolution, file extension, etc
+        # Access should go through self.__get_video_info() to populate it lazily
         self.__video_info = None
 
     def broadcast(self):
@@ -47,7 +33,7 @@ class Broadcaster:
         # Bind multicast traffic to eth0. Otherwise it might send over wlan0 -- multicast doesn't work well over wifi.
         # `|| true` to avoid 'RTNETLINK answers: File exists' if the route has already been added.
         (subprocess.check_output(
-            f"sudo ip route add {self.MULTICAST_ADDRESS}/32 dev eth0 || true",
+            f"sudo ip route add {MulticastHelper.ADDRESS}/32 dev eth0 || true",
             shell = True,
             executable = '/usr/bin/bash',
             stderr = subprocess.STDOUT
@@ -60,7 +46,7 @@ class Broadcaster:
             f"-i <(youtube-dl {shlex.quote(self.__video_url)} -f 'bestvideo[vcodec^=avc1][height<=720]' -o -) " +
             f"-i <(youtube-dl {shlex.quote(self.__video_url)} -f 'bestaudio' -o -) " +
             "-c:v copy -c:a aac -f matroska " +
-            f"\"udp://{self.MULTICAST_ADDRESS}:{self.MULTICAST_PORT}\"")
+            f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.PORT}\"")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
@@ -70,7 +56,7 @@ class Broadcaster:
         while proc.poll() is None:
             time.sleep(0.1)
 
-        self.__send_end_of_video_magic_bytes()
+        MulticastHelper().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
 
         receivers_proc.wait()
 
@@ -291,23 +277,3 @@ class Broadcaster:
             f"{self.__video_info['width']}x{self.__video_info['height']}")
 
         return self.__video_info
-
-    def __send_end_of_video_magic_bytes(self):
-        self.__logger.info("Sending end of video magic bytes to receivers...")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.MULTICAST_TTL)
-
-        magic_bytes = self.END_OF_VIDEO_MAGIC_BYTES
-        i = 0
-        max_attempts = 100
-        while True:
-            bytes_sent = sock.sendto(magic_bytes, (self.MULTICAST_ADDRESS, self.MULTICAST_PORT))
-            if bytes_sent < len(magic_bytes):
-                magic_bytes = magic_bytes[bytes_sent:]
-            else:
-                break
-
-            i += 1
-            if i > max_attempts:
-                self.__logger.warn(f"Unable to send all magic bytes after {i} attempts.")
-                break

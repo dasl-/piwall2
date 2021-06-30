@@ -6,9 +6,7 @@ import string
 
 class Logger:
 
-    __namespace = None
-
-    __uuid = '' # static variable
+    __uuid = ''
 
     def __init__(self):
         self.__namespace = ""
