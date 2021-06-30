@@ -30,6 +30,7 @@ class Receiver:
             if len(last_video_bytes) > len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):
                 last_video_bytes = last_video_bytes[-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):]
             if last_video_bytes == Broadcaster.END_OF_VIDEO_MAGIC_BYTES:
+                self.__logger.info("Received end of video magic bytes...")
                 # os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 proc.stdin.close()
                 break
