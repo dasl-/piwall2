@@ -46,7 +46,7 @@ class Broadcaster:
             f"-i <(youtube-dl {shlex.quote(self.__video_url)} -f 'bestvideo[vcodec^=avc1][height<=720]' -o -) " +
             f"-i <(youtube-dl {shlex.quote(self.__video_url)} -f 'bestaudio' -o -) " +
             "-c:v copy -c:a aac -f matroska " +
-            f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.PORT}\"")
+            f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
