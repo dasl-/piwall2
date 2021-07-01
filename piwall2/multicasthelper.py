@@ -54,11 +54,11 @@ class MulticastHelper:
         self.__logger.info(f"Sending video stream message: {msg}")
         self.__send_msg_to(msg, (self.ADDRESS, self.VIDEO_PORT))
 
-    def __send_msg_to(self, msg, address):
+    def __send_msg_to(self, msg, address_tuple):
         i = 0
         max_attempts = 10
         while True:
-            bytes_sent = self.__send_socket.sendto(msg, address)
+            bytes_sent = self.__send_socket.sendto(msg, address_tuple)
             if bytes_sent < len(msg): # not sure if this can ever happen...
                 msg = msg[bytes_sent:]
             else:
@@ -72,7 +72,7 @@ class MulticastHelper:
     def __make_receive_socket(self, address, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((self.ADDRESS, self.VIDEO_PORT))
-        mreq = struct.pack("4sl", socket.inet_aton(self.ADDRESS), socket.INADDR_ANY)
+        sock.bind((address, port))
+        mreq = struct.pack("4sl", socket.inet_aton(address), socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         return sock
