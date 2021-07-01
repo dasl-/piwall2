@@ -15,7 +15,7 @@ from piwall2.broadcaster import Broadcaster
 
 def parse_args():
     parser = argparse.ArgumentParser(description=
-f"""Apply the receivers config in: {config_loader.get_receivers_config_path()}.
+f"""Apply the receivers config located in: {config_loader.get_receivers_config_path()}.
 This script should be run on the broadcaster. This script does several things:
 1) Sets up passwordless SSH from the broadcaster to each receiver
 2) Sets up the control daemon on the broadcaster
