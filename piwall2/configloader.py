@@ -4,9 +4,9 @@ from piwall2.logger import Logger
 
 class ConfigLoader:
 
-    __CONFIG_FILE_NAME = 'config.toml'
+    __RECEIVERS_CONFIG_FILE_NAME = 'receivers.toml'
 
-    def __init__(self):
+    def __init__(self, load = True):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__receivers_config = None
         self.__receivers = []
@@ -14,12 +14,13 @@ class ConfigLoader:
         self.__wall_height = None
         self.__youtube_dl_video_format = None
         self.__is_loaded = False
-        self.__load_config_if_not_loaded()
+        if load:
+            self.load_config_if_not_loaded()
 
     def get_receivers_config(self):
         return self.__receivers_config
 
-    def get_receivers(self):
+    def get_receivers_list(self):
         return self.__receivers
 
     def get_wall_width(self):
@@ -33,11 +34,14 @@ class ConfigLoader:
     def get_youtube_dl_video_format(self):
         return self.__youtube_dl_video_format
 
-    def __load_config_if_not_loaded(self):
+    def get_receivers_config_path(self):
+        return DirectoryUtils().root_dir + '/' + self.__RECEIVERS_CONFIG_FILE_NAME
+
+    def load_config_if_not_loaded(self):
         if self.__is_loaded:
             return
 
-        config_path = DirectoryUtils().root_dir + '/' + self.__CONFIG_FILE_NAME
+        config_path = self.get_receivers_config_path()
         self.__logger.info(f"Loading piwall2 config from: {config_path}.")
         raw_config = toml.load(config_path)
         self.__logger.info(f"Validating piwall2 config: {raw_config}")
@@ -84,6 +88,8 @@ class ConfigLoader:
         else:
             self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
         self.__logger.info(f"Using youtube-dl video format: {self.__youtube_dl_video_format}")
+
+        self.__is_loaded = True
 
     def __assert_receiver_config_valid(self, receiver, receiver_config, is_this_receiver_dual_video_out):
         if 'x' not in receiver_config:

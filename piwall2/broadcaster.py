@@ -70,7 +70,7 @@ class Broadcaster:
             f"-o IdentityFile={shlex.quote(self.SSH_KEY_PATH)} "
         )
         cmds = []
-        for receiver in self.__config_loader.get_receivers():
+        for receiver in self.__config_loader.get_receivers_list():
             receiver_cmd = self.__get_receiver_cmd(receiver)
             cmds.append(
                 f"ssh {ssh_opts} pi@{receiver} {shlex.quote(receiver_cmd)}\n".encode()
