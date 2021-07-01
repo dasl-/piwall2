@@ -14,8 +14,13 @@ from piwall2.parallelrunner import ParallelRunner
 from piwall2.broadcaster import Broadcaster
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Setup passwordless SSH for piwall2 video broadcaster. " +
-        "Run this on the pi that you will be using as the broadcaster.",
+    parser = argparse.ArgumentParser(description=
+f"""Apply the receivers config in: {config_loader.get_receivers_config_path()}.
+This script should be run on the broadcaster. This script does several things:
+1) Sets up passwordless SSH from the broadcaster to each receiver
+2) Sets up the control daemon on the broadcaster
+3) Sets up the receiver daemon on each receiver
+""",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--receiver-ssh-password', dest='receiver_ssh_password', action='store', required=True,
         help="SSH password for logging into the receiver raspberry pis. If you haven't changed this, it will be 'raspberry'.")
@@ -48,7 +53,7 @@ def generate_ssh_key(file):
 
 def authorize_ssh_key(file, password):
     print("Getting list of receivers from config...")
-    receivers = ParallelRunner().quote_machines(ConfigLoader().get_receivers())
+    receivers = ParallelRunner().quote_machines(ConfigLoader().get_receivers_list())
     authorize_ssh_key_cmd = (
         f"sshpass -p {shlex.quote(password)} " +
         "ssh-copy-id " +
@@ -62,7 +67,7 @@ def authorize_ssh_key(file, password):
     print(f"Authorizing ssh key on receivers: {receivers}")
 
     parallel_cmd = (
-        f"parallel --will-cite --max-procs 16 " +
+        "parallel --will-cite --max-procs 16 " +
         # exit when the first job fails. Kill running jobs.
         # If fail=1 is used, the exit status will be the exit status of the failing job.
         "--halt now,fail=1 " +
@@ -78,7 +83,11 @@ def authorize_ssh_key(file, password):
     )
 
 
+config_loader = ConfigLoader(load = False)
 args = parse_args()
+
+# load after parsing args to avoid potentially throwing errors before printing the help text
+config_loader.load_config_if_not_loaded()
 generate_ssh_key(Broadcaster.SSH_KEY_PATH)
 authorize_ssh_key(Broadcaster.SSH_KEY_PATH, args.receiver_ssh_password)
 print("Success!")
