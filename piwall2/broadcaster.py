@@ -85,7 +85,7 @@ class Broadcaster:
         crop, crop2 = self.__get_crops_for_receiver(receiver, receiver_config)
 
         receiver_cmd_template = ('/home/pi/piwall2/receive --command "{0}" --log-uuid ' +
-            shlex.quote(Logger.get_uuid()))
+            shlex.quote(Logger.get_uuid()) + ' >/tmp/receiver.log')
 
         # omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 3 pipe:0'
         omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys pipe:0'
