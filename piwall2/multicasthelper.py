@@ -47,7 +47,7 @@ class MulticastHelper:
             socket.SOL_SOCKET, socket.SO_RCVBUF, self.__VIDEO_SOCKET_RECEIVE_BUFFER_SIZE_BYTES
         )
         self.__logger.debug("Using receive buffer size of " +
-            self.__receive_video_socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF) +
+            str(self.__receive_video_socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)) +
             " bytes on receiver video socket.")
 
         self.__receive_control_socket = self.__make_receive_socket(self.ADDRESS, self.CONTROL_PORT)
