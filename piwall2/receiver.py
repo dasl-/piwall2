@@ -7,6 +7,9 @@ from piwall2.multicasthelper import MulticastHelper
 
 class Receiver:
 
+    # emit measurement stats once every 10s
+    __MEASUREMENT_WINDOW_SIZE_S = 10
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
@@ -18,8 +21,13 @@ class Receiver:
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
         )
         last_video_bytes = b''
+
+        measurement_window_start = time.time()
+        measurement_window_bytes_count = 0
+
         while True:
             video_bytes = multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+            measurement_window_bytes_count += len(video_bytes)
 
             if not has_lowered_timeout:
                 # Subsequent bytes after the first packet should be received very quickly
@@ -37,6 +45,13 @@ class Receiver:
 
             proc.stdin.write(video_bytes)
             proc.stdin.flush()
+
+            measurement_window_elapsed_time_s = time.time() - measurement_window_start
+            if measurement_window_elapsed_time_s > self.__MEASUREMENT_WINDOW_SIZE_S:
+                measurement_window_KB_per_s = measurement_window_bytes_count / measurement_window_elapsed_time_s / 1024
+                self.__logger.info(f"Reading video at {round(measurement_window_KB_per_s, 2)} KB/s")
+                measurement_window_start = time.time()
+                measurement_window_bytes_count = 0
 
         while proc.poll() is None:
             print('.')
