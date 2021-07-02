@@ -52,7 +52,7 @@ class Broadcaster:
         video_buffer_size = 1024 * 1024 * 10
         youtube_dl_video_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__video_url),
-            self.__config_loader.get_youtube_dl_video_format(),
+            shlex.quote(self.__config_loader.get_youtube_dl_video_format()),
             video_buffer_size
         )
 
@@ -63,7 +63,7 @@ class Broadcaster:
         audio_buffer_size = 1024 * 1024 * 1.25
         youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__video_url),
-            'bestaudio',
+            shlex.quote('bestaudio'),
             audio_buffer_size
         )
 
