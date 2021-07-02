@@ -41,10 +41,35 @@ class Broadcaster:
 
         receivers_proc = self.__start_receivers()
 
+        # Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
+        # and is trying to reconnect. This can happen from time to time when downloading long videos.
+        # Youtube-dl should download quickly until it fills the mbuffer. After the mbuffer is filled,
+        # ffmpeg will apply backpressure to youtube-dl because of ffmpeg's `-re` flag
+        youtube_dl_cmd_template = "youtube-dl {0} -f {1} -o - | mbuffer -q -Q -m {2}b"
+
+        # 10 MB. Based on one video, 1080p avc1 video, audio consumes about 0.36 MB/s. So this should
+        # be enough buffer for ~27s
+        video_buffer_size = 1024 * 1024 * 10
+        youtube_dl_video_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__video_url),
+            self.__config_loader.get_youtube_dl_video_format(),
+            video_buffer_size
+        )
+
+        # 1.25 MB. This is the minimum mbuffer size necessary to avoid:
+        #   mbuffer: fatal: total memory must be large enough for 5 blocks
+        # Based on one video, audio consumes about 0.016 MB/s. So this should
+        # be enough buffer for ~80s
+        audio_buffer_size = 1024 * 1024 * 1.25
+        youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__video_url),
+            'bestaudio',
+            audio_buffer_size
+        )
+
         # Mix the best audio with the video and send via multicast
         cmd = ("ffmpeg -re " +
-            f"-i <(youtube-dl {shlex.quote(self.__video_url)} -f 'bestvideo[vcodec^=avc1][height<=720]' -o -) " +
-            f"-i <(youtube-dl {shlex.quote(self.__video_url)} -f 'bestaudio' -o -) " +
+            f"-i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) " +
             "-c:v copy -c:a aac -f matroska " +
             f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
         self.__logger.info(f"Running broadcast command: {cmd}")
