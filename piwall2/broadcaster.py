@@ -88,7 +88,7 @@ class Broadcaster:
             shlex.quote(Logger.get_uuid()) + ' >/tmp/receiver.log 2>&1')
 
         # omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 3 pipe:0'
-        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys pipe:0'
+        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --genlog pipe:0'
         omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
 
         receiver_cmd = None
