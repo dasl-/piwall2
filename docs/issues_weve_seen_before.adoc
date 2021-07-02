@@ -13,3 +13,124 @@ If you are:
 1. using hdmi output at a resolution of 2,560 x 1,440 or above
 
 then it could be https://www.zdnet.com/article/raspberry-pi-4-wi-fi-problem-firmware-update-will-fix-your-screen-resolution-bug/
+
+## UDP packet loss
+### Symptoms
+* video pauses / freezes (either momentarily or permanently) on one or more TVs
+* video glitches / artifacts on one or more monitors
+* video never starts on one or more monitors
+* video gets out of sync with respect to other TVs
+
+### Diagnosing
+#### Receive buffer filling up
+The following command repeatedly watches for UDP receiver related errors. Run this on the receiver(s) which is experiencing issues while you are broadcasting a video.
+....
+% while sleep 1; do netstat -anus | grep receive | grep errors; done
+    0 packet receive errors
+    0 receive buffer errors
+    0 packet receive errors
+    0 receive buffer errors
+    0 packet receive errors
+    0 receive buffer errors
+....
+
+The number displayed is the number of errors since the pi was last rebooted. If the numbers are staying constant, then you are not currently getting any errors. If the numbers are increasing, you are currently getting UDP packet loss.
+
+Many times, both of these numbers will have the same value. That is, the number of packet receive errors will be equal to the number of receive buffer errors. This may indicate a socket receive buffer is too small.
+
+The following command shows default udp buffer sizes on a fresh install of raspbian:
+....
+% sudo sysctl -A | grep net | grep 'mem\|backlog' | grep 'udp_mem\|rmem_\|max_backlog'
+net.core.netdev_max_backlog = 1000
+net.core.rmem_default = 180224
+net.core.rmem_max = 180224
+net.ipv4.udp_mem = 15735    20983   31470
+net.ipv4.udp_rmem_min = 4096
+....
+
+To print a display a socket's receive buffer size, you may do this in python:
+....
+>>> import socket
+>>> import struct
+>>> sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+>>> sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+>>> sock.bind(('239.0.1.23', 1234))
+>>> mreq = struct.pack("4sl", socket.inet_aton('239.0.1.23'), socket.INADDR_ANY)
+>>> sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+>>> print(sock.getsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF))
+180224
+....
+
+Observe how by default, a socket gets a receive buffer equal to `net.core.rmem_default`. Socket buffers may be changed via:
+....
+>>> sock.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF, 99999)
+>>> print(sock.getsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF))
+199998
+....
+
+Observe how a receive buffer was created that is double the size of what we specified. According to the man page:
+....
+       SO_RCVBUF
+              Sets or gets the maximum socket receive buffer in bytes.
+              The kernel doubles this value (to allow space for
+              bookkeeping overhead) when it is set using setsockopt(2),
+              and this doubled value is returned by getsockopt(2).  The
+              default value is set by the
+              /proc/sys/net/core/rmem_default file, and the maximum
+              allowed value is set by the /proc/sys/net/core/rmem_max
+              file.  The minimum (doubled) value for this option is 256.
+....
+
+This seemingly allows us to create sockets with receive buffers up to double the size specified in `net.core.rmem_max`:
+....
+>>> sock.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF, 99999999)
+>>> print(sock.getsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF))
+360448
+....
+
+This command lets us see the number of bytes that have not been read yet from the socket's receive buffer (`Recv-Q`):
+....
+% netstat -c --udp -an
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+udp        0      0 0.0.0.0:5353            0.0.0.0:*
+udp        0      0 0.0.0.0:51772           0.0.0.0:*
+udp        0      0 0.0.0.0:68              0.0.0.0:*
+udp        0      0 239.0.1.23:1234         0.0.0.0:*
+udp6       0      0 :::5353                 :::*
+udp6       0      0 :::39588                :::*
+....
+
+While a video is being broadcast, you may see the number for the Recv-Q number sometimes go above zero. If the Recv-Q value gets close to the socket's receive buffer size, you may start to see UDP packet loss. You can run both of these commands at the same time on the receiver to confirm:
+
+....
+% netstat -c --udp -an | grep '239.0.1.23:1234'
+...
+% # in a separate shell:
+% while sleep 1; do netstat -anus | grep receive | grep errors; done
+....
+
+If the socket's receiver buffer is filling up, we'd expect to see the number of errors reported by the second command to start increasing at the same time that the socket's Recv-Q fills up according to the first command.
+
+I am not sure if there are other reasons, aside from the receive buffer overflowing, for the "receive buffer errors" counter to be incremented.
+
+#### Receive buffer too big
+While debugging packet loss problems, I tried setting the socket's receive buffer to 64MB by changing the sysctl defaults:
+....
+net.core.rmem_default = 67108864
+net.core.rmem_max = 67108864
+....
+
+Strangely, this sometimes caused problems of its own. While broadcasting a video, I'd sometimes see the symptoms of packet loss still (video glitches, pauses, etc). I'd see packet receive errors increasing while receive buffer errors stayed constant. They were not increasing in lockstep like before:
+....
+% while sleep 1; do netstat -anus | grep receive | grep errors; done
+...
+....
+
+(https://linux-tips.com/t/udp-packet-drops-and-packet-receive-error-difference/237/2)[This post] pointed to a possible solution: decrease the socket buffer size. After making adjustments, everything seemed fine:
+....
+net.core.rmem_default = 4194304
+net.core.rmem_max = 67108864
+....
+
+I am not sure what was wrong with using 64MB. This would be the default for all sockets on the system, so perhaps this created memory pressure? Or perhaps something else was going on. If 4MB is too small for some use cases, this may be worth investigating again.
