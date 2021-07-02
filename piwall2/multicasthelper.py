@@ -59,7 +59,7 @@ class MulticastHelper:
     def receive(self, msg_type):
         if msg_type == self.MSG_TYPE_VIDEO_STREAM:
             video_bytes = self.__receive_video_socket.recv(4096)
-            self.__logger.debug(f"Received {len(video_bytes)} video stream bytes")
+            # self.__logger.debug(f"Received {len(video_bytes)} video stream bytes")
             return video_bytes
 
     def get_receive_video_socket(self):
