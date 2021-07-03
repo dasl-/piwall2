@@ -70,7 +70,8 @@ class Broadcaster:
         # Mix the best audio with the video and send via multicast
         cmd = ("ffmpeg -re " +
             f"-i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) " +
-            "-c:v copy -c:a aac -f matroska " +
+            # "-c:v copy -c:a aac -f matroska " +
+            "-c:v copy -c:a mp2 -b:a 192k -f mpegts " +
             f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
@@ -112,8 +113,8 @@ class Broadcaster:
         receiver_cmd_template = ('/home/pi/piwall2/receive --command "{0}" --log-uuid ' +
             shlex.quote(Logger.get_uuid()) + ' >/tmp/receiver.log 2>&1')
 
-        # omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 3 pipe:0'
-        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --genlog pipe:0'
+        # omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys  pipe:0'
+        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 3 --genlog pipe:0'
         omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
 
         receiver_cmd = None
