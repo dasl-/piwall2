@@ -86,7 +86,8 @@ class ConfigLoader:
         if is_any_receiver_dual_video_out:
             self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=720]'
         else:
-            self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
+            self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=720]'
+            # self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
         self.__logger.info(f"Using youtube-dl video format: {self.__youtube_dl_video_format}")
 
         self.__is_loaded = True
