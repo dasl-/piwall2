@@ -113,9 +113,10 @@ class Broadcaster:
         receiver_cmd_template = ('/home/pi/piwall2/receive --command "{0}" --log-uuid ' +
             shlex.quote(Logger.get_uuid()) + ' >/tmp/receiver.log 2>&1')
 
-        # omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys  pipe:0'
-        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 3 --genlog pipe:0'
-        omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
+        twenty_MB = 1024 * 1024 * 20
+
+        omx_cmd_template = 'mbuffer -q -Q -m {0}b | omxplayer --adev {1} --display {2} --crop {3} --no-keys --threshold 3 --genlog pipe:0'
+        omx_cmd = omx_cmd_template.format(twenty_MB, shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
 
         receiver_cmd = None
         if receiver_config['is_dual_video_output']:
