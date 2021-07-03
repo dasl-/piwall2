@@ -44,7 +44,6 @@ class Receiver:
                 break
 
             proc.stdin.write(video_bytes)
-            # proc.stdin.flush()
 
             measurement_window_elapsed_time_s = time.time() - measurement_window_start
             if measurement_window_elapsed_time_s > self.__MEASUREMENT_WINDOW_SIZE_S:
