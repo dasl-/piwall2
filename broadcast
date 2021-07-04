@@ -7,7 +7,7 @@ from piwall2.broadcaster import Broadcaster
 def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video broadcaster')
     parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
-        help='youtube video url. default: The Smashing Pumpkins - Today.')
+        help='youtube video url or file path. default: The Smashing Pumpkins - Today.')
 
     args = parser.parse_args()
     return args
