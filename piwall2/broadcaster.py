@@ -17,6 +17,9 @@ class Broadcaster:
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
 
+    __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
+    __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
+
     def __init__(self, video_url):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         Logger.set_uuid(Logger.make_uuid())
@@ -41,35 +44,10 @@ class Broadcaster:
 
         receivers_proc = self.__start_receivers()
 
-        # Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
-        # and is trying to reconnect. This can happen from time to time when downloading long videos.
-        # Youtube-dl should download quickly until it fills the mbuffer. After the mbuffer is filled,
-        # ffmpeg will apply backpressure to youtube-dl because of ffmpeg's `-re` flag
-        youtube_dl_cmd_template = "youtube-dl {0} -f {1} -o - | mbuffer -q -Q -m {2}b"
-
-        # 10 MB. Based on one video, 1080p avc1 video, audio consumes about 0.36 MB/s. So this should
-        # be enough buffer for ~27s
-        video_buffer_size = 1024 * 1024 * 10
-        youtube_dl_video_cmd = youtube_dl_cmd_template.format(
-            shlex.quote(self.__video_url),
-            shlex.quote(self.__config_loader.get_youtube_dl_video_format()),
-            video_buffer_size
-        )
-
-        # 1.25 MB. This is the minimum mbuffer size necessary to avoid:
-        #   mbuffer: fatal: total memory must be large enough for 5 blocks
-        # Based on one video, audio consumes about 0.016 MB/s. So this should
-        # be enough buffer for ~80s
-        audio_buffer_size = 1024 * 1024 * 1.25
-        youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
-            shlex.quote(self.__video_url),
-            shlex.quote('bestaudio'),
-            audio_buffer_size
-        )
+        ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
 
         # Mix the best audio with the video and send via multicast
-        cmd = ("ffmpeg -re " +
-            f"-i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) " +
+        cmd = (f"ffmpeg -re {ffmpeg_input_clause}" +
             # "-c:v copy -c:a aac -f matroska " +
             "-c:v copy -c:a mp2 -b:a 192k -f mpegts " +
             f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
@@ -251,57 +229,111 @@ class Broadcaster:
 
         return (crop, crop2)
 
+    def __get_ffmpeg_input_clause(self):
+        video_url_type = self.__get_video_url_type()
+        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBEDL:
+            # Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
+            # and is trying to reconnect. This can happen from time to time when downloading long videos.
+            # Youtube-dl should download quickly until it fills the mbuffer. After the mbuffer is filled,
+            # ffmpeg will apply backpressure to youtube-dl because of ffmpeg's `-re` flag
+            youtube_dl_cmd_template = "youtube-dl {0} -f {1} -o - | mbuffer -q -Q -m {2}b"
+
+            # 10 MB. Based on one video, 1080p avc1 video, audio consumes about 0.36 MB/s. So this should
+            # be enough buffer for ~27s
+            video_buffer_size = 1024 * 1024 * 10
+            youtube_dl_video_cmd = youtube_dl_cmd_template.format(
+                shlex.quote(self.__video_url),
+                shlex.quote(self.__config_loader.get_youtube_dl_video_format()),
+                video_buffer_size
+            )
+
+            # 1.25 MB. This is the minimum mbuffer size necessary to avoid:
+            #   mbuffer: fatal: total memory must be large enough for 5 blocks
+            # Based on one video, audio consumes about 0.016 MB/s. So this should
+            # be enough buffer for ~80s
+            audio_buffer_size = round(1024 * 1024 * 1.25)
+            youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
+                shlex.quote(self.__video_url),
+                shlex.quote('bestaudio'),
+                audio_buffer_size
+            )
+
+            return f" -i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) "
+        elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
+            return f" -i {shlex.quote(self.__video_url)} "
+
     # Lazily populate video_info from youtube. This takes a couple seconds.
+    # Must return a dict containing the keys: width, height
     def __get_video_info(self):
         if self.__video_info:
             return self.__video_info
 
-        self.__logger.info("Downloading and populating video metadata...")
-        ydl_opts = {
-            'format': self.__config_loader.get_youtube_dl_video_format(),
-            'logger': Logger().set_namespace('youtube_dl'),
-            'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
-        }
-        ydl = youtube_dl.YoutubeDL(ydl_opts)
+        video_url_type = self.__get_video_url_type()
+        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBEDL:
+            self.__logger.info("Downloading and populating video metadata...")
+            ydl_opts = {
+                'format': self.__config_loader.get_youtube_dl_video_format(),
+                'logger': Logger().set_namespace('youtube_dl'),
+                'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
+            }
+            ydl = youtube_dl.YoutubeDL(ydl_opts)
 
-        # Automatically try to update youtube-dl and retry failed youtube-dl operations when we get a youtube-dl
-        # error.
-        #
-        # The youtube-dl package needs updating periodically when youtube make updates. This is
-        # handled on a cron once a day: https://github.com/dasl-/pifi/blob/a614b33e1be093f6ee3bb62b036ee6472ffe5132/install/pifi_cron.sh#L5
-        #
-        # But we also attempt to update it on the fly here if we get youtube-dl errors when trying to play
-        # a video.
-        #
-        # Example of how this would look in logs: https://gist.github.com/dasl-/09014dca55a2e31bb7d27f1398fd8155
-        max_attempts = 2
-        for attempt in range(1, (max_attempts + 1)):
-            try:
-                self.__video_info = ydl.extract_info(self.__video_url, download = False)
-            except Exception as e:
-                caught_or_raising = "Raising"
-                if attempt < max_attempts:
-                    caught_or_raising = "Caught"
-                self.__logger.warning("Problem downloading video info during attempt {} of {}. {} exception: {}"
-                    .format(attempt, max_attempts, caught_or_raising, traceback.format_exc()))
-                if attempt < max_attempts:
-                    self.__logger.warning("Attempting to update youtube-dl before retrying download...")
-                    update_youtube_dl_output = (subprocess
-                        .check_output(
-                            'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
-                            shell = True,
-                            executable = '/usr/bin/bash',
-                            stderr = subprocess.STDOUT
-                        )
-                        .decode("utf-8"))
-                    self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
-                else:
-                    self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
-                    raise e
+            # Automatically try to update youtube-dl and retry failed youtube-dl operations when we get a youtube-dl
+            # error.
+            #
+            # The youtube-dl package needs updating periodically when youtube make updates. This is
+            # handled on a cron once a day: https://github.com/dasl-/pifi/blob/a614b33e1be093f6ee3bb62b036ee6472ffe5132/install/pifi_cron.sh#L5
+            #
+            # But we also attempt to update it on the fly here if we get youtube-dl errors when trying to play
+            # a video.
+            #
+            # Example of how this would look in logs: https://gist.github.com/dasl-/09014dca55a2e31bb7d27f1398fd8155
+            max_attempts = 2
+            for attempt in range(1, (max_attempts + 1)):
+                try:
+                    self.__video_info = ydl.extract_info(self.__video_url, download = False)
+                except Exception as e:
+                    caught_or_raising = "Raising"
+                    if attempt < max_attempts:
+                        caught_or_raising = "Caught"
+                    self.__logger.warning("Problem downloading video info during attempt {} of {}. {} exception: {}"
+                        .format(attempt, max_attempts, caught_or_raising, traceback.format_exc()))
+                    if attempt < max_attempts:
+                        self.__logger.warning("Attempting to update youtube-dl before retrying download...")
+                        update_youtube_dl_output = (subprocess
+                            .check_output(
+                                'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
+                                shell = True,
+                                executable = '/usr/bin/bash',
+                                stderr = subprocess.STDOUT
+                            )
+                            .decode("utf-8"))
+                        self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
+                    else:
+                        self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
+                        raise e
 
-        self.__logger.info("Done downloading and populating video metadata.")
+            self.__logger.info("Done downloading and populating video metadata.")
 
-        self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
-            f"{self.__video_info['width']}x{self.__video_info['height']}")
+            self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
+                f"{self.__video_info['width']}x{self.__video_info['height']}")
+        elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
+            # TODO: guard against unsupported video formats
+            ffprobe_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height {shlex.quote(self.__video_url)}'
+            ffprobe_output = (subprocess
+                .check_output(ffprobe_cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT)
+                .decode("utf-8"))
+            ffprobe_output = ffprobe_output.split('\n')[0]
+            ffprobe_parts = ffprobe_output.split(',')
+            self.__video_info = {
+                'width': int(ffprobe_parts[0]),
+                'height': int(ffprobe_parts[1]),
+            }
 
         return self.__video_info
+
+    def __get_video_url_type(self):
+        if self.__video_url.startswith('http://') or self.__video_url.startswith('https://'):
+            return self.__VIDEO_URL_TYPE_YOUTUBEDL
+        else:
+            return self.__VIDEO_URL_TYPE_FILE
