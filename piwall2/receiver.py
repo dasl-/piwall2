@@ -24,6 +24,7 @@ class Receiver:
 
         measurement_window_start = time.time()
         measurement_window_bytes_count = 0
+        is_first_write = True
 
         while True:
             video_bytes = multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
@@ -44,6 +45,9 @@ class Receiver:
                 break
 
             proc.stdin.write(video_bytes)
+            if is_first_write:
+                self.__logger.debug("Wrote first video bytes")
+                is_first_write = False
 
             measurement_window_elapsed_time_s = time.time() - measurement_window_start
             if measurement_window_elapsed_time_s > self.__MEASUREMENT_WINDOW_SIZE_S:
