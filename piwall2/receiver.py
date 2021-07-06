@@ -21,9 +21,8 @@ class Receiver:
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
         )
 
-        video_bytes = b''
+        video_bytes_to_write = b''
         last_video_bytes = b''
-
         measurement_window_start = time.time()
         measurement_window_bytes_count = 0
         total_bytes_count = 0
@@ -31,23 +30,26 @@ class Receiver:
         is_buffer_threshold_passed = False
 
         while True:
-            video_bytes += multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+            video_bytes_received = multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+            video_bytes_to_write += video_bytes_received
             if total_bytes_count == 0:
                 first_byte_time = time.time()
 
                 # Subsequent bytes after the first packet should be received very quickly
                 socket.settimeout(1)
 
-            measurement_window_bytes_count += len(video_bytes)
+            num_bytes_received = len(video_bytes_received)
+            measurement_window_bytes_count += num_bytes_received
+            total_bytes_count += num_bytes_received
 
-            last_video_bytes += video_bytes[-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):]
+            last_video_bytes += video_bytes_to_write[-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):]
             if len(last_video_bytes) > len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):
                 last_video_bytes = last_video_bytes[-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES):]
             if last_video_bytes == Broadcaster.END_OF_VIDEO_MAGIC_BYTES:
                 self.__logger.info("Received end of video magic bytes...")
                 if not is_buffer_threshold_passed:
                     self.__logger.info("Playing video before buffer threshold reached due to end of video.")
-                    proc.stdin.write(video_bytes[:-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES)])
+                    proc.stdin.write(video_bytes_to_write[:-len(Broadcaster.END_OF_VIDEO_MAGIC_BYTES)])
                 # os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 proc.stdin.close()
                 break
@@ -56,8 +58,8 @@ class Receiver:
                 if not is_buffer_threshold_passed:
                     self.__logger.info("Video buffer threshold has been passed, starting to play video.")
                     is_buffer_threshold_passed = True
-                proc.stdin.write(video_bytes)
-                video_bytes = b''
+                proc.stdin.write(video_bytes_to_write)
+                video_bytes_to_write = b''
 
             measurement_window_elapsed_time_s = time.time() - measurement_window_start
             if measurement_window_elapsed_time_s > self.__MEASUREMENT_WINDOW_SIZE_S:
