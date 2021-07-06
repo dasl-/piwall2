@@ -122,7 +122,7 @@ class Broadcaster:
         """
         mbuffer_size = 1024 * 1024 * 200 # 200 MB
         mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b'
-        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 3 --genlog pipe:0'
+        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --genlog pipe:0'
         omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
 
         receiver_cmd = None
