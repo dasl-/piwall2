@@ -27,14 +27,13 @@ class Receiver:
 
         while True:
             video_bytes = multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+            if total_bytes_count == 0:
+                # Subsequent bytes after the first packet should be received very quickly
+                socket.settimeout(1)
 
             len_video_bytes = len(video_bytes)
             measurement_window_bytes_count += len_video_bytes
             total_bytes_count += len_video_bytes
-
-            if total_bytes_count == 0:
-                # Subsequent bytes after the first packet should be received very quickly
-                socket.settimeout(1)
 
             # todo: make this better. we might not have written the last few bytes if the magic bytes came as
             # part of the same receive call as some actual video bytes. (not sure if that's possible...)
