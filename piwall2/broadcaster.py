@@ -91,18 +91,47 @@ class Broadcaster:
         receiver_cmd_template = ('/home/pi/piwall2/receive --command "{0}" --log-uuid ' +
             shlex.quote(Logger.get_uuid()) + ' >/tmp/receiver.log 2>&1')
 
-        twenty_MB = 1024 * 1024 * 20
+        """
+        We use mbuffer in the receiver command. The mbuffer is here to solve two problems:
 
-        omx_cmd_template = 'mbuffer -q -Q -m {0}b | omxplayer --adev {1} --display {2} --crop {3} --no-keys --threshold 3 --genlog pipe:0'
-        omx_cmd = omx_cmd_template.format(twenty_MB, shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
+        1) Sometimes the python receiver process would get blocked writing directly to omxplayer. When this happens,
+        the receiver's writes would occur rather slowly. While the receiver is blocked on writing, it cannot read
+        incoming data from the UDP socket. The kernel's UDP buffers would then fill up, causing UDP packets to be
+        dropped.
+
+        Unlike python, mbuffer is multithreaded, meaning it can read and write simultaneously in two separate
+        threads. Thus, while mbuffer is writing to omxplayer, it can still read the incoming data from python at
+        full speed. Slow writes will not block reads.
+
+        2) I am not sure how exactly omxplayer's various buffers work. There are many options:
+
+            % omxplayer --help
+            ...
+             --audio_fifo  n         Size of audio output fifo in seconds
+             --video_fifo  n         Size of video output fifo in MB
+             --audio_queue n         Size of audio input queue in MB
+             --video_queue n         Size of video input queue in MB
+            ...
+
+        More info: https://github.com/popcornmix/omxplayer/issues/256#issuecomment-57907940
+
+        I am not sure which I would need to adjust to ensure enough buffering is available. By using mbuffer,
+        we effectively have a single buffer that accounts for any possible source of delays, whether it's from audio,
+        video, and no matter where in the pipeline the delay is coming from. Using mbuffer seems simpler, and it is
+        easier to monitor. By checking its logs, we can see how close the mbuffer gets to becoming full.
+        """
+        mbuffer_size = 1024 * 1024 * 200 # 200 MB
+        mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b'
+        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 3 --genlog pipe:0'
+        omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
 
         receiver_cmd = None
         if receiver_config['is_dual_video_output']:
             omx_cmd2 = omx_cmd_template.format(shlex.quote(adev2), shlex.quote(display2), shlex.quote(crop2))
-            tee_cmd = f"tee >({omx_cmd}) >({omx_cmd2}) >/dev/null"
+            tee_cmd = f"{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null"
             receiver_cmd = receiver_cmd_template.format(tee_cmd)
         else:
-            receiver_cmd = receiver_cmd_template.format(omx_cmd)
+            receiver_cmd = receiver_cmd_template.format(f'{mbuffer_cmd} | {omx_cmd}')
 
         self.__logger.debug(f"Using receiver command for {receiver}: {receiver_cmd}")
         return receiver_cmd
@@ -232,26 +261,32 @@ class Broadcaster:
     def __get_ffmpeg_input_clause(self):
         video_url_type = self.__get_video_url_type()
         if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBEDL:
-            # Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
-            # and is trying to reconnect. This can happen from time to time when downloading long videos.
-            # Youtube-dl should download quickly until it fills the mbuffer. After the mbuffer is filled,
-            # ffmpeg will apply backpressure to youtube-dl because of ffmpeg's `-re` flag
+            """
+            Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
+            and is trying to reconnect:
+
+                [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 1 of 10)...
+                [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 2 of 10)...
+                [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 3 of 10)...
+
+            This can happen from time to time when downloading long videos.
+            Youtube-dl should download quickly until it fills the mbuffer. After the mbuffer is filled,
+            ffmpeg will apply backpressure to youtube-dl because of ffmpeg's `-re` flag
+            """
             youtube_dl_cmd_template = "youtube-dl {0} -f {1} -o - | mbuffer -q -Q -m {2}b"
 
-            # 10 MB. Based on one video, 1080p avc1 video, audio consumes about 0.36 MB/s. So this should
-            # be enough buffer for ~27s
-            video_buffer_size = 1024 * 1024 * 10
+            # 50 MB. Based on one video, 1080p avc1 video, audio consumes about 0.36 MB/s. So this should
+            # be enough buffer for ~139s
+            video_buffer_size = 1024 * 1024 * 50
             youtube_dl_video_cmd = youtube_dl_cmd_template.format(
                 shlex.quote(self.__video_url),
                 shlex.quote(self.__config_loader.get_youtube_dl_video_format()),
                 video_buffer_size
             )
 
-            # 1.25 MB. This is the minimum mbuffer size necessary to avoid:
-            #   mbuffer: fatal: total memory must be large enough for 5 blocks
-            # Based on one video, audio consumes about 0.016 MB/s. So this should
-            # be enough buffer for ~80s
-            audio_buffer_size = round(1024 * 1024 * 1.25)
+            # 5 MB. Based on one video, audio consumes about 0.016 MB/s. So this should
+            # be enough buffer for ~312s
+            audio_buffer_size = 1024 * 1024 * 5
             youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
                 shlex.quote(self.__video_url),
                 shlex.quote('bestaudio'),
