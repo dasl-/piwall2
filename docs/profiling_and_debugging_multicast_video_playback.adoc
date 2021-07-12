@@ -145,5 +145,26 @@ Note that you must adjust the `grep -v` filters in the above commands to align w
 
 During normal playback of https://www.youtube.com/watch?v=6wVZK0W0SAo[one video], we have seen these buffers get as low as ~1.25 seconds. This is somewhat surprising, as they start as 5 seconds. I am not sure what causes them to get so low. It would be interesting to see if there are other video for which the 5 second buffer is not enough and pauses occur. If such videos are found, we may have to increase the starting buffer size for omxplayer (see omxplayer's `--threshold` option). Interestingly, the low water mark for these buffers was during a period where the video content was static for a few minutes, https://youtu.be/6wVZK0W0SAo?t=5480[at the 1h 31m mark generally].
 
+Output may look like this:
+....
+pi@piwall2.local: 07:24:33 T:18446744073264380076   DEBUG: Normal M:5480066760 (A:5481299600 V:5481320078) P:0 A:1.23 V:1.25
+pi@piwall3.local: 07:25:39 T:18446744073330445597   DEBUG: Normal M:5546117358 (A:5547337144 V:5547369400) P:0 A:1.22 V:1.25
+pi@piwall4.local: 07:24:33 T:18446744073264383655   DEBUG: Normal M:5480025806 (A:5481299600 V:5481320078) P:0 A:1.27 V:1.29
+pi@piwall5.local: 07:24:33 T:18446744073264383500   DEBUG: Normal M:5480038026 (A:5481299600 V:5481320078) P:0 A:1.26 V:1.28
+....
+
+The log lines we are parsing look like this:
+....
+% cat ~/omxplayer.log | grep Normal
+04:32:21 T:18446744072022878421   DEBUG: Normal M:0 (A:-4503599627370496 V:-4503599627370496) P:1 A:0.00 V:0.00/T:5.00 (0,0,0,0) A:0% V:0% (0.00,6.34)
+04:32:22 T:18446744072023933774   DEBUG: Normal M:-200000 (A:1018778 V:1011911) P:1 A:1.22 V:1.21/T:5.00 (0,0,0,0) A:0% V:0% (0.96,6.34)
+04:32:23 T:18446744072024560430   DEBUG: Normal M:-200000 (A:2272656 V:2304867) P:1 A:2.47 V:2.50/T:5.00 (0,0,0,0) A:0% V:0% (2.24,6.34)
+...
+04:32:31 T:18446744072032771196   DEBUG: Normal M:4806239 (A:10318367 V:10354578) P:0 A:5.51 V:5.55/T:5.00 (0,0,1,1) A:0% V:0% (5.28,6.34)
+04:32:32 T:18446744072033647644   DEBUG: Normal M:5682842 (A:11075922 V:11147033) P:0 A:5.39 V:5.46/T:5.00 (0,0,1,1) A:0% V:0% (5.13,6.34)
+04:32:33 T:18446744072034689177   DEBUG: Normal M:6724331 (A:11990211 V:11981200) P:0 A:5.27 V:5.26/T:5.00 (0,0,1,1) A:0% V:0% (5.00,6.34)
+...
+....
+
 ## Profiling results
 Some profiling results I have collected on a https://www.youtube.com/watch?v=6wVZK0W0SAo[test video] may be https://gist.github.com/dasl-/71e6d54cb07bb32395980f31c1bad826[viewed here].
