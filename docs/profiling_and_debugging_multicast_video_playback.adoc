@@ -1,0 +1,149 @@
+# Profiling and debugging multicast video playback
+:toc:
+:toclevels: 5
+
+## Background
+When playing videos over multicast, glitches may sometimes occur. Video may pause, stutter, or experience graphics glitches during playback. Here are some metrics / logs to look at when debugging multicast video playback issues.
+
+## Things to watch
+### mbuffer high water mark
+We use `mbuffer` in a variety of places in this project, but for profiling and debugging multicast video playback issues, you probably want to look at the `mbuffer` in the receiver process. Rather than writing directly from the receiver to omxplayer, https://github.com/dasl-/piwall2/blob/eb2f8ea0427581e74ff55596526faa9a748316f9/piwall2/broadcaster.py#L94-L122[we write from the receiver to mbuffer]. Mbuffer then writes to omxplayer.
+
+If the receiver's mbuffer fills up, the receiver will be blocked on its write syscall. If the receiver is blocked on writing, it won't be able to read. Thus, the kernel's UDP receive buffers will start to fill up. Once they are full, we will start to drop incoming UDP packets. Dropped packets can cause playback issues.
+
+The mbuffer log file looks like this:
+....
+% cat /tmp/mbuffer.out
+mbuffer: in @ 73.1 kiB/s, out @ 73.1 kiB/s,  256 kiB total, buffer   0% full
+mbuffer: in @  0.0 kiB/s, out @  0.0 kiB/s,  256 kiB total, buffer   0% full
+mbuffer: in @  511 kiB/s, out @  511 kiB/s,  512 kiB total, buffer   0% full
+...
+....
+
+The command below reads the receiver's mbuffer log file on each receiver and looks for the maximum fill percentage that the log file recorded (the high water mark).
+....
+% dsh -r ssh -c --remoteshellopt '-o UserKnownHostsFile=/dev/null' --remoteshellopt '-o StrictHostKeyChecking=no' --remoteshellopt '-o LogLevel=ERROR' -M -m pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local "cat /tmp/mbuffer.out | awk '{ print \$14; }' | sort -n | tail -1"
+....
+
+In my experience, when everything is running smoothly, the high water mark output will generally be 0-1%:
+....
+pi@piwall5.local: 0%
+pi@piwall2.local: 0%
+pi@piwall3.local: 0%
+pi@piwall4.local: 0%
+....
+
+### kernel socket receive buffer high water mark
+If the broadcaster is sending data too fast, or if the receiver is reading data too slowly, the kernel's UDP receive buffers on the receiver may start to fill up. We set these receiver buffers to https://github.com/dasl-/piwall2/blob/eb2f8ea0427581e74ff55596526faa9a748316f9/piwall2/multicasthelper.py#L23[four megabytes].
+
+It may be helpful to see if the kernel's socket receive buffers filled up, or if they did not fill up, how close they came to filling up during a video playback. We can sample the kernel's receive buffer status once per second with the below command:
+
+....
+while sleep 1 ; do date -u ; dsh -r ssh -c --remoteshellopt '-o UserKnownHostsFile=/dev/null' --remoteshellopt '-o StrictHostKeyChecking=no' --remoteshellopt '-o LogLevel=ERROR' -M -m pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local "netstat --udp -an | grep '239.0.1.23:1234'" | sort | grep -v 'udp        0' ; echo "" ; done
+....
+
+Normal output may look like this:
+....
+[laptop] ~/clones/pitools % while sleep 1 ; do date -u ; dsh -r ssh -c --remoteshellopt '-o UserKnownHostsFile=/dev/null' --remoteshellopt '-o StrictHostKeyChecking=no' --remoteshellopt '-o LogLevel=ERROR' -M -m pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local "netstat --udp -an | grep '239.0.1.23:1234'" | sort | grep -v 'udp        0' ; echo "" ; done
+Mon Jul 12 04:20:27 UTC 2021
+
+Mon Jul 12 04:20:28 UTC 2021
+
+Mon Jul 12 04:20:30 UTC 2021
+
+...
+
+Mon Jul 12 04:20:37 UTC 2021
+pi@piwall3.local: udp     5248      0 239.0.1.23:1234         0.0.0.0:*
+pi@piwall4.local: udp     5248      0 239.0.1.23:1234         0.0.0.0:*
+
+Mon Jul 12 04:20:39 UTC 2021
+
+...
+
+Mon Jul 12 04:21:02 UTC 2021
+pi@piwall4.local: udp     2624      0 239.0.1.23:1234         0.0.0.0:*
+
+...
+....
+
+Timestamps without any output indicate a sample taken when the buffers were empty (0 bytes). The number in the samples (5248, 2624) indicates the size in bytes of the data in the receive buffer when the sample was taken. In my experience, during normal video playback, the high water mark should be around 500000 bytes or lower (~0.5 megabytes or lower). If these buffers start to approach or exceed their capacity of four megabytes (4,194,304 bytes), we are at risk of dropping packets. Dropped packets can cause playback issues.
+
+### udp packet loss
+We can also measure packet loss directly. We can query for the number of receive errors once per second with the below command:
+
+....
+while sleep 1 ; do date -u ; dsh -r ssh -c --remoteshellopt '-o UserKnownHostsFile=/dev/null' --remoteshellopt '-o StrictHostKeyChecking=no' --remoteshellopt '-o LogLevel=ERROR' -M -m pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local "netstat -anus | grep receive | grep errors" | sort | grep -v -E ' 0 .* errors'; echo "" ; done
+....
+
+Output may look like this:
+....
+Mon Jul 12 04:31:23 UTC 2021
+
+Mon Jul 12 04:31:24 UTC 2021
+
+...
+
+Mon Jul 12 04:34:18 UTC 2021
+pi@piwall2.local:     302 packet receive errors
+pi@piwall2.local:     302 receive buffer errors
+
+Mon Jul 12 04:34:20 UTC 2021
+pi@piwall2.local:     361 packet receive errors
+pi@piwall2.local:     361 receive buffer errors
+
+Mon Jul 12 04:34:21 UTC 2021
+pi@piwall2.local:     361 packet receive errors
+pi@piwall2.local:     361 receive buffer errors
+
+Mon Jul 12 04:34:22 UTC 2021
+pi@piwall2.local:     443 packet receive errors
+pi@piwall2.local:     443 receive buffer errors
+
+Mon Jul 12 04:34:24 UTC 2021
+pi@piwall2.local:     443 packet receive errors
+pi@piwall2.local:     443 receive buffer errors
+
+...
+....
+
+Errors can be caused for a variety of reasons, but in most cases they are because we are not reading the incoming data fast enough. The number in the above output indicates the number of errors since the host's last reboot. We filter out any output that shows 0 errors, hence the timestamps without any output. Dropped packets can cause playback issues.
+
+### omxplayer pauses
+omxplayer will automatically pause playback if its video / audio buffers get too low. Specifically, if the video or audio buffers get https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L1648[below 0.1 seconds of buffered output], omxplayer will pause to allow the buffers to grow in size.
+
+We configure omxplayer with a buffer size of 5 seconds (TODO: code link), meaning at startup, it will wait until it has a buffer of 5 seconds for both audio and video before starting playback. In most cases, the audio and video buffers should continue to stay around 5 seconds for the playback of the entire video, but we often see them fluctuate in size for unknown reasons over the course of playback.
+
+Ideally we want to avoid any pauses during playback. If playback gets paused, it often does not unpause correctly, or if it does, playback may get out of sync across the receivers.
+
+Use this command to determine if any of the receivers paused their playback due to low audio / video buffers:
+....
+dsh -r ssh -c --remoteshellopt '-o UserKnownHostsFile=/dev/null' --remoteshellopt '-o StrictHostKeyChecking=no' --remoteshellopt '-o LogLevel=ERROR' -M -m pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local "cat omxplayer.log | grep -i 'DEBUG: Pause'" 2>/dev/null
+.... 
+
+If you see no output, that is good -- you had no pauses. If there were pauses, you may see output like this:
+....
+pi@piwall3.local: 05:15:29 T:18446744073108888524   DEBUG: Pause 4.16,-0.56 (0,1,0,0) 10.00
+....
+
+The format of the log line is https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L1750[defined in omxplayer here]. In this example, playback was paused because the video buffer was low (-0.56).
+
+### omxplayer audio / video buffer low water mark
+As mentioned in the previous section, if the video or audio buffers get https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L1648[below 0.1 seconds of buffered output], omxplayer will pause to allow the buffers to grow in size. We can monitor the audio / video buffer size (in seconds) via https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L1694-L1696[log lines that omxplayer emits]. If the 'A:N.NN' or 'V:N.NN' gets below 0.1, omxplayer will pause.
+
+The low water mark of omxplayer's video buffer may be obtained via:
+....
+dsh -r ssh -c --remoteshellopt '-o UserKnownHostsFile=/dev/null' --remoteshellopt '-o StrictHostKeyChecking=no' --remoteshellopt '-o LogLevel=ERROR' -M -m pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local "cat omxplayer.log | grep -i 'DEBUG: Normal' | grep -v '02:26:' | grep -v '04:37:' | cut -d'/' -f1 | sort --numeric-sort --field-separator=':' --key 11 | head -1" 2>/dev/null | sort
+....
+
+The low water mark of omxplayer's audio buffer may be obtained via:
+....
+dsh -r ssh -c --remoteshellopt '-o UserKnownHostsFile=/dev/null' --remoteshellopt '-o StrictHostKeyChecking=no' --remoteshellopt '-o LogLevel=ERROR' -M -m pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local "cat omxplayer.log | grep -i 'DEBUG: Normal' | grep -vE '02:2[67]:' | grep -vE '04:3[78]:' | cut -d'/' -f1 | sort --numeric-sort --field-separator=':' --key 10 | head -1" 2>/dev/null | sort
+....
+
+Note that you must adjust the `grep -v` filters in the above commands to align with the video's start and end times, where we expect the audio / video buffers to be low. To determine what to set these start / end time grep filters to, you may do `head omxplayer.log` and `tail omxplayer.log` to see when the video started and stopped.
+
+During normal playback of https://www.youtube.com/watch?v=6wVZK0W0SAo[one video], we have seen these buffers get as low as ~1.25 seconds. This is somewhat surprising, as they start as 5 seconds. I am not sure what causes them to get so low. It would be interesting to see if there are other video for which the 5 second buffer is not enough and pauses occur. If such videos are found, we may have to increase the starting buffer size for omxplayer (see omxplayer's `--threshold` option). Interestingly, the low water mark for these buffers was during a period where the video content was static for a few minutes, https://youtu.be/6wVZK0W0SAo?t=5480[at the 1h 31m mark generally].
+
+## Profiling results
+Some profiling results I have collected on a https://www.youtube.com/watch?v=6wVZK0W0SAo[test video] may be https://gist.github.com/dasl-/71e6d54cb07bb32395980f31c1bad826[viewed here].
