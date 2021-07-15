@@ -44,9 +44,11 @@ class Broadcaster:
 
         receivers_proc = self.__start_receivers()
 
+        # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
         ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
 
         # Mix the best audio with the video and send via multicast
+        # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"ffmpeg -re {ffmpeg_input_clause}" +
             "-c:v copy -c:a mp2 -b:a 192k -f mpegts " +
             f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
