@@ -91,7 +91,6 @@ requires /boot/config.txt:
 
 
 # TODO:
-investigate omxplayer --live ?? https://github.com/popcornmix/omxplayer/issues/165
 
 * cropping hi res hevc w/ hardware decode is possible, but it's closed source: https://info-beamer.com/blog/dual-display-or-4k-and-hevc-on-the-pi-4
 
