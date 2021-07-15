@@ -3,7 +3,7 @@
 :toclevels: 5
 
 ## Usage of omxplayer
-At time of writing, we run omxplayer like so: (TODO link)
+At time of writing, https://github.com/dasl-/piwall2/blob/5625b8887f528f671b7944a6cc43de54f375800c/piwall2/broadcaster.py#L126[we run omxplayer like so]:
 ....
 omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 5 --video_fifo 35 --genlog pipe:0
 ....
@@ -35,5 +35,7 @@ Increasing the `video_fifo` size appears to solve the problem, indicating that o
 ## audio_fifo
 If we ever need to increase the `threshold` more, we may need to raise `video_fifo` again. Note that according to the logs, the audio buffers didn't go very far past 6.33 seconds. If we ever need to raise the `threshold` beyond that, we may need to increase audio buffer sizes also. Using the `audio_fifo` option to omxplayer didn't seem to have any effect, however. Reading the omxplayer source, it actually seemed like the `audio_fifo` option might not get used for anything, i.e. it's a no-op? Worth reconfirming sometime.
 
-## gpu_mem TODO link
+## gpu_mem
 The raspberry pi allows you to configure how much memory is allocated to the GPU via a setting: https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem`]. If we set omxplayer's `video_fifo` size too high, we may run out of `gpu_mem`. If that happens, `omxplayer` will exit immediately after it is started with the `have a nice day ;)` message. The https://gist.github.com/dasl-/4edb2cede0e0eede512e336340ac7f58[omxplayer logs will indicate errors trying to allocate buffers]. The linked logs show the memory allocation errors that happened when I tried to set omxplayer's `--video_fifo 200` with a gpu_mem of `gpu_mem=128`.
+
+Thus, https://github.com/dasl-/piwall2/blob/5625b8887f528f671b7944a6cc43de54f375800c/install/install.sh#L70[we set the raspberry pi's `gpu_mem` high enough] to accomodate the `video_fifo` size we use in omxplayer.
