@@ -1,0 +1,39 @@
+# Configuring omxplayer
+:toc:
+:toclevels: 5
+
+## Usage of omxplayer
+At time of writing, we run omxplayer like so: (TODO link)
+....
+omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 5 --video_fifo 35 --genlog pipe:0
+....
+
+Of particular note are the `threshold` and `video_fifo` options:
+....
+    --threshold   n         Amount of buffered data required to finish buffering [s]
+    --video_fifo  n         Size of video output fifo in MB
+....
+
+Here is some https://github.com/popcornmix/omxplayer/issues/256[more info about some of the more interesting omxplayer parameters].
+
+## threshold
+Raising the `threshold` was necessary to prevent random occasional video drop outs. See: https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc . Hopefully setting it to 5 seconds is enough to accomodate playing of all videos without pauses / drop outs..
+
+## video_fifo
+Increasing the `video_fifo` option was necessary to accomodate the increased threshold. Without increasing the video_fifo, we'd see videos with a threshold of 5 seconds take about 90 seconds to start playing. In other words, they were taking about 85 seconds longer than expected to start playing. What were they doing all this time? Let's look at a https://gist.github.com/dasl-/0e52feccff6caacecf0955011f925aeb[log from such a run]. From the logs, it looks like we started receiving video signal at around 02:46:07, yet it took until 02:47:39 (about 90 seconds) for the video to actually unpause:
+....
+02:47:39 T:2123221681   DEBUG: OMXClock::OMXSetSpeed(1.00) pause_resume:1
+....
+
+If we https://gist.github.com/dasl-/1b0070adf0dbcaca22986d2f33afe88e[filter for the stats debug output], we can see that while the audio buffers soon surpass the 5 second threshold (`A:6.33`), the video buffers don't seem to climb past 2.86 seconds:
+....
+02:46:20 T:2044297647   DEBUG: Normal M:-200000 (A:6130078 V:2659189) P:1 A:6.33 V:2.86/T:5.00 (0,0,1,0) A:4% V:12% (5.98,6.34)
+....
+
+Increasing the `video_fifo` size appears to solve the problem, indicating that omxplayer likely didn't have enough memory allocated to buffer the requested 5 seconds of video. Presumably it gave up after about 90 seconds and started playing anyway. By increasing the buffer, we only have to wait about 5 seconds for the video to start playing.
+
+## audio_fifo
+If we ever need to increase the `threshold` more, we may need to raise `video_fifo` again. Note that according to the logs, the audio buffers didn't go very far past 6.33 seconds. If we ever need to raise the `threshold` beyond that, we may need to increase audio buffer sizes also. Using the `audio_fifo` option to omxplayer didn't seem to have any effect, however. Reading the omxplayer source, it actually seemed like the `audio_fifo` option might not get used for anything, i.e. it's a no-op? Worth reconfirming sometime.
+
+## gpu_mem TODO link
+The raspberry pi allows you to configure how much memory is allocated to the GPU via a setting: https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem`]. If we set omxplayer's `video_fifo` size too high, we may run out of `gpu_mem`. If that happens, `omxplayer` will exit immediately after it is started with the `have a nice day ;)` message. The https://gist.github.com/dasl-/4edb2cede0e0eede512e336340ac7f58[omxplayer logs will indicate errors trying to allocate buffers]. The linked logs show the memory allocation errors that happened when I tried to set omxplayer's `--video_fifo 200` with a gpu_mem of `gpu_mem=128`.
