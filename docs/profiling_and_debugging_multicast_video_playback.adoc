@@ -5,7 +5,7 @@
 ## Background
 When playing videos over multicast, glitches may sometimes occur. Video may pause, stutter, or experience graphics glitches during playback. Here are some metrics / logs to look at when debugging multicast video playback issues.
 
-## Things to watch
+## Things to record
 ### mbuffer high water mark
 We use `mbuffer` in a variety of places in this project, but for profiling and debugging multicast video playback issues, you probably want to look at the `mbuffer` in the receiver process. Rather than writing directly from the receiver to omxplayer, https://github.com/dasl-/piwall2/blob/eb2f8ea0427581e74ff55596526faa9a748316f9/piwall2/broadcaster.py#L94-L122[we write from the receiver to mbuffer]. Mbuffer then writes to omxplayer.
 
@@ -168,3 +168,14 @@ The log lines we are parsing look like this:
 
 ## Profiling results
 Some profiling results I have collected on a https://www.youtube.com/watch?v=6wVZK0W0SAo[test video] may be https://gist.github.com/dasl-/71e6d54cb07bb32395980f31c1bad826[viewed here]. Note that for trial 3 and onward in the linked gist, one of the raspberry pi's (piwall3) appeared to be having hardware issues causing random video pauses until its hardware was replaced.
+
+See these results in a https://docs.google.com/spreadsheets/d/1vP3O_LLLR4p_q1lOpIfwUwL1d7bTHbV2OFuT1eG205Q/edit#gid=0[spreadsheet here].
+
+## Things to watch
+### tcpdump
+You can video broadcast monitor network traffic like so:
+....
+% sudo tcpdump -i eth0 'udp and dst 239.0.1.23'
+....
+
+This should work either on the broadcaster or receiver raspberry pi.
