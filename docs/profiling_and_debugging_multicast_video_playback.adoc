@@ -167,4 +167,4 @@ The log lines we are parsing look like this:
 ....
 
 ## Profiling results
-Some profiling results I have collected on a https://www.youtube.com/watch?v=6wVZK0W0SAo[test video] may be https://gist.github.com/dasl-/71e6d54cb07bb32395980f31c1bad826[viewed here].
+Some profiling results I have collected on a https://www.youtube.com/watch?v=6wVZK0W0SAo[test video] may be https://gist.github.com/dasl-/71e6d54cb07bb32395980f31c1bad826[viewed here]. Note that for trial 3 and onward in the linked gist, one of the raspberry pi's (piwall3) appeared to be having hardware issues causing random video pauses until its hardware was replaced.
