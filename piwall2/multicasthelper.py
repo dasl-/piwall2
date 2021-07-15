@@ -66,7 +66,7 @@ class MulticastHelper:
         return self.__receive_video_socket
 
     def __send_video_stream_msg(self, msg):
-        self.__logger.info(f"Sending video stream message: {msg}")
+        self.__logger.debug(f"Sending video stream message: {msg}")
         self.__send_msg_to(msg, (self.ADDRESS, self.VIDEO_PORT))
 
     def __send_msg_to(self, msg, address_tuple):
