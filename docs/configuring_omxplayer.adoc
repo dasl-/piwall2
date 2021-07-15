@@ -16,10 +16,12 @@ Of particular note are the `threshold` and `video_fifo` options:
 
 Here is some https://github.com/popcornmix/omxplayer/issues/256[more info about some of the more interesting omxplayer parameters].
 
-## threshold
+## omxplayer configuration
+
+### threshold
 Raising the `threshold` was necessary to prevent random occasional video drop outs. See: https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc . Hopefully setting it to 5 seconds is enough to accomodate playing of all videos without pauses / drop outs..
 
-## video_fifo
+### video_fifo
 Increasing the `video_fifo` option was necessary to accomodate the increased threshold. Without increasing the video_fifo, we'd see videos with a threshold of 5 seconds take about 90 seconds to start playing. In other words, they were taking about 85 seconds longer than expected to start playing. What were they doing all this time? Let's look at a https://gist.github.com/dasl-/0e52feccff6caacecf0955011f925aeb[log from such a run]. From the logs, it looks like we started receiving video signal at around 02:46:07, yet it took until 02:47:39 (about 90 seconds) for the video to actually unpause:
 ....
 02:47:39 T:2123221681   DEBUG: OMXClock::OMXSetSpeed(1.00) pause_resume:1
@@ -32,10 +34,19 @@ If we https://gist.github.com/dasl-/1b0070adf0dbcaca22986d2f33afe88e[filter for 
 
 Increasing the `video_fifo` size appears to solve the problem, indicating that omxplayer likely didn't have enough memory allocated to buffer the requested 5 seconds of video. Presumably it gave up after about 90 seconds and started playing anyway. By increasing the buffer, we only have to wait about 5 seconds for the video to start playing.
 
-## audio_fifo
+### audio_fifo
 If we ever need to increase the `threshold` more, we may need to raise `video_fifo` again. Note that according to the logs, the audio buffers didn't go very far past 6.33 seconds. If we ever need to raise the `threshold` beyond that, we may need to increase audio buffer sizes also. Using the `audio_fifo` option to omxplayer didn't seem to have any effect, however. Reading the omxplayer source, it actually seemed like the `audio_fifo` option might not get used for anything, i.e. it's a no-op? Worth reconfirming sometime.
 
-## gpu_mem
-The raspberry pi allows you to configure how much memory is allocated to the GPU via a setting: https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem`]. If we set omxplayer's `video_fifo` size too high, we may run out of `gpu_mem`. If that happens, `omxplayer` will exit immediately after it is started with the `have a nice day ;)` message. The https://gist.github.com/dasl-/4edb2cede0e0eede512e336340ac7f58[omxplayer logs will indicate errors trying to allocate buffers]. The linked logs show the memory allocation errors that happened when I tried to set omxplayer's `--video_fifo 200` with a gpu_mem of `gpu_mem=128`.
+### gpu_mem
+Note that `gpu_mem` is not an omxplayer command line option -- it is a raspberry pi setting that we need to set to stabilize omxplayer video playback. The raspberry pi allows you to configure how much memory is allocated to the GPU via a setting: https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md[`gpu_mem`]. If we set omxplayer's `video_fifo` size too high, we may run out of `gpu_mem`. If that happens, `omxplayer` will exit immediately after it is started with the `have a nice day ;)` message. The https://gist.github.com/dasl-/4edb2cede0e0eede512e336340ac7f58[omxplayer logs will indicate errors trying to allocate buffers]. The linked logs show the memory allocation errors that happened when I tried to set omxplayer's `--video_fifo 200` with a gpu_mem of `gpu_mem=128`.
 
 Thus, https://github.com/dasl-/piwall2/blob/5625b8887f528f671b7944a6cc43de54f375800c/install/install.sh#L70[we set the raspberry pi's `gpu_mem` high enough] to accomodate the `video_fifo` size we use in omxplayer.
+
+
+### live
+The `--live` option seems like it might be useful for our use case:
+....
+--live                  Set for live tv or vod type stream
+....
+
+But in practice, I found this setting not to be good. When using `--live`, the audio became staticky, as if it were playing in low fidelity. The `--live` option appears to do two things. Firstly, https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L1176-L1177[it increases the default `--threshold`] if the `--threshold` has not been explicitly set already. As we set the threshold even higher already (we set it to 5s vs 0.7s with the `--live` option), the `--live` option has no effect here for us. Secondly, the `--live` option appears to adjust the playback speed to compensate for buffer sizes. When the audio / video buffers are too short, it slows down playback. And when the audio / video buffers are too long, it speeds up playback. I am skeptical that this would work well -- I'd be worried that playback would tend to get out of sync across the various receiver raspberry pis.
