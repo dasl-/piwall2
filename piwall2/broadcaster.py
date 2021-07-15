@@ -50,8 +50,7 @@ class Broadcaster:
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"ffmpeg -re {ffmpeg_input_clause}" +
-            "-c:v copy -c:a mp2 -b:a 192k -f mpegts " +
-            f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
+            "-c:v copy -c:a mp2 -b:a 192k -frag_duration 200000 -f ismv - | /home/pi/piwall2/msend_video")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
