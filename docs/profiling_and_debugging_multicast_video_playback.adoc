@@ -112,7 +112,7 @@ Errors can be caused for a variety of reasons, but in most cases they are becaus
 ### omxplayer pauses
 omxplayer will automatically pause playback if its video / audio buffers get too low. Specifically, if the video or audio buffers get https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L1648[below 0.1 seconds of buffered output], omxplayer will pause to allow the buffers to grow in size.
 
-We configure omxplayer with a buffer size of 5 seconds (TODO: code link), meaning at startup, it will wait until it has a buffer of 5 seconds for both audio and video before starting playback. In most cases, the audio and video buffers should continue to stay around 5 seconds for the playback of the entire video, but we often see them fluctuate in size for unknown reasons over the course of playback.
+We https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc[configure omxplayer] with a https://github.com/dasl-/piwall2/blob/5625b8887f528f671b7944a6cc43de54f375800c/piwall2/broadcaster.py#L126[buffer size of 5 seconds], meaning at startup, it will wait until it has a buffer of 5 seconds for both audio and video before starting playback. In most cases, the audio and video buffers should continue to stay around 5 seconds for the playback of the entire video, but we often see them fluctuate in size for unknown reasons over the course of playback.
 
 Ideally we want to avoid any pauses during playback. If playback gets paused, it often does not unpause correctly, or if it does, playback may get out of sync across the receivers.
 
