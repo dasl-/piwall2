@@ -105,3 +105,5 @@ CPU usage is low, around 10%. But the lack of audio and choppiness remains a pro
 It is likely worth exploring gstreamer as a solution here, especially if / when omxplayer stops working. https://stackoverflow.com/a/63263102/627663[Others have noted] that gstreamer playback on raspberry pis can be laggy, but perhaps this will improve in the future.
 
 I https://www.raspberrypi.org/forums/viewtopic.php?f=67&t=309723[created a forum post] to ask if anyone knows what the deal is with gstreamer's laggy playback.
+
+We have an https://github.com/dasl-/piwall2/issues/1[issue open to look into using gstreamer].
