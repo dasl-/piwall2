@@ -1,0 +1,31 @@
+# Best video container format for streaming
+:toc:
+:toclevels: 5
+
+## Background
+We already know that on the raspberry pi, it will be https://github.com/dasl-/piwall2/blob/main/docs/video_formats_and_hardware_acceleration.adoc[best to use the H264 video codec] in our piwall video. Furthermore, we know that we can use a https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc[variety of video container formats] to broadcast the video. But which container format is best?
+
+## video container formats
+### mp4
+As we https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc[noted in the linked document], mp4 does not work for broadcasting the video as a stream:
+
+....
+% ffmpeg -i bestvideo.mp4 -i bestaudio.webm -c:v copy -c:a aac -f mp4 -
+...
+[mp4 @ 0x21b3f80] muxer does not support non seekable output
+....
+
+### matroska
+Using matroska seemed to be working pretty well when https://github.com/dasl-/piwall2/blob/319eedcec2fbe7740c69e94e75b6b7913dbbfea8/piwall2/broadcaster.py#L73[we used to use it in the early stages]. It mostly worked for the videos I was testing with. But some videos experienced glitches. To be honest, I can't remember all the details of what went wrong with this video format. It might be worth giving matroska another shot with all the https://github.com/dasl-/piwall2/commit/5625b8887f528f671b7944a6cc43de54f375800c[changes I've made lately to stabilize omxplayer]. We could try https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc[profiling things] again with matroska since making all these changes. But at the time that I switched from mkv to mpegts, mkv seemed not as good. I just can't remember all the details of why not. 
+
+### mpegts
+We https://github.com/dasl-/piwall2/blob/d3622dea3277c9b44d376c4e91e8632c1a20f4ce/piwall2/broadcaster.py#L51[currently use mpegts] in the broadcasting code. As mentioned in the matroska section, this seemed to be an improvement over matroska. 
+
+I am not sure if the https://ffmpeg.org/ffmpeg-formats.html#mpegts-1[mpegts muxer] has an equivalent configuration option to `-fragment_duration` in the ismv muxer (see the below section on ismv). For what it's worth, when sampling some of the network traffic while an mpegts video is being broadcast, UDP packets appear to get sent in a constant stream, many times per second. There did not seem to be long gaps between packets. In fact, we set a https://github.com/dasl-/piwall2/blob/959d87b350f153dc02293f3d8a26bb7f195c2e50/piwall2/receiver.py#L32[receive socket timeout of one second]. If there had been a gap of greater than one second in between packets while the mpegts video was being broadcast, we would have had a socket timeout exception. This never happened. Perhaps the mpegts muxer's `-pcr_period`, `-pat_period`, `-sdt_period`, and / or `-nit_period` are relevant here? They all default to less than one second.
+
+### ismv
+Using ismv also seems like a decent bet. But in some https://docs.google.com/spreadsheets/d/1vP3O_LLLR4p_q1lOpIfwUwL1d7bTHbV2OFuT1eG205Q/edit#gid=0[profiling results I collected], the audio and video buffers got lower when using ismv than they did with mpegts. Perhaps this could be improved by using a shorter `fragment_duration` with ismv -- using a 200ms fragment duration with ismv was an improvement over using a 2s fragment duration with ismv, as judged by the low water mark of omxplayer's audio and video buffers.
+
+The https://ffmpeg.org/ffmpeg-formats.html#Options-11[`-fragment_duration`] appears to control how frequently UDP packets are broadcast by the muxer. By https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc#tcpdump[running tcpdump] while the video is being broadcast, we were able to observe that when no `-fragment_duration` option was passed to ffmpeg, fragments appeared to be "random" durations. Usually, there were about two seconds between groups of UDP packets that were sent. But occasionally the gaps were longer. While watching our https://www.youtube.com/watch?v=6wVZK0W0SAo[test video], some gaps between groups of packets that were sent exceeded five seconds. When this happened, omxplayer's audio and video buffers became depleted, since we https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc[configured omxplayer] with a 5 second `--threshold` option. With these gaps that were over 5 seconds long, video playback would pause and get out of sync.
+
+By configuring the ismv muxer with a `-fragment_duration` setting, we are able to control how long the gaps between groups of UDP packets that are sent are. As mentioned earlier, a `-fragment_duration` of 200ms seemed safer than a `-fragment_duration` of 2s. More testing would be needed to determine the optimal `-fragment_duration`. I am not sure the downside of using a very small `-fragment_duration`. Note that if using a `-fragment_duration` of greater than one second, the https://github.com/dasl-/piwall2/blob/959d87b350f153dc02293f3d8a26bb7f195c2e50/piwall2/receiver.py#L32[socket receive timeout] must be increased. The receive timeout must always be larger than the `-fragment_duration`, or else you will get socket timeout exceptions waiting for the next group of packets to be sent.
