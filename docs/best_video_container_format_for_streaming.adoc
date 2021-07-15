@@ -26,6 +26,22 @@ I am not sure if the https://ffmpeg.org/ffmpeg-formats.html#mpegts-1[mpegts muxe
 ### ismv
 Using ismv also seems like a decent bet. But in some https://docs.google.com/spreadsheets/d/1vP3O_LLLR4p_q1lOpIfwUwL1d7bTHbV2OFuT1eG205Q/edit#gid=0[profiling results I collected], the audio and video buffers got lower when using ismv than they did with mpegts. Perhaps this could be improved by using a shorter `fragment_duration` with ismv -- using a 200ms fragment duration with ismv was an improvement over using a 2s fragment duration with ismv, as judged by the low water mark of omxplayer's audio and video buffers.
 
+#### fragment_duration
 The https://ffmpeg.org/ffmpeg-formats.html#Options-11[`-fragment_duration`] appears to control how frequently UDP packets are broadcast by the muxer. By https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc#tcpdump[running tcpdump] while the video is being broadcast, we were able to observe that when no `-fragment_duration` option was passed to ffmpeg, fragments appeared to be "random" durations. Usually, there were about two seconds between groups of UDP packets that were sent. But occasionally the gaps were longer. While watching our https://www.youtube.com/watch?v=6wVZK0W0SAo[test video], some gaps between groups of packets that were sent exceeded five seconds. When this happened, omxplayer's audio and video buffers became depleted, since we https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc[configured omxplayer] with a 5 second `--threshold` option. With these gaps that were over 5 seconds long, video playback would pause and get out of sync.
 
 By configuring the ismv muxer with a `-fragment_duration` setting, we are able to control how long the gaps between groups of UDP packets that are sent are. As mentioned earlier, a `-fragment_duration` of 200ms seemed safer than a `-fragment_duration` of 2s. More testing would be needed to determine the optimal `-fragment_duration`. I am not sure the downside of using a very small `-fragment_duration`. Note that if using a `-fragment_duration` of greater than one second, the https://github.com/dasl-/piwall2/blob/959d87b350f153dc02293f3d8a26bb7f195c2e50/piwall2/receiver.py#L32[socket receive timeout] must be increased. The receive timeout must always be larger than the `-fragment_duration`, or else you will get socket timeout exceptions waiting for the next group of packets to be sent.
+
+#### multicast output bug
+Ffmpeg can natively broadcast its output to a udp address:
+....
+ffmpeg -re  -i <input> -c:v copy -c:a mp2 -b:a 192k -f mpegts "udp://239.0.1.23:1234"
+....
+
+When using mpegts and matroska container formats, I've seen this work pretty well. But when using ismv, I found this didn't always work properly. It worked for some of my test videos, but when playing https://www.youtube.com/watch?v=6wVZK0W0SAo[this test video], the receivers didn't seem to be playing the ismv video correctly. After some debugging, I found that this was due to differences in the byte output of the video when ffmpeg outputs to the UDP address versus when ffmpeg outputs to a file or to stdout. By using `diff` on different segments of the resulting output, I saw that there were small differences in the output bytes when ffmpeg outputs to a udp address versus when it outputs to a file or to stdout. These small differences appeared to be localized around `moov` bytes in the output. So perhaps this is a bug in ffmpeg? For reference, here is the version of ffmpeg I was testing with:
+
+....
+ffmpeg version 4.1.6-1~deb10u1+rpt2 Copyright (c) 2000-2020 the FFmpeg developers
+  built with gcc 8 (Raspbian 8.3.0-6+rpi1)
+....
+
+Because of this bug, I wrote my own udp multicast broadcaster. I made ffmpeg emit to stdout, and then I broadcast its output myself to the udp address. This seemed to solve the corrupted video playback issues. You can see this solution in the ismv branch (TODO link).
