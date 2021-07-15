@@ -6,6 +6,14 @@ import string
 
 class Logger:
 
+    # Log levels
+    ERROR = 40
+    WARNING = 30
+    INFO = 20
+    DEBUG = 10
+
+    __level = None
+
     __uuid = ''
 
     def __init__(self):
@@ -14,6 +22,21 @@ class Logger:
     def set_namespace(self, namespace):
         self.__namespace = namespace
         return self
+
+    # A level of None means to log every level.
+    # A numeric level means to log everything at that level and above.
+    @staticmethod
+    def set_level(level):
+        if (
+            level != Logger.ERROR and level != Logger.WARNING and level != Logger.INFO and
+            level != Logger.DEBUG and level is not None
+        ):
+            raise Exception("Invalid level specified")
+        Logger.__level = level
+
+    @staticmethod
+    def get_level():
+        return Logger.__level
 
     @staticmethod
     def make_uuid():
@@ -28,18 +51,30 @@ class Logger:
         return Logger.__uuid
 
     def debug(self, msg):
+        if Logger.__level is not None and Logger.__level > Logger.DEBUG:
+            return
+
         msg = self.__format_msg(level = 'debug', msg = msg)
         print(msg, file = sys.stdout, flush = True)
 
     def info(self, msg):
+        if Logger.__level is not None and Logger.__level > Logger.INFO:
+            return
+
         msg = self.__format_msg(level = 'info', msg = msg)
         print(msg, file = sys.stdout, flush = True)
 
     def warning(self, msg):
+        if Logger.__level is not None and Logger.__level > Logger.WARNING:
+            return
+
         msg = self.__format_msg(level = 'warning', msg = msg)
         print(msg, file = sys.stderr, flush = True)
 
     def error(self, msg):
+        if Logger.__level is not None and Logger.__level > Logger.ERROR:
+            return
+
         msg = self.__format_msg(level = 'error', msg = msg)
         print(msg, file = sys.stderr, flush = True)
 
