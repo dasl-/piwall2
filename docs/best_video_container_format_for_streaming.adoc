@@ -44,4 +44,4 @@ ffmpeg version 4.1.6-1~deb10u1+rpt2 Copyright (c) 2000-2020 the FFmpeg developer
   built with gcc 8 (Raspbian 8.3.0-6+rpi1)
 ....
 
-Because of this bug, I wrote my own udp multicast broadcaster. I made ffmpeg emit to stdout, and then I broadcast its output myself to the udp address. This seemed to solve the corrupted video playback issues. You can see this solution in the ismv branch (TODO link).
+Because of this bug, I https://github.com/dasl-/piwall2/blob/b0f94acae7a93c9f27f7aa972ea9265b40f79bf3/msend_video[wrote my own udp multicast broadcaster]. I made https://github.com/dasl-/piwall2/blob/b0f94acae7a93c9f27f7aa972ea9265b40f79bf3/piwall2/broadcaster.py#L53[ffmpeg emit to stdout], and then I broadcast its output myself to the udp address. This seemed to solve the corrupted video playback issues. You can see this solution in the https://github.com/dasl-/piwall2/tree/ismv[ismv branch].
