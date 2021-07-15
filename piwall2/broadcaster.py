@@ -48,7 +48,6 @@ class Broadcaster:
 
         # Mix the best audio with the video and send via multicast
         cmd = (f"ffmpeg -re {ffmpeg_input_clause}" +
-            # "-c:v copy -c:a aac -f matroska " +
             "-c:v copy -c:a mp2 -b:a 192k -f mpegts " +
             f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
         self.__logger.info(f"Running broadcast command: {cmd}")
@@ -122,7 +121,9 @@ class Broadcaster:
         """
         mbuffer_size = 1024 * 1024 * 200 # 200 MB
         mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b'
-        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 0.7 --genlog pipe:0'
+
+        # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
+        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 5 --video_fifo 35 --genlog pipe:0'
         omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
 
         receiver_cmd = None

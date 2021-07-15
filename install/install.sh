@@ -8,6 +8,7 @@ is_restart_required=false
 main(){
     updateAndInstallPackages
     disableWifi
+    setGpuMem
 
     if [ "$is_restart_required" = true ] ; then
         echo "Restarting..."
@@ -61,6 +62,25 @@ enableCompositeVideoOutput(){
         is_restart_required=true
     else
         echo 'composite video output already enabled...'
+    fi
+}
+
+# See: https://www.raspberrypi.org/documentation/configuration/config-txt/memory.md
+#      https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#gpu_mem
+setGpuMem(){
+    gpu_mem=$(vcgencmd get_mem gpu | sed -n 's/gpu=\(.*\)M/\1/p')
+    if (( gpu_mem < 128 )); then
+        echo 'Increasing gpu_mem to 128 megabytes...'
+
+        # comment out existing gpu_mem.* lines in config
+        sudo sed $CONFIG -i -e "s/^\(gpu_mem.*\)/#\1/"
+
+        # create the new stanza
+        echo 'gpu_mem=128' | sudo tee -a $CONFIG >/dev/null
+
+        is_restart_required=true
+    else
+        echo "gpu_mem was large enough already: $gpu_mem megabytes..."
     fi
 }
 
