@@ -9,10 +9,11 @@ from piwall2.multicasthelper import MulticastHelper
 from piwall2.configloader import ConfigLoader
 from piwall2.parallelrunner import ParallelRunner
 
-class Broadcaster:
+# Broadcasts a video for playback on the piwall
+class VideoBroadcaster:
 
     # For passwordless ssh from the broadcaster to the receivers.
-    # See: https://github.com/dasl-/piwall2/blob/main/utils/setup_broadcaster_ssh
+    # See: https://github.com/dasl-/piwall2/blob/main/utils/setup_broadcaster_and_receivers
     SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
@@ -20,6 +21,7 @@ class Broadcaster:
     __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
     __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
 
+    # video_url may be a youtube url or a path to a file on disk
     def __init__(self, video_url):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         Logger.set_uuid(Logger.make_uuid())
@@ -61,7 +63,7 @@ class Broadcaster:
         while proc.poll() is None:
             time.sleep(0.1)
 
-        MulticastHelper().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+        MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
 
         receivers_proc.wait()
 

@@ -2,7 +2,7 @@
 
 import argparse
 import traceback
-from piwall2.receiver import Receiver
+from piwall2.videoreceiver import VideoReceiver
 from piwall2.logger import Logger
 
 def parseArgs():
@@ -21,6 +21,6 @@ Logger.set_uuid(args.log_uuid)
 logger = Logger()
 
 try:
-    Receiver().receive(args.command)
+    VideoReceiver().receive(args.command)
 except Exception:
     logger.error(f'Caught exception: {traceback.format_exc()}')

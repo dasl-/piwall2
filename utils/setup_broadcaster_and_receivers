@@ -6,16 +6,29 @@ import os
 import sys
 import shlex
 
-# This is necessary for the import below to work
+# This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 from piwall2.configloader import ConfigLoader
 from piwall2.parallelrunner import ParallelRunner
-from piwall2.broadcaster import Broadcaster
+from piwall2.videobroadcaster import VideoBroadcaster
 
-def parse_args():
+def main():
+    config_loader = ConfigLoader(load = False)
+    args = parse_args(config_loader)
+
+    # load after parsing args to avoid potentially throwing errors before printing the help text
+    config_loader.load_config_if_not_loaded()
+    generate_ssh_key(VideoBroadcaster.SSH_KEY_PATH)
+    authorize_ssh_key(VideoBroadcaster.SSH_KEY_PATH, args.receiver_ssh_password)
+
+
+
+    print("Success!")
+
+def parse_args(config_loader):
     parser = argparse.ArgumentParser(description=
-f"""Apply the receivers config located in: {config_loader.get_receivers_config_path()}.
+f"""Applies the receivers config located in: {config_loader.get_receivers_config_path()}.
 This script should be run on the broadcaster. This script does several things:
 1) Sets up passwordless SSH from the broadcaster to each receiver
 2) Sets up the control daemon on the broadcaster
@@ -51,9 +64,9 @@ def generate_ssh_key(file):
         )
     )
 
-def authorize_ssh_key(file, password):
+def authorize_ssh_key(file, password, config_loader):
     print("Getting list of receivers from config...")
-    receivers = ParallelRunner().quote_machines(ConfigLoader().get_receivers_list())
+    receivers = ParallelRunner().quote_machines(config_loader.get_receivers_list())
     authorize_ssh_key_cmd = (
         f"sshpass -p {shlex.quote(password)} " +
         "ssh-copy-id " +
@@ -83,11 +96,4 @@ def authorize_ssh_key(file, password):
     )
 
 
-config_loader = ConfigLoader(load = False)
-args = parse_args()
-
-# load after parsing args to avoid potentially throwing errors before printing the help text
-config_loader.load_config_if_not_loaded()
-generate_ssh_key(Broadcaster.SSH_KEY_PATH)
-authorize_ssh_key(Broadcaster.SSH_KEY_PATH, args.receiver_ssh_password)
-print("Success!")
+main()
