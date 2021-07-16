@@ -2,7 +2,7 @@
 
 import argparse
 
-from piwall2.broadcaster import Broadcaster
+from piwall2.videobroadcaster import VideoBroadcaster
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video broadcaster')
@@ -14,4 +14,4 @@ def parseArgs():
 
 
 args = parseArgs()
-Broadcaster(args.url).broadcast()
+VideoBroadcaster(args.url).broadcast()
