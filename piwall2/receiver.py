@@ -6,14 +6,17 @@ class Receiver:
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__control_message_helper = ControlMessageHelper()
+        self.__control_message_helper = ControlMessageHelper().setup_for_receiver()
         self.__volume_controller = VolumeController()
 
-    def run(self, cmd):
+    def run(self):
         while True:
-            control_msg = self.__control_message_helper.receive_msg()
-            if control_msg is None:
+            control_msg = None
+            try:
+                control_msg = self.__control_message_helper.receive_msg()
+            except Exception:
                 continue
+
             if control_msg[ControlMessageHelper.MSG_TYPE_KEY] == ControlMessageHelper.VOLUME:
                 self.__volume_controller.set_vol_pct(control_msg[ControlMessageHelper.CONTENT_KEY])
             else:

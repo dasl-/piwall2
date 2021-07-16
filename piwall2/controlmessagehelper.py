@@ -14,8 +14,8 @@ class ControlMessageHelper:
     MSG_TYPE_KEY = 'msg_type'
     CONTENT_KEY = 'content'
 
-    __MSG_PREFIX_MAGIC_BYTES = 'control_message_magic_prefix'
-    __MSG_SUFFIX_MAGIC_BYTES = 'control_message_magic_suffix'
+    __MSG_PREFIX_MAGIC_BYTES = b'control_message_magic_prefix'
+    __MSG_SUFFIX_MAGIC_BYTES = b'control_message_magic_suffix'
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -26,7 +26,7 @@ class ControlMessageHelper:
 
     def setup_for_receiver(self):
         self.__multicast_helper = MulticastHelper().setup_receiver_control_socket()
-        self.__receive_remainder = ''
+        self.__receive_remainder = b''
         return self
 
     def send_msg(self, content, control_msg_type):
@@ -37,7 +37,7 @@ class ControlMessageHelper:
             self.MSG_TYPE_KEY: control_msg_type,
             self.CONTENT_KEY: content
         })
-        msg = self.__MSG_PREFIX_MAGIC_BYTES + msg + self.__MSG_SUFFIX_MAGIC_BYTES
+        msg = self.__MSG_PREFIX_MAGIC_BYTES + msg.encode() + self.__MSG_SUFFIX_MAGIC_BYTES
         self.__multicast_helper.send(msg, MulticastHelper.MSG_TYPE_CONTROL)
 
     """
@@ -74,7 +74,7 @@ class ControlMessageHelper:
                 suffix_start_index = data.find(self.__MSG_SUFFIX_MAGIC_BYTES, prefix_start_index)
             if suffix_start_index != -1:
                 msg_start_index = prefix_start_index + len(self.__MSG_PREFIX_MAGIC_BYTES)
-                msg_end_index = suffix_start_index + len(self.__MSG_SUFFIX_MAGIC_BYTES)
+                msg_end_index = suffix_start_index
                 msg = data[msg_start_index:msg_end_index]
                 self.__receive_remainder = data[msg_end_index:]
                 break
