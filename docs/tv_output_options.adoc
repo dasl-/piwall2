@@ -32,6 +32,11 @@ There are a couple of additional composite https://www.raspberrypi.org/documenta
 1. If you're not using NTSC TVs, you'll want to adjust `sdtv_mode` (most North American TVs use NTSC)
 1. If you have a CRT with a non-standard aspect ratio, you'll want to adjust `sdtv_aspect`
 
+## Mixing and matching video output types
+Note that you cannot use both a composite TV output and an HDMI TV output on the same raspberry pi. Enabling composite output requires setting `enable_tvout=1` in `/boot/config.txt`. HDMI TVs are not recognized when this setting is enabled, and composite TVs are not recognized when it is disabled.
+
+Furthermore, be careful of using both composite output and HDMI output on different raspberry pis as part of the same TV wall. In my experience, the composite output will be very slightly out of sync with the HDMI output. The degree to which they are out of sync is very slight, so it may be tolerable, depending on your taste. I am not sure why they are slightly out of sync. Perhaps it has to do with using different clock speeds?
+
 ## General video options
 These video options apply to both HDMI and composite video output.
 
