@@ -148,6 +148,19 @@ Now we can play two videos in sync with omxplayer, with sound outputting through
 ....
 With this method, CPU usage is around 5% playing both videos.
 
+#### Note on using alsa sound
+By default, omxplayer does not use alsa sound. Thus the "normal" raspberry pi volume controls (`alsamixer`, `amixer`, etc) have no effect on omxplayer's volume. See the https://www.raspberrypi.org/documentation/usage/audio/README.md[documentation here]:
+____
+Note that omxplayer doesn't use ALSA and so ignores the audio configuration set by raspi-config or amixer.
+____
+
+Omxplayer does have options to use alsa sound output as discussed in the section above "With ALSA sound". Alsa sound can also be used in the composite TV output setup by specifying:
+....
+% omxplayer -o alsa:hw:0,0 sync_test_1080p.mkv
+....
+
+Most of the time, the alsa sound works fine. But in some videos, I have noticed occasional playback issues when using alsa sound -- sometimes one or more TVs would freeze when attempting to play the video, resulting in a frozen image of one of the first few frames of the video. Meanwhile, the rest of the TVs may continue playing the video. Thus, I do not recommend using alsa sound output. I noticed these alsa playback glitches when testing on https://www.youtube.com/watch?v=4S5KBlieT0I[this video]. I would notice the playback glitches in 3 out of 9 test that I ran.
+
 ### vlc
 Due to our cropping needs, link:cropping_videos_for_streaming_playback.adoc[vlc is not the preferred software to use for videoplayback in this project].
 
