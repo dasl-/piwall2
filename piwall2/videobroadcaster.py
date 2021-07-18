@@ -49,10 +49,14 @@ class VideoBroadcaster:
         # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
         ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
 
+        audio_clause = '-c:a mp2 -b:a 192k'
+        if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
+            audio_clause = '-c:a copy'
+
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        cmd = (f"ffmpeg -re {ffmpeg_input_clause}" +
-            "-c:v copy -c:a mp2 -b:a 192k -f mpegts " +
+        cmd = (f"ffmpeg -re {ffmpeg_input_clause} " +
+            f"-c:v copy {audio_clause} -f mpegts " +
             f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
@@ -303,9 +307,18 @@ class VideoBroadcaster:
                 audio_buffer_size
             )
 
-            return f" -i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) "
+            return f"-i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd})"
         elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
-            return f" -i {shlex.quote(self.__video_url)} "
+            # Why the process substitution and sleep? Ffmpeg seemed to occasionally stumble playing the video
+            # without the sleep. This would result in:
+            # 1) The first couple seconds of the video getting skipped
+            # 2) Slightly out of sync video across the TVs
+            #
+            # (1) would happen every time, whereas (2) happened 3 out of 8 times during testing.
+            # Perhaps the sleep gives ffmpeg time to start up before starting to play the video.
+            # When using youtube-dl, it takes some time for the download of the video to start, giving
+            # ffmpeg an opportunity to start-up without us having to explicltly sleep.
+            return f"-i <( sleep 2 ; cat {shlex.quote(self.__video_url)} )"
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
     # Must return a dict containing the keys: width, height
