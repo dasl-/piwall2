@@ -159,7 +159,7 @@ Omxplayer does have options to use alsa sound output as discussed in the section
 % omxplayer -o alsa:hw:0,0 sync_test_1080p.mkv
 ....
 
-Most of the time, the alsa sound works fine. But in some videos, I have noticed occasional playback issues when using alsa sound -- sometimes one or more TVs would freeze when attempting to play the video, resulting in a frozen image of one of the first few frames of the video. Meanwhile, the rest of the TVs may continue playing the video. Thus, I do not recommend using alsa sound output. I noticed these alsa playback glitches when testing on https://www.youtube.com/watch?v=4S5KBlieT0I[this video]. I would notice the playback glitches in 3 out of 9 test that I ran.
+Most of the time, the alsa sound works fine. But in some videos, I have noticed occasional playback issues when using alsa sound -- sometimes one or more TVs would freeze when attempting to play the video, resulting in a frozen image of one of the first few frames of the video. Meanwhile, the rest of the TVs would continue playing the video. Thus, I do not recommend using alsa sound output. I noticed these alsa playback glitches when testing on https://www.youtube.com/watch?v=4S5KBlieT0I[this video] while using component TV output. I noticed playback glitches in 3 out of 9 tests that I ran in this manner.
 
 ### vlc
 Due to our cropping needs, link:cropping_videos_for_streaming_playback.adoc[vlc is not the preferred software to use for videoplayback in this project].
