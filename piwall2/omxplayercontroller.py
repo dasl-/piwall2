@@ -9,7 +9,7 @@ from piwall2.logger import Logger
 # https://github.com/popcornmix/omxplayer#dbus-control
 class OmxplayerController:
 
-    __DBUS_TIMEOUT_MS = 200
+    __DBUS_TIMEOUT_MS = 1500
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
