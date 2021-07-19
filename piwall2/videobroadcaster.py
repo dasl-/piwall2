@@ -8,6 +8,7 @@ from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 from piwall2.configloader import ConfigLoader
 from piwall2.parallelrunner import ParallelRunner
+from piwall2.volumecontroller import VolumeController
 
 # Broadcasts a video for playback on the piwall
 class VideoBroadcaster:
@@ -88,12 +89,12 @@ class VideoBroadcaster:
             )
         return ParallelRunner().run_cmds(cmds)
 
-    # TODO: make this actually work
     def __get_receiver_cmd(self, receiver):
         receiver_config = self.__config_loader.get_receivers_config()[receiver]
         adev, adev2 = self.__get_adevs_for_receiver(receiver, receiver_config)
         display, display2 = self.__get_displays_for_receiver(receiver, receiver_config)
         crop, crop2 = self.__get_crops_for_receiver(receiver, receiver_config)
+        volume = VolumeController().get_vol_millibels()
 
         receiver_cmd_template = ('/home/pi/piwall2/receive --command "{0}" --log-uuid ' +
             shlex.quote(Logger.get_uuid()) + ' >/tmp/receiver.log 2>&1')
@@ -131,12 +132,15 @@ class VideoBroadcaster:
         mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_cmd_template = 'omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 5 --video_fifo 35 --genlog pipe:0'
-        omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display), shlex.quote(crop))
+        omx_cmd_template = ('omxplayer --adev {0} --display {1} --crop {2} --vol {3} ' +
+            '--no-keys --threshold 5 --video_fifo 35 --genlog pipe:0')
+        omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display),
+            shlex.quote(crop), shlex.quote(volume))
 
         receiver_cmd = None
         if receiver_config['is_dual_video_output']:
-            omx_cmd2 = omx_cmd_template.format(shlex.quote(adev2), shlex.quote(display2), shlex.quote(crop2))
+            omx_cmd2 = omx_cmd_template.format(shlex.quote(adev2), shlex.quote(display2),
+                shlex.quote(crop2), shlex.quote(volume))
             tee_cmd = f"{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null"
             receiver_cmd = receiver_cmd_template.format(tee_cmd)
         else:
