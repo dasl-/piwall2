@@ -14,6 +14,7 @@ class Receiver:
             control_msg = None
             try:
                 control_msg = self.__control_message_helper.receive_msg()
+                self.__logger.debug(f"Received control message {control_msg}.")
             except Exception:
                 continue
 

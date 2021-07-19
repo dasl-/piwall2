@@ -15,7 +15,7 @@ class ControlBroadcaster:
     def run(self):
         while True:
             self.__set_receiver_volume()
-            time.sleep(0.5)
+            time.sleep(2)
 
     def __set_receiver_volume(self):
         vol_pct = self.__volume_controller.get_vol_pct()
