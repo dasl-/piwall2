@@ -1,6 +1,7 @@
 import getpass
 import re
 import subprocess
+import time
 from piwall2.logger import Logger
 
 # Controls omxplayer via dbus.
@@ -9,7 +10,7 @@ from piwall2.logger import Logger
 # https://github.com/popcornmix/omxplayer#dbus-control
 class OmxplayerController:
 
-    __DBUS_TIMEOUT_MS = 1500
+    __DBUS_TIMEOUT_MS = 2000
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -57,11 +58,18 @@ class OmxplayerController:
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
             "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set " +
             f"string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{vol_pct}")
+        start = time.time()
         try:
             vol_cmd_output = (subprocess
                 .check_output(cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT))
         except Exception:
+            self.__logger.debug("failed to set omxplayer volume")
             return False
+        elapsed_ms = (time.time() - start) * 1000
+
+        # this is taking a while... https://docs.google.com/spreadsheets/d/1jB3cf7_d_jQxHmjWCLvt7DCgGCIJfhZ2V6EG4J1_AsA/edit#gid=0
+        # Try pydbus, maybe it's faster
+        self.__logger.debug(f"set volume after {elapsed_ms}ms.")
         return True
 
     # Returns a boolean. True if the session was loaded or already loaded, false if we failed to load.
