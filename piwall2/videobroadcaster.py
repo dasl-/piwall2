@@ -135,12 +135,12 @@ class VideoBroadcaster:
         omx_cmd_template = ('omxplayer --adev {0} --display {1} --crop {2} --vol {3} ' +
             '--no-keys --threshold 5 --video_fifo 35 --genlog pipe:0')
         omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display),
-            shlex.quote(crop), shlex.quote(volume))
+            shlex.quote(crop), shlex.quote(str(volume)))
 
         receiver_cmd = None
         if receiver_config['is_dual_video_output']:
             omx_cmd2 = omx_cmd_template.format(shlex.quote(adev2), shlex.quote(display2),
-                shlex.quote(crop2), shlex.quote(volume))
+                shlex.quote(crop2), shlex.quote(str(volume)))
             tee_cmd = f"{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null"
             receiver_cmd = receiver_cmd_template.format(tee_cmd)
         else:
