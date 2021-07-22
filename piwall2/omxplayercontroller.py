@@ -72,6 +72,28 @@ class OmxplayerController:
         self.__logger.debug(f"set volume after {elapsed_ms}ms.")
         return True
 
+    # crop string: "x1 y1 x2 y2"
+    def set_crop(self, crop_string):
+        if not self.__load_dbus_session_info_if_not_loaded():
+            return False
+
+        cmd = (f"DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
+            f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
+            "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetVideoCropPos " +
+            f"objpath:/not/used string:'{crop_string}'")
+
+        start = time.time()
+        try:
+            cmd_output = (subprocess
+                .check_output(cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT))
+        except Exception:
+            self.__logger.debug("failed to set omxplayer crop position")
+            return False
+        elapsed_ms = (time.time() - start) * 1000
+
+        self.__logger.debug(f"set crop position after {elapsed_ms}ms.")
+        return True
+
     # Returns a boolean. True if the session was loaded or already loaded, false if we failed to load.
     def __load_dbus_session_info_if_not_loaded(self):
         if self.__dbus_addr and self.__dbus_pid:
