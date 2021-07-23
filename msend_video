@@ -6,6 +6,7 @@ import time
 
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
+from piwall2.videobroadcaster import VideoBroadcaster
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video sender')
@@ -46,7 +47,7 @@ while True:
     if not data:
         break
 
-    if bytes_sent > (100 * 1024 * 1024): # slow down after sending the first 100 MB
+    if bytes_sent > (VideoBroadcaster.RECEIVER_MBUFFER_SIZE / 2): # slow down after sending this much
         if burst_end_time == 0:
             burst_end_time = time.time()
         time_since_burst = time.time() - burst_end_time

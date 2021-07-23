@@ -18,6 +18,7 @@ class VideoBroadcaster:
     SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
+    RECEIVER_MBUFFER_SIZE = 1024 * 1024 * 1024 # 1024 MB
 
     __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
     __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
@@ -132,8 +133,7 @@ class VideoBroadcaster:
         video, and no matter where in the pipeline the delay is coming from. Using mbuffer seems simpler, and it is
         easier to monitor. By checking its logs, we can see how close the mbuffer gets to becoming full.
         """
-        mbuffer_size = 1024 * 1024 * 200 # 200 MB
-        mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b'
+        mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {self.RECEIVER_MBUFFER_SIZE}b'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
         omx_cmd_template = ('omxplayer --adev {0} --display {1} --crop {2} --vol {3} ' +
