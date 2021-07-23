@@ -56,9 +56,8 @@ class VideoBroadcaster:
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        cmd = (f"ffmpeg -re {ffmpeg_input_clause} " +
-            f"-c:v copy {audio_clause} -f mpegts " +
-            f"\"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
+        cmd = (f"ffmpeg {ffmpeg_input_clause} " +
+            f"-c:v copy {audio_clause} -f mpegts - | {DirectoryUtils().root_dir}/msend_video")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True

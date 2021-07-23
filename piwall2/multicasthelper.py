@@ -31,7 +31,7 @@ class MulticastHelper:
     # Maximum transmission unit
     __MTU = 1472
 
-    def __init__(self, is_broadcaster = False, is_receiver = False):
+    def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def setup_broadcaster_socket(self):
