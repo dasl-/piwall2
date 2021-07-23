@@ -2,9 +2,6 @@ import getpass
 import re
 import subprocess
 import time
-import random
-import string
-import socket
 from piwall2.logger import Logger
 
 # Controls omxplayer via dbus.
@@ -21,11 +18,6 @@ class OmxplayerController:
         self.__dbus_addr = None
         self.__dbus_pid = None
         self.__load_dbus_session_info_if_not_loaded()
-
-        self.__sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        self.__server_address = '/tmp/omx.sock'
-        id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-        self.__sock.bind(self.__server_address + '_' + id)
 
     # gets a perceptual loudness %
     # returns a float in the range [0, 100]
@@ -56,16 +48,6 @@ class OmxplayerController:
     # takes a perceptual loudness %.
     # vol_pct should be a float in the range [0, 100]
     def set_vol_pct(self, vol_pct):
-        vol_pct_to_send = str(vol_pct / 100).encode()
-        start = time.time()
-        sent = self.__sock.sendto(vol_pct_to_send, self.__server_address)
-        elapsed_ms1 = (time.time() - start) * 1000
-        self.__logger.debug(f"Finished set_vol_pct. sent: {sent}, elapsed_ms: {elapsed_ms1}.")
-        # resp, server = self.__sock.recvfrom(4096)
-        # elapsed_ms2 = (time.time() - start) * 1000
-        # self.__logger.debug(f"Finished set_vol_pct. sent: {sent}, resp: {resp}, server: {server}, elapsed_ms: {elapsed_ms1} , {elapsed_ms2} ms.")
-        return
-
         if not self.__load_dbus_session_info_if_not_loaded():
             return False
 
