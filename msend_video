@@ -2,6 +2,7 @@
 
 from piwall2.logger import Logger
 import sys
+import subprocess
 from piwall2.multicasthelper import MulticastHelper
 
 log_level = Logger.get_level()
@@ -9,16 +10,27 @@ if log_level is None or log_level <= Logger.DEBUG:
     # Prevent MulticastHelper.__send_video_stream_msg debug logs from being too spammy
     Logger.set_level(Logger.INFO)    
 
-m = MulticastHelper()
+m = MulticastHelper().setup_broadcaster_socket()
+bytes_sent = 0
+cmd = (f"ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f copy \"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
+proc = subprocess.Popen(
+    cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
+)
+
 while True:
     data = sys.stdin.buffer.read(4096)
     if not data:
+        proc.stdin.close()
         break
     i = 0
-    while True:
-        chunk = data[i:(i + 1472)]
-        i += 1472
-        if chunk:
-            m.send(chunk, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
-        else:
-            break
+    if bytes_sent > 100 * 1024 * 1024: # 100 MB
+        proc.stdin.write(data)
+    else:
+        while True:
+            chunk = data[i:(i + 1472)]
+            i += 1472
+            if chunk:
+                m.send(chunk, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+            else:
+                bytes_sent += len(data)
+                break
