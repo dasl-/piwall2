@@ -21,6 +21,7 @@ class VideoBroadcaster:
 
     __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
     __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
+    __AUDIO_FORMAT = 'bestaudio'
 
     # video_url may be a youtube url or a path to a file on disk
     def __init__(self, video_url):
@@ -54,10 +55,14 @@ class VideoBroadcaster:
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
             audio_clause = '-c:a copy'
 
+        duration = shlex.quote(self.__video_info['duration'])
+        size = shlex.quote(self.__video_info['__total_size__'])
+
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"ffmpeg {ffmpeg_input_clause} " +
-            f"-c:v copy {audio_clause} -f mpegts - | {DirectoryUtils().root_dir}/msend_video")
+            f"-c:v copy {audio_clause} -f mpegts - | " +
+            f"{DirectoryUtils().root_dir}/msend_video --duration {duration} --size {size}")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
@@ -306,7 +311,7 @@ class VideoBroadcaster:
             audio_buffer_size = 1024 * 1024 * 5
             youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
                 shlex.quote(self.__video_url),
-                shlex.quote('bestaudio'),
+                shlex.quote(self.__AUDIO_FORMAT),
                 audio_buffer_size
             )
 
@@ -333,7 +338,7 @@ class VideoBroadcaster:
         if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBEDL:
             self.__logger.info("Downloading and populating video metadata...")
             ydl_opts = {
-                'format': self.__config_loader.get_youtube_dl_video_format(),
+                'format': self.__config_loader.get_youtube_dl_video_format() + '+' + self.__AUDIO_FORMAT,
                 'logger': Logger().set_namespace('youtube_dl'),
                 'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
             }
@@ -374,21 +379,31 @@ class VideoBroadcaster:
                         self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
                         raise e
 
-            self.__logger.info("Done downloading and populating video metadata.")
+            total_size = (self.__video_info['requested_formats'][0]['filesize'] +
+                self.__video_info['requested_formats'][1]['filesize'])
+            self.__video_info['__total_size__'] = total_size
 
+            self.__logger.info("Done downloading and populating video metadata.")
             self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
                 f"{self.__video_info['width']}x{self.__video_info['height']}")
+            self.__logger.info(f"video info: {self.__video_info}")
         elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
             # TODO: guard against unsupported video formats
-            ffprobe_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height {shlex.quote(self.__video_url)}'
+            ffprobe_cmd = ('ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height,duration ' +
+                f'-show_entries format=size {shlex.quote(self.__video_url)}')
             ffprobe_output = (subprocess
                 .check_output(ffprobe_cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT)
                 .decode("utf-8"))
-            ffprobe_output = ffprobe_output.split('\n')[0]
-            ffprobe_parts = ffprobe_output.split(',')
+            ffprobe_lines = ffprobe_output.split('\n')
+            ffprobe_stream_parts = ffprobe_lines[0].split(',')
+
+            # sometimes this may have either 2 or 3 lines of output. The format parts will always be on the last line.
+            ffprobe_format_parts = ffprobe_lines[len(ffprobe_lines - 1)].split(',')
             self.__video_info = {
-                'width': int(ffprobe_parts[0]),
-                'height': int(ffprobe_parts[1]),
+                'width': int(ffprobe_stream_parts[0]),
+                'height': int(ffprobe_stream_parts[1]),
+                'duration': int(ffprobe_stream_parts[2]),
+                '__total_size__': int(ffprobe_format_parts[0])
             }
 
         return self.__video_info
