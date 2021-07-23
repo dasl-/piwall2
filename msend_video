@@ -12,7 +12,7 @@ if log_level is None or log_level <= Logger.DEBUG:
 
 m = MulticastHelper().setup_broadcaster_socket()
 bytes_sent = 0
-cmd = (f"ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f copy \"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
+cmd = (f"ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts \"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}\"")
 proc = subprocess.Popen(
     cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
 )
