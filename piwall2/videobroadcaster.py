@@ -55,8 +55,8 @@ class VideoBroadcaster:
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
             audio_clause = '-c:a copy'
 
-        duration = shlex.quote(self.__video_info['duration'])
-        size = shlex.quote(self.__video_info['__total_size__'])
+        duration = shlex.quote(str(self.__video_info['duration']))
+        size = shlex.quote(str(self.__video_info['__total_size__']))
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
