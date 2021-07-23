@@ -60,9 +60,10 @@ class OmxplayerController:
         start = time.time()
         sent = self.__sock.sendto(vol_pct_to_send, self.__server_address)
         elapsed_ms1 = (time.time() - start) * 1000
-        resp, server = self.__sock.recvfrom(4096)
-        elapsed_ms2 = (time.time() - start) * 1000
-        self.__logger.debug(f"Finished set_vol_pct. sent: {sent}, resp: {resp}, server: {server}, elapsed_ms: {elapsed_ms1} , {elapsed_ms2} ms.")
+        self.__logger.debug(f"Finished set_vol_pct. sent: {sent}, elapsed_ms: {elapsed_ms1}.")
+        # resp, server = self.__sock.recvfrom(4096)
+        # elapsed_ms2 = (time.time() - start) * 1000
+        # self.__logger.debug(f"Finished set_vol_pct. sent: {sent}, resp: {resp}, server: {server}, elapsed_ms: {elapsed_ms1} , {elapsed_ms2} ms.")
         return
 
         if not self.__load_dbus_session_info_if_not_loaded():
