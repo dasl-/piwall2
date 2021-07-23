@@ -56,7 +56,7 @@ class OmxplayerController:
     # takes a perceptual loudness %.
     # vol_pct should be a float in the range [0, 100]
     def set_vol_pct(self, vol_pct):
-        vol_pct_to_send = str(vol_pct / 100)
+        vol_pct_to_send = str(vol_pct / 100).encode()
         start = time.time()
         sent = self.__sock.sendto(vol_pct_to_send, self.__server_address)
         resp, server = self.__sock.recvfrom(4096)
