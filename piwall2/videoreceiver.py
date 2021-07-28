@@ -1,7 +1,7 @@
 import subprocess
 import time
 
-from piwall2.videobroadcaster import VideoBroadcaster
+from piwall2.broadcaster.videobroadcaster import VideoBroadcaster
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 
@@ -13,7 +13,10 @@ class VideoReceiver:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    def receive(self, cmd):
+    def receive(self, cmd, log_uuid = None):
+        if log_uuid:
+            Logger.set_uuid(log_uuid)
+
         multicast_helper = MulticastHelper().setup_receiver_video_socket()
         socket = multicast_helper.get_receive_video_socket()
         proc = subprocess.Popen(
