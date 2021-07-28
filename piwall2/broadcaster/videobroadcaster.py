@@ -298,8 +298,11 @@ class VideoBroadcaster:
             exhausted on long video downloads. After a while, retries would be necessary to reconnect. The
             retries would be successful, but the connection errors would happen again a few minutes later.
             This allows us to keep retrying whenever it is necessary.
+
+            Use yt-dlp, a fork of youtube-dl that has a workaround (for now) for an issue where youtube has been
+            throttling youtube-dl’s download speed: https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
-            youtube_dl_cmd_template = "youtube-dl {0} --retries infinite --format {1} --output - | mbuffer -q -Q -m {2}b"
+            youtube_dl_cmd_template = "yt-dlp --extractor-args youtube:player_client=android {0} --retries infinite --format {1} --output - | mbuffer -q -Q -m {2}b"
 
             # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
             # be enough buffer for ~139s

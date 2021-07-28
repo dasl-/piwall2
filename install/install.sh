@@ -21,7 +21,7 @@ updateAndInstallPackages(){
     sudo apt update
     sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi parallel dsh sshpass mbuffer
     sudo apt -y full-upgrade
-    sudo pip3 install --upgrade youtube_dl toml pytz
+    sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
 }
 
 # We disable wifi because multicast doesn't work well over wifi. Since the TV wall
