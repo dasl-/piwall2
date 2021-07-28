@@ -18,7 +18,7 @@ class VideoBroadcaster:
     SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
-    RECEIVER_MBUFFER_SIZE = 1024 * 1024 * 1024 # 1024 MB
+    __RECEIVER_MBUFFER_SIZE = 1024 * 1024 * 1024 # 1024 MB
 
     __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
     __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
@@ -56,15 +56,16 @@ class VideoBroadcaster:
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
             audio_clause = '-c:a copy'
 
-        duration = shlex.quote(str(self.__video_info['duration']))
-        size = shlex.quote(str(self.__video_info['__total_size__']))
+        throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(self.__RECEIVER_MBUFFER_SIZE / 2)}b | ' +
+            'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
+        broadcasting_clause = ('ffmpeg -i pipe:0 -c:v copy -c:a copy -f mpegts ' +
+            f'"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}"')
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"ffmpeg {ffmpeg_input_clause} " +
             f"-c:v copy {audio_clause} -f mpegts - | " +
-            f"{DirectoryUtils().root_dir}/throttle_broadcast --size {size} --duration {duration} " +
-            f"--log-uuid {shlex.quote(Logger.get_uuid())}")
+            f"tee >({throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
@@ -93,7 +94,9 @@ class VideoBroadcaster:
             cmds.append(
                 f"ssh {ssh_opts} pi@{receiver} {shlex.quote(receiver_cmd)}\n".encode()
             )
-        return ParallelRunner().run_cmds(cmds)
+        ret = ParallelRunner().run_cmds(cmds)
+        time.sleep(2) # ensure the receivers have started before beginning broadcast
+        return ret
 
     def __get_receiver_cmd(self, receiver):
         receiver_config = self.__config_loader.get_receivers_config()[receiver]
@@ -134,7 +137,7 @@ class VideoBroadcaster:
         video, and no matter where in the pipeline the delay is coming from. Using mbuffer seems simpler, and it is
         easier to monitor. By checking its logs, we can see how close the mbuffer gets to becoming full.
         """
-        mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {self.RECEIVER_MBUFFER_SIZE}b'
+        mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {self.__RECEIVER_MBUFFER_SIZE}b'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
         omx_cmd_template = ('omxplayer --adev {0} --display {1} --crop {2} --vol {3} ' +
@@ -339,7 +342,7 @@ class VideoBroadcaster:
         if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBEDL:
             self.__logger.info("Downloading and populating video metadata...")
             ydl_opts = {
-                'format': self.__config_loader.get_youtube_dl_video_format() + '+' + self.__AUDIO_FORMAT,
+                'format': self.__config_loader.get_youtube_dl_video_format(),
                 'logger': Logger().set_namespace('youtube_dl'),
                 'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
             }
@@ -380,30 +383,21 @@ class VideoBroadcaster:
                         self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
                         raise e
 
-            total_size = (self.__video_info['requested_formats'][0]['filesize'] +
-                self.__video_info['requested_formats'][1]['filesize'])
-            self.__video_info['__total_size__'] = total_size
-
             self.__logger.info("Done downloading and populating video metadata.")
+
             self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
                 f"{self.__video_info['width']}x{self.__video_info['height']}")
         elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
             # TODO: guard against unsupported video formats
-            ffprobe_cmd = ('ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height,duration ' +
-                f'-show_entries format=size {shlex.quote(self.__video_url)}')
+            ffprobe_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height {shlex.quote(self.__video_url)}'
             ffprobe_output = (subprocess
                 .check_output(ffprobe_cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT)
                 .decode("utf-8"))
-            ffprobe_lines = ffprobe_output.split('\n')
-            ffprobe_stream_parts = ffprobe_lines[0].split(',')
-
-            # sometimes this may have either 2 or 3 lines of output. The format parts will always be on the last line.
-            ffprobe_format_parts = ffprobe_lines[len(ffprobe_lines - 1)].split(',')
+            ffprobe_output = ffprobe_output.split('\n')[0]
+            ffprobe_parts = ffprobe_output.split(',')
             self.__video_info = {
-                'width': int(ffprobe_stream_parts[0]),
-                'height': int(ffprobe_stream_parts[1]),
-                'duration': int(ffprobe_stream_parts[2]),
-                '__total_size__': int(ffprobe_format_parts[0])
+                'width': int(ffprobe_parts[0]),
+                'height': int(ffprobe_parts[1]),
             }
 
         return self.__video_info
