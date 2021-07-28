@@ -63,7 +63,7 @@ class VideoBroadcaster:
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"ffmpeg {ffmpeg_input_clause} " +
             f"-c:v copy {audio_clause} -f mpegts - | " +
-            f"{DirectoryUtils().root_dir}/throttle_video --size {size} --duration {duration} " +
+            f"{DirectoryUtils().root_dir}/throttle_broadcast --size {size} --duration {duration} " +
             f"--log-uuid {shlex.quote(Logger.get_uuid())}")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(

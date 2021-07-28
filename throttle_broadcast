@@ -19,4 +19,4 @@ def parseArgs():
 
 args = parseArgs()
 video_broadcast_throttler = VideoBroadcastThrottler(args.size, args.duration, args.log_uuid)
-video_broadcast_throttler.throttle_video()
+video_broadcast_throttler.throttle_broadcast()
