@@ -56,7 +56,9 @@ class VideoBroadcaster:
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
             audio_clause = '-c:a copy'
 
-        throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(self.__RECEIVER_MBUFFER_SIZE / 2)}b | ' +
+        slow_start_throttling_clause = (DirectoryUtils().root_dir + '/timeout_after_first_byte --timeout 10 | ' +
+            'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
+        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(self.__RECEIVER_MBUFFER_SIZE / 2)}b | ' +
             'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
         broadcasting_clause = ('ffmpeg -i pipe:0 -c:v copy -c:a copy -f mpegts ' +
             f'"udp://{MulticastHelper.ADDRESS}:{MulticastHelper.VIDEO_PORT}"')
@@ -65,7 +67,7 @@ class VideoBroadcaster:
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"ffmpeg {ffmpeg_input_clause} " +
             f"-c:v copy {audio_clause} -f mpegts - | " +
-            f"tee >({throttling_clause}) >({broadcasting_clause}) >/dev/null")
+            f"tee >({slow_start_throttling_clause}) >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True

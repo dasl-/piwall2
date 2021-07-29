@@ -32,7 +32,7 @@ class VideoReceiver:
             video_bytes = multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
             if total_bytes_count == 0:
                 # Subsequent bytes after the first packet should be received more quickly
-                socket.settimeout(5)
+                socket.settimeout(10)
                 self.__logger.info("Received first bytes of video...")
 
             len_video_bytes = len(video_bytes)
