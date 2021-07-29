@@ -56,8 +56,6 @@ class VideoBroadcaster:
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
             audio_clause = '-c:a copy'
 
-        slow_start_throttling_clause = (DirectoryUtils().root_dir + '/timeout_after_first_byte --timeout 5 | ' +
-            'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; cat >/dev/null')
         burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(self.__RECEIVER_MBUFFER_SIZE / 2)}b | ' +
             'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
         broadcasting_clause = ('ffmpeg -i pipe:0 -c:v copy -c:a copy -f mpegts ' +
@@ -67,7 +65,7 @@ class VideoBroadcaster:
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"ffmpeg {ffmpeg_input_clause} " +
             f"-c:v copy {audio_clause} -f mpegts - | " +
-            f"tee >({slow_start_throttling_clause}) >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
+            f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
@@ -143,7 +141,7 @@ class VideoBroadcaster:
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
         omx_cmd_template = ('omxplayer --adev {0} --display {1} --crop {2} --vol {3} ' +
-            '--no-keys --threshold 5 --video_fifo 35 --genlog pipe:0')
+            '--no-keys --timeout 20 --threshold 0.2 --video_fifo 35 --genlog pipe:0')
         omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display),
             shlex.quote(crop), shlex.quote(str(volume)))
 
