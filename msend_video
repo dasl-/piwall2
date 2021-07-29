@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+import sys
+import argparse
+import os
+
+from piwall2.logger import Logger
+from piwall2.multicasthelper import MulticastHelper
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description='piwall2 video sender')
+    parser.add_argument('--log-uuid', dest='log_uuid', action='store',
+        help='Logger UUID')
+    args = parser.parse_args()
+    return args
+
+def send_data(multicast_helper, data):
+    i = 0
+    while True:
+        chunk = data[i:(i + 1472)]
+        i += 1472
+        if chunk:
+            multicast_helper.send(chunk, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+        else:
+            return len(data)
+
+
+args = parseArgs()
+log_level = Logger.get_level()
+if log_level is None or log_level <= Logger.DEBUG:
+    # Prevent MulticastHelper.__send_video_stream_msg debug logs from being too spammy
+    Logger.set_level(Logger.INFO)    
+if args.log_uuid:
+    Logger.set_uuid(args.log_uuid)
+
+logger = Logger().set_namespace(os.path.basename(__file__))
+logger.info("Starting to send video...")
+
+m = MulticastHelper().setup_broadcaster_socket()
+bytes_sent = 0
+while True:
+    data = sys.stdin.buffer.read(4096)
+    if not data:
+        break
+    bytes_sent += send_data(m, data)
+
+logger.info(f"Finished sending video. Sent {bytes_sent} bytes.")
