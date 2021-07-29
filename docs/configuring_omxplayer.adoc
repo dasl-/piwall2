@@ -18,6 +18,21 @@ Here is some https://github.com/popcornmix/omxplayer/issues/256[more info about 
 
 ## omxplayer configuration
 
+### timeout 
+From the man page:
+....
+--timeout     n         Timeout for stalled file/network operations (default 10s)
+....
+We raise the timeout because sometimes youtube-dl can take longer than usual to start up. Thus, it may be more than 10 seconds before omxplayer starts receiving data after its process has been started. When this happens, we will see an error message like this:
+....
+Invalid framerate 90000, using forced 25fps and just trust timestamps
+have a nice day ;)
+....
+
+In the omxplayer log, we will see https://gist.github.com/dasl-/0caa95c6c438685bf4c12f280784c223[something like this].
+
+Raising the timeout should make these types of errors less likely.
+
 ### threshold
 Raising the `threshold` was necessary to prevent random occasional video drop outs. See: https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc . Hopefully setting it to 5 seconds is enough to accomodate playing of all videos without pauses / drop outs..
 
