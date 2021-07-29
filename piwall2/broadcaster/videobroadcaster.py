@@ -18,7 +18,7 @@ class VideoBroadcaster:
     SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
-    __RECEIVER_MBUFFER_SIZE = 1024 * 1024 * 1024 # 1024 MB
+    __RECEIVER_MBUFFER_SIZE = 1024 * 1024 * 400 # 400 MB
 
     __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
     __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
