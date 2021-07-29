@@ -56,8 +56,8 @@ class VideoBroadcaster:
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
             audio_clause = '-c:a copy'
 
-        slow_start_throttling_clause = (DirectoryUtils().root_dir + '/timeout_after_first_byte --timeout 10 | ' +
-            'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
+        slow_start_throttling_clause = (DirectoryUtils().root_dir + '/timeout_after_first_byte --timeout 5 | ' +
+            'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; cat >/dev/null')
         burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(self.__RECEIVER_MBUFFER_SIZE / 2)}b | ' +
             'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
         broadcasting_clause = ('ffmpeg -i pipe:0 -c:v copy -c:a copy -f mpegts ' +
