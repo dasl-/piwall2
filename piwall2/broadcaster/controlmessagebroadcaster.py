@@ -5,7 +5,7 @@ from piwall2.volumecontroller import VolumeController
 
 # Broadcasts various "control" messages to the receivers:
 # 1) controls volume on the receivers
-class ControlBroadcaster:
+class ControlMessageBroadcaster:
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
