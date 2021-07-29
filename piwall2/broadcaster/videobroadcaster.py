@@ -58,7 +58,7 @@ class VideoBroadcaster:
 
         burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(self.__RECEIVER_MBUFFER_SIZE / 2)}b | ' +
             'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
-        broadcasting_clause = DirectoryUtils().root_dir + "/msend_video"
+        broadcasting_clause = DirectoryUtils().root_dir + f"/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
