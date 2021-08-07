@@ -96,6 +96,8 @@ class MulticastHelper:
             return self.__receive_video_socket.recv(self.__MAX_MSG_SIZE)
         elif port == self.CONTROL_PORT:
             return self.__receive_control_socket.recv(self.__MAX_MSG_SIZE)
+        else:
+            raise Exception(f'Unexpected port: {port}.')
 
     def get_receive_video_socket(self):
         return self.__receive_video_socket

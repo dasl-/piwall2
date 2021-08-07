@@ -21,9 +21,6 @@ def main():
     config_loader.load_config_if_not_loaded()
     generate_ssh_key(VideoBroadcaster.SSH_KEY_PATH)
     authorize_ssh_key(VideoBroadcaster.SSH_KEY_PATH, args.receiver_ssh_password)
-
-
-
     print("Success!")
 
 def parse_args(config_loader):

@@ -10,6 +10,7 @@ class ControlMessageHelper:
 
     # Control message types
     TYPE_VOLUME = 'volume'
+    TYPE_PLAY_VIDEO = 'play_video'
 
     CTRL_MSG_TYPE_KEY = 'msg_type'
     CONTENT_KEY = 'content'
@@ -23,7 +24,6 @@ class ControlMessageHelper:
 
     def setup_for_receiver(self):
         self.__multicast_helper = MulticastHelper().setup_receiver_control_sockets()
-        self.__receive_remainder = b''
         return self
 
     def send_msg(self, ctrl_msg_type, content):

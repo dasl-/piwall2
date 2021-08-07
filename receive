@@ -3,7 +3,7 @@
 import argparse
 import os
 import traceback
-from piwall2.videoreceiver import VideoReceiver
+from piwall2.receiver.videoreceiver import VideoReceiver
 from piwall2.logger import Logger
 
 def parseArgs():

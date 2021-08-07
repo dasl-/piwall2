@@ -3,12 +3,14 @@ import subprocess
 import time
 import traceback
 import youtube_dl
+
+from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 from piwall2.configloader import ConfigLoader
-from piwall2.parallelrunner import ParallelRunner
 from piwall2.volumecontroller import VolumeController
+from piwall2.receiver.videoreceiver import VideoReceiver
 
 # Broadcasts a video for playback on the piwall
 class VideoBroadcaster:
@@ -18,7 +20,6 @@ class VideoBroadcaster:
     SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
-    __RECEIVER_MBUFFER_SIZE = 1024 * 1024 * 400 # 400 MB
 
     __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
     __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
@@ -35,6 +36,8 @@ class VideoBroadcaster:
         # Access should go through self.__get_video_info() to populate it lazily
         self.__video_info = None
 
+        self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
+
     def broadcast(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
 
@@ -47,7 +50,7 @@ class VideoBroadcaster:
             stderr = subprocess.STDOUT
         ))
 
-        receivers_proc = self.__start_receivers()
+        self.__start_receivers()
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
         ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
@@ -57,7 +60,7 @@ class VideoBroadcaster:
             audio_clause = '-c:a copy'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
-        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(self.__RECEIVER_MBUFFER_SIZE / 2)}b | ' +
+        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(VideoReceiver.MBUFFER_SIZE_BYTES / 2)}b | ' +
             'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
         broadcasting_clause = DirectoryUtils().root_dir + f"/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
 
@@ -77,85 +80,49 @@ class VideoBroadcaster:
 
         MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
 
-        receivers_proc.wait()
+        # TODO: do we need to sleep before returning control back to the main loop? Can we be sure the receiver is
+        # done playing at this point?
+        self.__logger.info("Video broadcast process ended.")
 
     def __start_receivers(self):
-        ssh_opts = (
-            "-o ConnectTimeout=5 " +
-            "-o UserKnownHostsFile=/dev/null " +
-            "-o StrictHostKeyChecking=no " +
-            "-o LogLevel=ERROR " +
-            "-o PasswordAuthentication=no " +
-            f"-o IdentityFile={shlex.quote(self.SSH_KEY_PATH)} "
-        )
-        cmds = []
+        msg = {}
         for receiver in self.__config_loader.get_receivers_list():
-            receiver_cmd = self.__get_receiver_cmd(receiver)
-            cmds.append(
-                f"ssh {ssh_opts} pi@{receiver} {shlex.quote(receiver_cmd)}\n".encode()
-            )
-        ret = ParallelRunner().run_cmds(cmds)
-        time.sleep(2) # ensure the receivers have started before beginning broadcast
-        return ret
+            msg[receiver] = self.__get_receiver_params_list(receiver)
+        msg['log_uuid'] = Logger.get_uuid()
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
+        self.__logger.info("Sent play_video control message.")
 
-    def __get_receiver_cmd(self, receiver):
+    def __get_receiver_params_list(self, receiver):
         receiver_config = self.__config_loader.get_receivers_config()[receiver]
         adev, adev2 = self.__get_adevs_for_receiver(receiver, receiver_config)
         display, display2 = self.__get_displays_for_receiver(receiver, receiver_config)
         crop, crop2 = self.__get_crops_for_receiver(receiver, receiver_config)
         volume = VolumeController().get_vol_millibels()
 
-        receiver_cmd_template = ('/home/pi/piwall2/receive --command "{0}" --log-uuid ' +
-            shlex.quote(Logger.get_uuid()) + ' >/tmp/receiver.log 2>&1')
-
-        """
-        We use mbuffer in the receiver command. The mbuffer is here to solve two problems:
-
-        1) Sometimes the python receiver process would get blocked writing directly to omxplayer. When this happens,
-        the receiver's writes would occur rather slowly. While the receiver is blocked on writing, it cannot read
-        incoming data from the UDP socket. The kernel's UDP buffers would then fill up, causing UDP packets to be
-        dropped.
-
-        Unlike python, mbuffer is multithreaded, meaning it can read and write simultaneously in two separate
-        threads. Thus, while mbuffer is writing to omxplayer, it can still read the incoming data from python at
-        full speed. Slow writes will not block reads.
-
-        2) I am not sure how exactly omxplayer's various buffers work. There are many options:
-
-            % omxplayer --help
-            ...
-             --audio_fifo  n         Size of audio output fifo in seconds
-             --video_fifo  n         Size of video output fifo in MB
-             --audio_queue n         Size of audio input queue in MB
-             --video_queue n         Size of video input queue in MB
-            ...
-
-        More info: https://github.com/popcornmix/omxplayer/issues/256#issuecomment-57907940
-
-        I am not sure which I would need to adjust to ensure enough buffering is available. By using mbuffer,
-        we effectively have a single buffer that accounts for any possible source of delays, whether it's from audio,
-        video, and no matter where in the pipeline the delay is coming from. Using mbuffer seems simpler, and it is
-        easier to monitor. By checking its logs, we can see how close the mbuffer gets to becoming full.
-        """
-        mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {self.__RECEIVER_MBUFFER_SIZE}b'
-
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_cmd_template = ('omxplayer --adev {0} --display {1} --crop {2} --vol {3} ' +
+        omx_misc_params_template = ('--adev {0} --display {1} --vol {2} ' +
             '--no-keys --timeout 20 --threshold 0.2 --video_fifo 35 --genlog pipe:0')
-        omx_cmd = omx_cmd_template.format(shlex.quote(adev), shlex.quote(display),
-            shlex.quote(crop), shlex.quote(str(volume)))
+        omx_misc_params = omx_misc_params_template.format(shlex.quote(adev), shlex.quote(display),
+            shlex.quote(str(volume)))
 
-        receiver_cmd = None
+        params = {
+            'crop': crop,
+            'misc': omx_misc_params,
+        }
+
         if receiver_config['is_dual_video_output']:
-            omx_cmd2 = omx_cmd_template.format(shlex.quote(adev2), shlex.quote(display2),
-                shlex.quote(crop2), shlex.quote(str(volume)))
-            tee_cmd = f"{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null"
-            receiver_cmd = receiver_cmd_template.format(tee_cmd)
+            omx_misc_params2 = omx_misc_params_template.format(shlex.quote(adev2), shlex.quote(display2),
+                shlex.quote(str(volume)))
+            params2 = {
+                'crop': crop2,
+                'misc': omx_misc_params2,
+            }
+            params_list = [params, params2]
         else:
-            receiver_cmd = receiver_cmd_template.format(f'{mbuffer_cmd} | {omx_cmd}')
+            params_list = [params]
 
-        self.__logger.debug(f"Using receiver command for {receiver}: {receiver_cmd}")
-        return receiver_cmd
+        self.__logger.debug(f"Using params_list for {receiver}: {params_list}")
+        return params_list
 
     def __get_adevs_for_receiver(self, receiver, receiver_config):
         adev = None
@@ -332,7 +299,7 @@ class VideoBroadcaster:
             # (1) would happen every time, whereas (2) happened 3 out of 8 times during testing.
             # Perhaps the sleep gives ffmpeg time to start up before starting to play the video.
             # When using youtube-dl, it takes some time for the download of the video to start, giving
-            # ffmpeg an opportunity to start-up without us having to explicltly sleep.
+            # ffmpeg an opportunity to start-up without us having to explicitly sleep.
             return f"-i <( sleep 2 ; cat {shlex.quote(self.__video_url)} )"
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
