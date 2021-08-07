@@ -17,6 +17,8 @@ class Receiver:
         self.__local_ip_address = self.__get_local_ip()
 
     def run(self):
+        self.__logger.info("Started receiver!")
+
         while True:
             ctrl_msg = None
             try:
@@ -33,17 +35,19 @@ class Receiver:
                 raise Exception(f"Unsupported control message type: {ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]}.")
 
     def __receive_and_play_video(self, ctrl_msg):
+        ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
         orig_uuid = Logger.get_uuid()
-        if 'log_uuid' in ctrl_msg:
-            Logger.set_uuid(ctrl_msg['log_uuid'])
+        if 'log_uuid' in ctrl_msg_content:
+            Logger.set_uuid(ctrl_msg_content['log_uuid'])
 
         try:
-            if self.__hostname in ctrl_msg:
-                params_list = ctrl_msg[self.__hostname]
-            elif self.__local_ip_address in ctrl_msg:
-                params_list = ctrl_msg[self.__local_ip_address]
+            if self.__hostname in ctrl_msg_content:
+                params_list = ctrl_msg_content[self.__hostname]
+            elif self.__local_ip_address in ctrl_msg_content:
+                params_list = ctrl_msg_content[self.__local_ip_address]
             else:
-                raise Exception(f"Unable to find hostname or local ip in control message configuration: {ctrl_msg}")
+                raise Exception(f"Unable to find hostname ({self.__hostname}) or local ip " +
+                    f"({self.__local_ip_address}) in control message content: {ctrl_msg_content}")
             self.__video_receiver.receive_and_play_video(params_list)
         finally:
             Logger.set_uuid(orig_uuid)
