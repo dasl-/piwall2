@@ -1,3 +1,5 @@
+import os
+import os
 import shlex
 import subprocess
 import time
@@ -25,6 +27,10 @@ class VideoBroadcaster:
     __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
     __AUDIO_FORMAT = 'bestaudio'
 
+    # Touch this file when video playing is done.
+    # We check for its existence to determine when video playing is over.
+    __VIDEO_PLAY_DONE_FILE = '/tmp/video_play_done.file'
+
     # video_url may be a youtube url or a path to a file on disk
     def __init__(self, video_url):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -37,6 +43,7 @@ class VideoBroadcaster:
         self.__video_info = None
 
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
+        self.__do_housekeeping()
 
     def broadcast(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
@@ -62,7 +69,8 @@ class VideoBroadcaster:
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
         mbuffer_size = round(piwall2.receiver.videoreceiver.VideoReceiver.MBUFFER_SIZE_BYTES / 2)
         burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
-            'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
+            '{ ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
+            'touch ' + self.__VIDEO_PLAY_DONE_FILE + ' ; }')
         broadcasting_clause = DirectoryUtils().root_dir + f"/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
 
         # Mix the best audio with the video and send via multicast
@@ -78,12 +86,13 @@ class VideoBroadcaster:
         self.__logger.info("Waiting for broadcast to end...")
         while proc.poll() is None:
             time.sleep(0.1)
-
+        self.__logger.info("Video broadcast process ended.")
         MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
 
-        # TODO: do we need to sleep before returning control back to the main loop? Can we be sure the receiver is
-        # done playing at this point?
-        self.__logger.info("Video broadcast process ended.")
+        while not os.path.isfile(self.__VIDEO_PLAY_DONE_FILE):
+            time.sleep(0.1)
+        self.__logger.info("Video playback is likely over.")
+        self.__do_housekeeping()
 
     def __start_receivers(self):
         msg = {}
@@ -378,3 +387,9 @@ class VideoBroadcaster:
             return self.__VIDEO_URL_TYPE_YOUTUBEDL
         else:
             return self.__VIDEO_URL_TYPE_FILE
+
+    def __do_housekeeping(self):
+        try:
+            os.remove(self.__VIDEO_PLAY_DONE_FILE)
+        except Exception:
+            pass
