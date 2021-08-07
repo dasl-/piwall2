@@ -179,3 +179,28 @@ You can video broadcast monitor network traffic like so:
 ....
 
 This should work either on the broadcaster or receiver raspberry pi.
+
+When sending a packet less than or equal to the ethernet MTU (1472 bytes), tcpdump will show output like this:
+....
+01:41:25.060091 IP 192.168.1.6.40768 > 239.0.1.23.1234: UDP, length 10
+....
+For instance, the above output indicates we sent a packet of ten bytes.
+
+If we send a packet of larger than the MTU, we will see tcpdump output like this:
+....
+01:48:50.967419 IP 192.168.1.6.57108 > 239.0.1.23.1234: UDP, bad length 1473 > 1472
+01:48:50.967440 IP 192.168.1.6 > 239.0.1.23: udp
+....
+
+In the above example, we sent a message of 1473 bytes. Assuming that packet fragmentation is enabled, this is ok -- the networking stack will automatically split the message into two packets. The tcpdump output will have one line per packet that was sent. The first line will indicate how much data was sent in total (1473 bytes). https://iota.stackexchange.com/a/769[This stackexchange comment] indicates that it's ok:
+
+____
+Be aware that UDP, bad length is also shown if UDP fragmentation is enabled and working.
+____
+
+Interestingly, that comment also mentions you can check if UDP fragmentation is enabled with `ethtool`. When I run the command on the pi, it shows that fragmentation is disabled:
+....
+% sudo ethtool -k eth0 | grep udp-fragmentation-offload
+udp-fragmentation-offload: off
+....
+But in my testing, sending messages larger than the MTU definitely worked. So it seems fragmentation is working despite ethtool showing it disabled?

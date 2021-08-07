@@ -14,16 +14,6 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
-def send_data(multicast_helper, data):
-    i = 0
-    while True:
-        chunk = data[i:(i + 1472)]
-        i += 1472
-        if chunk:
-            multicast_helper.send(chunk, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
-        else:
-            return len(data)
-
 
 args = parseArgs()
 log_level = Logger.get_level()
@@ -42,6 +32,6 @@ while True:
     data = sys.stdin.buffer.read(4096)
     if not data:
         break
-    bytes_sent += send_data(m, data)
+    bytes_sent += m.send(data, MulticastHelper.VIDEO_PORT)
 
 logger.info(f"Finished sending video. Sent {bytes_sent} bytes.")

@@ -18,7 +18,7 @@ class Receiver:
             except Exception:
                 continue
 
-            if control_msg[ControlMessageHelper.MSG_TYPE_KEY] == ControlMessageHelper.VOLUME:
+            if control_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY] == ControlMessageHelper.TYPE_VOLUME:
                 self.__omxplayer_controller.set_vol_pct(control_msg[ControlMessageHelper.CONTENT_KEY])
             else:
-                raise Exception(f"Unsupported control message type: {control_msg[ControlMessageHelper.MSG_TYPE_KEY]}.")
+                raise Exception(f"Unsupported control message type: {control_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]}.")

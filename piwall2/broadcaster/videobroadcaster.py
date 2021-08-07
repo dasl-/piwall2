@@ -75,7 +75,7 @@ class VideoBroadcaster:
         while proc.poll() is None:
             time.sleep(0.1)
 
-        MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+        MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
 
         receivers_proc.wait()
 

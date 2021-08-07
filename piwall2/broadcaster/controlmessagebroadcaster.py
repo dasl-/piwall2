@@ -19,4 +19,4 @@ class ControlMessageBroadcaster:
 
     def __set_receiver_volume(self):
         vol_pct = self.__volume_controller.get_vol_pct()
-        self.__control_message_helper.send_msg(vol_pct, ControlMessageHelper.VOLUME)
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)

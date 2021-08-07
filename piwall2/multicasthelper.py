@@ -6,18 +6,13 @@ from piwall2.logger import Logger
 class MulticastHelper:
 
     ADDRESS = '239.0.1.23'
+
+    # Messages will be sent 'raw' over the video stream port
     VIDEO_PORT = 1234
-    CONTROL_PORT = 1235
 
     # Message will be sent according to the control protocol over the control port.
     # E.g. volume control commands.
-    MSG_TYPE_CONTROL = 'msg_type_control'
-
-    # Message will be sent 'raw' over the video stream port
-    MSG_TYPE_VIDEO_STREAM = 'msg_type_video_stream'
-
-    __MSG_PREFIX = 'piwall2_multicast_msg_start'
-    __MSG_SUFFIX = 'piwall2_multicast_msg_end'
+    CONTROL_PORT = 1236
 
     # 2 MB. This will be doubled to 4MB when we set it via setsockopt.
     __VIDEO_SOCKET_RECEIVE_BUFFER_SIZE_BYTES = 2097152
@@ -28,8 +23,11 @@ class MulticastHelper:
     # be re-sent/broadcast (see https://www.tldp.org/HOWTO/Multicast-HOWTO-6.html)
     __TTL = 2
 
-    # Maximum transmission unit
-    __MTU = 1472
+    # max UDP packet size is 65535 bytes
+    # IP Header is 20 bytes, UDP header is 8 bytes
+    # 65535 - 20 - 8 = 65507
+    # Sending a message of any larger will result in: `OSError: [Errno 90] Message too long`
+    __MAX_MSG_SIZE = 65507
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -58,55 +56,48 @@ class MulticastHelper:
             " bytes on receiver video socket.")
         return self
 
-    def setup_receiver_control_socket(self):
+    def setup_receiver_control_sockets(self):
         self.__setup_socket_receive_buffer_configuration()
         self.__receive_control_socket = self.__make_receive_socket(self.ADDRESS, self.CONTROL_PORT)
         return self
 
-    def send(self, msg, msg_type):
-        if msg_type == self.MSG_TYPE_VIDEO_STREAM:
-            self.__send_video_stream_msg(msg)
-        elif msg_type == self.MSG_TYPE_CONTROL:
-            self.__send_control_msg(msg)
+    def send(self, msg, port):
+        if port == self.VIDEO_PORT:
+            self.__logger.debug(f"Sending video stream message: {msg}")
+        elif port == self.CONTROL_PORT:
+            self.__logger.debug(f"Sending control message: {msg}")
 
-    def receive(self, msg_type):
-        if msg_type == self.MSG_TYPE_VIDEO_STREAM:
-            return self.__receive_video_socket.recv(4096)
-        elif msg_type == self.MSG_TYPE_CONTROL:
-            return self.__receive_control_socket.recv(4096)
+        address_tuple = (self.ADDRESS, port)
+        bytes_sent = self.__send_socket.sendto(msg, address_tuple)
+        if bytes_sent == 0:
+            self.__logger.warn(f"Unable to send message. Address: {address_tuple}. Message: {msg}")
+        elif bytes_sent < len(msg):
+            # Not sure if this can ever happen... This post suggests you cannot have partial sends in UDP:
+            # https://www.gamedev.net/forums/topic/504256-partial-sendto/4289205/
+            self.__logger.warn(f"Partial send of message. Sent {bytes_sent} of {len(msg)} bytes. " +
+                f"Address: {address_tuple}. Message: {msg}")
+
+    """
+    UDP datagram messages cannot be split. One send corresponds to one receive. Having multiple senders
+    to the same socket in multiple processes will not clobber each other. Message boundaries will be
+    preserved, even when sending a message that is larger than the MTU and making use of the OS's
+    UDP fragmentation. The message will be reconstructed fully in the UDP stack layer.
+    See: https://stackoverflow.com/questions/8748711/udp-recv-recvfrom-multiple-senders
+
+    Use a receive buffer of the maximum packet size. Since we may be receiving messages of unknown
+    lengths, this guarantees that we will not accidentally truncate any messages by using a receiver
+    buffer that was too small.
+    See `MSG_TRUNC` flag: https://man7.org/linux/man-pages/man2/recv.2.html
+    See: https://stackoverflow.com/a/2862176/627663
+    """
+    def receive(self, port):
+        if port == self.VIDEO_PORT:
+            return self.__receive_video_socket.recv(self.__MAX_MSG_SIZE)
+        elif port == self.CONTROL_PORT:
+            return self.__receive_control_socket.recv(self.__MAX_MSG_SIZE)
 
     def get_receive_video_socket(self):
         return self.__receive_video_socket
-
-    def __send_video_stream_msg(self, msg):
-        self.__logger.debug(f"Sending video stream message: {msg}")
-        self.__send_msg_to(msg, (self.ADDRESS, self.VIDEO_PORT))
-
-    def __send_control_msg(self, msg):
-        self.__logger.debug(f"Sending control message: {msg}")
-        self.__send_msg_to(msg, (self.ADDRESS, self.CONTROL_PORT))
-
-    def __send_msg_to(self, msg, address_tuple):
-        i = 0
-        while True:
-            chunk = msg[i:(i + self.__MTU)]
-            i += self.__MTU
-            if chunk:
-                j = 0
-                max_attempts = 10
-                while True:
-                    bytes_sent = self.__send_socket.sendto(chunk, address_tuple)
-                    if bytes_sent < len(chunk): # not sure if this can ever happen...
-                        chunk = chunk[bytes_sent:]
-                    else:
-                        break
-
-                    j += 1
-                    if j > max_attempts:
-                        self.__logger.warn(f"Unable to send full message chunk ({chunk}) after {j} attempts.")
-                        break
-            else:
-                break
 
     def __make_receive_socket(self, address, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)

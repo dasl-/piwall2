@@ -29,7 +29,7 @@ class VideoReceiver:
         total_bytes_count = 0
 
         while True:
-            video_bytes = multicast_helper.receive(MulticastHelper.MSG_TYPE_VIDEO_STREAM)
+            video_bytes = multicast_helper.receive(MulticastHelper.VIDEO_PORT)
             if total_bytes_count == 0:
                 # Subsequent bytes after the first packet should be received more quickly
                 socket.settimeout(10)
