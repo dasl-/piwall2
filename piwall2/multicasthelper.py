@@ -76,6 +76,7 @@ class MulticastHelper:
             # https://www.gamedev.net/forums/topic/504256-partial-sendto/4289205/
             self.__logger.warn(f"Partial send of message. Sent {bytes_sent} of {len(msg)} bytes. " +
                 f"Address: {address_tuple}. Message: {msg}")
+        return bytes_sent
 
     """
     UDP datagram messages cannot be split. One send corresponds to one receive. Having multiple senders
