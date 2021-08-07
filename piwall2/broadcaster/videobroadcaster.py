@@ -10,7 +10,7 @@ from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 from piwall2.configloader import ConfigLoader
 from piwall2.volumecontroller import VolumeController
-from piwall2.receiver.videoreceiver import VideoReceiver
+import piwall2.receiver.videoreceiver
 
 # Broadcasts a video for playback on the piwall
 class VideoBroadcaster:
@@ -60,7 +60,8 @@ class VideoBroadcaster:
             audio_clause = '-c:a copy'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
-        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {round(VideoReceiver.MBUFFER_SIZE_BYTES / 2)}b | ' +
+        mbuffer_size = round(piwall2.receiver.videoreceiver.VideoReceiver.MBUFFER_SIZE_BYTES / 2)
+        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
             'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null')
         broadcasting_clause = DirectoryUtils().root_dir + f"/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
 

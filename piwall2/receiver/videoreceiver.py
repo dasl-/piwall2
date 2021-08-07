@@ -2,7 +2,7 @@ import shlex
 import subprocess
 import time
 
-from piwall2.broadcaster.videobroadcaster import VideoBroadcaster
+import piwall2.broadcaster.videobroadcaster
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 
@@ -41,7 +41,7 @@ class VideoReceiver:
             measurement_window_bytes_count += len_video_bytes
             total_bytes_count += len_video_bytes
 
-            if video_bytes == VideoBroadcaster.END_OF_VIDEO_MAGIC_BYTES:
+            if video_bytes == piwall2.broadcaster.videobroadcaster.VideoBroadcaster.END_OF_VIDEO_MAGIC_BYTES:
                 self.__logger.info(f"Received end of video magic bytes. Received {total_bytes_count} bytes. " +
                     "Waiting for video to finish playing...")
                 # os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
