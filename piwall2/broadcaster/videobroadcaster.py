@@ -38,7 +38,7 @@ class VideoBroadcaster:
         Logger.set_uuid(Logger.make_uuid())
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
-        self.__is_video_playback_in_progress = False
+        self.__are_video_receivers_running = False
         self.__video_broadcast_proc = None
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
@@ -92,7 +92,6 @@ class VideoBroadcaster:
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
         # Allows killing all processes (subshells, children, grandchildren, etc as a group)
-        self.__is_video_playback_in_progress = True
         self.__video_broadcast_proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
@@ -109,7 +108,10 @@ class VideoBroadcaster:
         # Wait to ensure video playback is done. Data collected suggests one second is sufficient:
         # https://docs.google.com/spreadsheets/d/1YzxsD3GPzsIeKYliADN3af7ORys5nXHCRBykSnHaaxk/edit#gid=0
         time.sleep(1)
-        self.__is_video_playback_in_progress = False
+
+        # Skip the video for good measure, just in case it is somehow still running
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
+        self.__are_video_receivers_running = False
         self.__logger.info("Video playback is likely over.")
 
     def __start_receivers(self):
@@ -117,6 +119,7 @@ class VideoBroadcaster:
         for receiver in self.__config_loader.get_receivers_list():
             msg[receiver] = self.__get_receiver_params_list(receiver)
         msg['log_uuid'] = Logger.get_uuid()
+        self.__are_video_receivers_running = True
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
         self.__logger.info("Sent play_video control message.")
 
@@ -411,12 +414,12 @@ class VideoBroadcaster:
             return self.__VIDEO_URL_TYPE_FILE
 
     def __do_housekeeping(self):
-        if self.__is_video_playback_in_progress:
+        if self.__are_video_receivers_running:
             if self.__video_broadcast_proc:
                 self.__logger.info("Killing video broadcast process group...")
                 os.killpg(os.getpgid(self.__video_broadcast_proc.pid), signal.SIGTERM)
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
-            self.__is_video_playback_in_progress = False
+            self.__are_video_receivers_running = False
         try:
             os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
         except Exception:
