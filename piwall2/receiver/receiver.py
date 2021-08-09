@@ -44,18 +44,8 @@ class Receiver:
                 self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
 
             if self.__is_video_playback_in_progress:
-                if self.__receive_and_play_video_proc:
-                    if self.__receive_and_play_video_proc.poll() is not None:
-                        self.__is_video_playback_in_progress = False
-                else:
-                    raise Exception("This should never happen")
-
-    def __stop_video_playback_if_playing(self):
-        if not self.__is_video_playback_in_progress:
-            return
-        self.__logger.info("Killing receive_and_play_video proc...")
-        os.killpg(os.getpgid(self.__receive_and_play_video_proc.pid), signal.SIGTERM)
-        self.__is_video_playback_in_progress = False
+                if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
+                    self.__is_video_playback_in_progress = False
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
@@ -83,6 +73,14 @@ class Receiver:
             return proc
         finally:
             Logger.set_uuid(orig_uuid)
+
+    def __stop_video_playback_if_playing(self):
+        if not self.__is_video_playback_in_progress:
+            return
+        if self.__receive_and_play_video_proc:
+            self.__logger.info("Killing receive_and_play_video proc...")
+            os.killpg(os.getpgid(self.__receive_and_play_video_proc.pid), signal.SIGTERM)
+        self.__is_video_playback_in_progress = False
 
     """
     `params_list` will be an array with one or two elements. The number of elements corresponds to the number of
