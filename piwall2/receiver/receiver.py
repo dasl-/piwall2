@@ -3,6 +3,7 @@ import shlex
 import signal
 import socket
 import subprocess
+import traceback
 
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
@@ -21,31 +22,37 @@ class Receiver:
         self.__local_ip_address = self.__get_local_ip()
         self.__is_video_playback_in_progress = False
         self.__receive_and_play_video_proc = None
+        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` cam
+        # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
+        self.__receive_and_play_video_proc_pgid = None
 
     def run(self):
         self.__logger.info("Started receiver!")
-
         while True:
-            ctrl_msg = None
             try:
-                ctrl_msg = self.__control_message_helper.receive_msg() # This blocks until a message is received!
-                self.__logger.debug(f"Received control message {ctrl_msg}.")
+                self.__run_internal()
             except Exception:
-                continue
+                self.__logger.error('Caught exception: {}'.format(traceback.format_exc()))
 
-            if self.__is_video_playback_in_progress:
-                if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
-                    self.__is_video_playback_in_progress = False
+    def __run_internal(self):
+        ctrl_msg = None
+        ctrl_msg = self.__control_message_helper.receive_msg() # This blocks until a message is received!
+        self.__logger.debug(f"Received control message {ctrl_msg}.")
 
-            msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
-            if self.__is_video_playback_in_progress:
-                if msg_type == ControlMessageHelper.TYPE_VOLUME:
-                    self.__omxplayer_controller.set_vol_pct(ctrl_msg[ControlMessageHelper.CONTENT_KEY])
-                elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
-                    self.__stop_video_playback_if_playing()
-            if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
+        if self.__is_video_playback_in_progress:
+            if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
+                self.__is_video_playback_in_progress = False
+
+        msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
+        if self.__is_video_playback_in_progress:
+            if msg_type == ControlMessageHelper.TYPE_VOLUME:
+                self.__omxplayer_controller.set_vol_pct(ctrl_msg[ControlMessageHelper.CONTENT_KEY])
+            elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
                 self.__stop_video_playback_if_playing()
-                self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
+        if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
+            self.__stop_video_playback_if_playing()
+            self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
+            self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc)
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
@@ -60,7 +67,6 @@ class Receiver:
             elif self.__local_ip_address in ctrl_msg_content:
                 params_list = ctrl_msg_content[self.__local_ip_address]
             else:
-
                 raise Exception(f"Unable to find hostname ({self.__hostname}) or local ip " +
                     f"({self.__local_ip_address}) in control message content: {ctrl_msg_content}")
 
@@ -77,13 +83,9 @@ class Receiver:
     def __stop_video_playback_if_playing(self):
         if not self.__is_video_playback_in_progress:
             return
-        if self.__receive_and_play_video_proc:
+        if self.__receive_and_play_video_proc_pgid:
             self.__logger.info("Killing receive_and_play_video proc...")
-            try:
-                os.killpg(os.getpgid(self.__receive_and_play_video_proc.pid), signal.SIGTERM)
-            except Exception:
-                # Can raise `ProcessLookupError: [Errno 3] No such process` if process is no longer running
-                pass
+            os.killpg(self.__receive_and_play_video_proc_pgid, signal.SIGTERM)
         self.__is_video_playback_in_progress = False
 
     """

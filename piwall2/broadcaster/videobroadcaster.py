@@ -39,7 +39,9 @@ class VideoBroadcaster:
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
         self.__are_video_receivers_running = False
-        self.__video_broadcast_proc = None
+        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` cam
+        # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
+        self.__video_broadcast_proc_pgid = None
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
         # Access should go through self.__get_video_info() to populate it lazily
@@ -92,12 +94,13 @@ class VideoBroadcaster:
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
         # Allows killing all processes (subshells, children, grandchildren, etc as a group)
-        self.__video_broadcast_proc = subprocess.Popen(
+        video_broadcast_proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
+        self.__video_broadcast_proc_pgid = os.getpgid(video_broadcast_proc.pid)
 
         self.__logger.info("Waiting for broadcast command to end...")
-        while self.__video_broadcast_proc.poll() is None:
+        while video_broadcast_proc.poll() is None:
             time.sleep(0.1)
         self.__logger.info("Video broadcast command ended. Waiting for video playback to end...")
         MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
@@ -415,13 +418,9 @@ class VideoBroadcaster:
 
     def __do_housekeeping(self):
         if self.__are_video_receivers_running:
-            if self.__video_broadcast_proc:
+            if self.__video_broadcast_proc_pgid:
                 self.__logger.info("Killing video broadcast process group...")
-                try:
-                    os.killpg(os.getpgid(self.__video_broadcast_proc.pid), signal.SIGTERM)
-                except Exception:
-                    # Can raise `ProcessLookupError: [Errno 3] No such process` if process is no longer running
-                    pass
+                os.killpg(self.__video_broadcast_proc_pgid, signal.SIGTERM)
 
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
             self.__are_video_receivers_running = False
