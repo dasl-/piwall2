@@ -37,7 +37,8 @@ class Receiver:
     def __run_internal(self):
         ctrl_msg = None
         ctrl_msg = self.__control_message_helper.receive_msg() # This blocks until a message is received!
-        self.__logger.debug(f"Received control message {ctrl_msg}.")
+        self.__logger.debug(f"Received control message {ctrl_msg}. " +
+            f"__is_video_playback_in_progress: {self.__is_video_playback_in_progress}.")
 
         if self.__is_video_playback_in_progress:
             if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
