@@ -1,6 +1,8 @@
 import os
 import shlex
+import signal
 import subprocess
+import sys
 import time
 import traceback
 import youtube_dl
@@ -36,6 +38,8 @@ class VideoBroadcaster:
         Logger.set_uuid(Logger.make_uuid())
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
+        self.__is_video_playback_in_progress = False
+        self.__video_broadcast_proc = None
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
         # Access should go through self.__get_video_info() to populate it lazily
@@ -43,8 +47,15 @@ class VideoBroadcaster:
 
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__do_housekeeping()
+        self.__register_signal_handlers()
 
     def broadcast(self):
+        try:
+            self.__broadcast_internal()
+        finally:
+            self.__do_housekeeping()
+
+    def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
 
         # Bind multicast traffic to eth0. Otherwise it might send over wlan0 -- multicast doesn't work well over wifi.
@@ -81,14 +92,15 @@ class VideoBroadcaster:
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
         # Allows killing all processes (subshells, children, grandchildren, etc as a group)
-        proc = subprocess.Popen(
+        self.__is_video_playback_in_progress = True
+        self.__video_broadcast_proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
 
-        self.__logger.info("Waiting for broadcast to end...")
-        while proc.poll() is None:
+        self.__logger.info("Waiting for broadcast command to end...")
+        while self.__video_broadcast_proc.poll() is None:
             time.sleep(0.1)
-        self.__logger.info("Video broadcast command ended.")
+        self.__logger.info("Video broadcast command ended. Waiting for video playback to end...")
         MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
 
         while not os.path.isfile(self.__VIDEO_PLAYBACK_DONE_FILE):
@@ -97,8 +109,8 @@ class VideoBroadcaster:
         # Wait to ensure video playback is done. Data collected suggests one second is sufficient:
         # https://docs.google.com/spreadsheets/d/1YzxsD3GPzsIeKYliADN3af7ORys5nXHCRBykSnHaaxk/edit#gid=0
         time.sleep(1)
+        self.__is_video_playback_in_progress = False
         self.__logger.info("Video playback is likely over.")
-        self.__do_housekeeping()
 
     def __start_receivers(self):
         msg = {}
@@ -399,7 +411,28 @@ class VideoBroadcaster:
             return self.__VIDEO_URL_TYPE_FILE
 
     def __do_housekeeping(self):
+        if self.__is_video_playback_in_progress:
+            if self.__video_broadcast_proc:
+                self.__logger.info("Killing video broadcast process group...")
+                os.killpg(os.getpgid(self.__video_broadcast_proc.pid), signal.SIGTERM)
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
+            self.__is_video_playback_in_progress = False
         try:
             os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
         except Exception:
             pass
+
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGINT, self.__signal_handler)
+        signal.signal(signal.SIGHUP, self.__signal_handler)
+        signal.signal(signal.SIGQUIT, self.__signal_handler)
+        signal.signal(signal.SIGABRT, self.__signal_handler)
+        signal.signal(signal.SIGFPE, self.__signal_handler)
+        signal.signal(signal.SIGSEGV, self.__signal_handler)
+        signal.signal(signal.SIGPIPE, self.__signal_handler)
+        signal.signal(signal.SIGTERM, self.__signal_handler)
+
+    def __signal_handler(self, sig, frame):
+        self.__logger.info(f"Caught signal {sig}, exiting gracefully...")
+        self.__do_housekeeping()
+        sys.exit(sig)

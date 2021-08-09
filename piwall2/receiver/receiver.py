@@ -1,4 +1,6 @@
+import os
 import shlex
+import signal
 import socket
 import subprocess
 
@@ -17,11 +19,12 @@ class Receiver:
         self.__omxplayer_controller = OmxplayerController()
         self.__hostname = socket.gethostname() + ".local"
         self.__local_ip_address = self.__get_local_ip()
+        self.__is_video_playback_in_progress = False
+        self.__receive_and_play_video_proc = None
 
     def run(self):
         self.__logger.info("Started receiver!")
 
-        receive_and_play_video_proc = None
         while True:
             ctrl_msg = None
             try:
@@ -31,12 +34,28 @@ class Receiver:
                 continue
 
             msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
-            if msg_type == ControlMessageHelper.TYPE_VOLUME:
-                self.__omxplayer_controller.set_vol_pct(ctrl_msg[ControlMessageHelper.CONTENT_KEY])
-            elif msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
-                receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
-            else:
-                raise Exception(f"Unsupported control message type: {ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]}.")
+            if self.__is_video_playback_in_progress:
+                if msg_type == ControlMessageHelper.TYPE_VOLUME:
+                    self.__omxplayer_controller.set_vol_pct(ctrl_msg[ControlMessageHelper.CONTENT_KEY])
+                elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
+                    self.__stop_video_playback_if_playing()
+            if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
+                self.__stop_video_playback_if_playing()
+                self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
+
+            if self.__is_video_playback_in_progress:
+                if self.__receive_and_play_video_proc:
+                    if self.__receive_and_play_video_proc.poll() is not None:
+                        self.__is_video_playback_in_progress = False
+                else:
+                    raise Exception("This should never happen")
+
+    def __stop_video_playback_if_playing(self):
+        if not self.__is_video_playback_in_progress:
+            return
+        self.__logger.info("Killing receive_and_play_video proc...")
+        os.killpg(os.getpgid(self.__receive_and_play_video_proc.pid), signal.SIGTERM)
+        self.__is_video_playback_in_progress = False
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
@@ -57,6 +76,7 @@ class Receiver:
 
             cmd = self.__build_receive_and_play_video_command(params_list)
             self.__logger.info(f"Running receive_and_play_video command: {cmd}")
+            self.__is_video_playback_in_progress = True
             proc = subprocess.Popen(
                 cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
             )

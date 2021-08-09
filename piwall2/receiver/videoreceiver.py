@@ -17,10 +17,10 @@ class VideoReceiver:
         multicast_helper = MulticastHelper().setup_receiver_video_socket()
         socket = multicast_helper.get_receive_video_socket()
 
-        # TODO: do we want start_new_session = True here? May make it harder for Receiver parent process
-        # to kill the group.
+        # Use start_new_session = False here so that every process here will get killed when
+        # the parent receive_and_play_video session is killed
         proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdin = subprocess.PIPE
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = False, stdin = subprocess.PIPE
         )
         self.__logger.info(f'Started receive_and_play_video command: {cmd}')
 

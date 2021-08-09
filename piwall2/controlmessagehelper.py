@@ -11,6 +11,7 @@ class ControlMessageHelper:
     # Control message types
     TYPE_VOLUME = 'volume'
     TYPE_PLAY_VIDEO = 'play_video'
+    TYPE_SKIP_VIDEO = 'skip_video'
 
     CTRL_MSG_TYPE_KEY = 'msg_type'
     CONTENT_KEY = 'content'
