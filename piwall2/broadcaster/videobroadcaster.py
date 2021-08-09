@@ -417,7 +417,12 @@ class VideoBroadcaster:
         if self.__are_video_receivers_running:
             if self.__video_broadcast_proc:
                 self.__logger.info("Killing video broadcast process group...")
-                os.killpg(os.getpgid(self.__video_broadcast_proc.pid), signal.SIGTERM)
+                try:
+                    os.killpg(os.getpgid(self.__video_broadcast_proc.pid), signal.SIGTERM)
+                except Exception:
+                    # Can raise `ProcessLookupError: [Errno 3] No such process` if process is no longer running
+                    pass
+
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
             self.__are_video_receivers_running = False
         try:

@@ -42,7 +42,6 @@ class VideoReceiver:
             if video_bytes == VideoBroadcaster.END_OF_VIDEO_MAGIC_BYTES:
                 self.__logger.info(f"Received end of video magic bytes. Received {total_bytes_count} bytes. " +
                     "Waiting for video to finish playing...")
-                # os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 proc.stdin.close()
                 break
 

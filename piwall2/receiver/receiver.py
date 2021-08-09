@@ -79,7 +79,11 @@ class Receiver:
             return
         if self.__receive_and_play_video_proc:
             self.__logger.info("Killing receive_and_play_video proc...")
-            os.killpg(os.getpgid(self.__receive_and_play_video_proc.pid), signal.SIGTERM)
+            try:
+                os.killpg(os.getpgid(self.__receive_and_play_video_proc.pid), signal.SIGTERM)
+            except Exception:
+                # Can raise `ProcessLookupError: [Errno 3] No such process` if process is no longer running
+                pass
         self.__is_video_playback_in_progress = False
 
     """
