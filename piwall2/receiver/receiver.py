@@ -126,12 +126,13 @@ class Receiver:
         params = params_list[0]
         params2 = None
         omx_cmd = omx_cmd_template.format(shlex.quote(params['crop']), params['misc'])
+        cmd = 'set -o pipefail && '
         if params_list_len == 2:
             params2 = params[1]
             omx_cmd2 = omx_cmd_template.format(shlex.quote(params2['crop']), params2['misc'])
-            cmd = f"{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null"
+            cmd += f'{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null'
         else:
-            cmd = f'{mbuffer_cmd} | {omx_cmd}'
+            cmd += f'{mbuffer_cmd} | {omx_cmd}'
 
         receiver_cmd_template = (DirectoryUtils().root_dir + '/receive_and_play_video --command "{0}" ' +
             '--log-uuid ' + shlex.quote(Logger.get_uuid()))
@@ -140,7 +141,7 @@ class Receiver:
     def __get_local_ip(self):
         return (subprocess
             .check_output(
-                'sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
+                'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
                 'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
                 stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
             )

@@ -85,7 +85,7 @@ class VideoBroadcaster:
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        cmd = (f"ffmpeg {ffmpeg_input_clause} " +
+        cmd = (f"set -o pipefail && ffmpeg {ffmpeg_input_clause} " +
             f"-c:v copy {audio_clause} -f mpegts - | " +
             f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {cmd}")
