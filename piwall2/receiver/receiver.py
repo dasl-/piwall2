@@ -117,8 +117,7 @@ class Receiver:
 
         receiver_cmd_template = (DirectoryUtils().root_dir + '/receive_and_play_video --command "{0}" ' +
             '--log-uuid ' + shlex.quote(Logger.get_uuid()))
-        receiver_cmd_template.format(cmd)
-        return cmd
+        return receiver_cmd_template.format(cmd)
 
     def __get_local_ip(self):
         return (subprocess
