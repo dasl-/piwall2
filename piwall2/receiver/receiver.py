@@ -82,6 +82,7 @@ class Receiver:
             Logger.set_uuid(orig_uuid)
 
     def __stop_video_playback_if_playing(self):
+        self.__logger.debug(f"In __stop_video_playback_if_playing. __is_video_playback_in_progress: {self.__is_video_playback_in_progress}, self.__receive_and_play_video_proc_pgid: {self.__receive_and_play_video_proc_pgid}")
         if not self.__is_video_playback_in_progress:
             return
         if self.__receive_and_play_video_proc_pgid:
