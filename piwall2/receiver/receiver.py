@@ -28,10 +28,14 @@ class Receiver:
         while True:
             ctrl_msg = None
             try:
-                ctrl_msg = self.__control_message_helper.receive_msg()
+                ctrl_msg = self.__control_message_helper.receive_msg() # This blocks until a message is received!
                 self.__logger.debug(f"Received control message {ctrl_msg}.")
             except Exception:
                 continue
+
+            if self.__is_video_playback_in_progress:
+                if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
+                    self.__is_video_playback_in_progress = False
 
             msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
             if self.__is_video_playback_in_progress:
@@ -42,10 +46,6 @@ class Receiver:
             if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
                 self.__stop_video_playback_if_playing()
                 self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
-
-            if self.__is_video_playback_in_progress:
-                if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
-                    self.__is_video_playback_in_progress = False
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
