@@ -56,6 +56,7 @@ class Receiver:
                     f"({self.__local_ip_address}) in control message content: {ctrl_msg_content}")
 
             cmd = self.__build_receive_and_play_video_command(params_list)
+            self.__logger.info(f"Running receive_and_play_video command: {cmd}")
             proc = subprocess.Popen(
                 cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
             )
