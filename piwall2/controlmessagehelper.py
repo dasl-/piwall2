@@ -28,9 +28,6 @@ class ControlMessageHelper:
         return self
 
     def send_msg(self, ctrl_msg_type, content):
-        if ctrl_msg_type not in [self.TYPE_VOLUME, self.TYPE_PLAY_VIDEO]:
-            raise Exception(f"Invalid control message type: {ctrl_msg_type}.")
-
         msg = json.dumps({
             self.CTRL_MSG_TYPE_KEY: ctrl_msg_type,
             self.CONTENT_KEY: content
