@@ -39,7 +39,7 @@ class VideoBroadcaster:
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
         self.__are_video_receivers_running = False
-        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` cam
+        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__video_broadcast_proc_pgid = None
 

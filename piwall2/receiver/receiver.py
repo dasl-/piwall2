@@ -22,7 +22,7 @@ class Receiver:
         self.__local_ip_address = self.__get_local_ip()
         self.__is_video_playback_in_progress = False
         self.__receive_and_play_video_proc = None
-        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` cam
+        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__receive_and_play_video_proc_pgid = None
 
@@ -38,7 +38,7 @@ class Receiver:
         ctrl_msg = None
         ctrl_msg = self.__control_message_helper.receive_msg() # This blocks until a message is received!
         self.__logger.debug(f"Received control message {ctrl_msg}. " +
-            f"__is_video_playback_in_progress: {self.__is_video_playback_in_progress}.")
+            f"self.__is_video_playback_in_progress: {self.__is_video_playback_in_progress}.")
 
         if self.__is_video_playback_in_progress:
             if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
@@ -53,7 +53,7 @@ class Receiver:
         if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
             self.__stop_video_playback_if_playing()
             self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
-            self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc)
+            self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc.pid)
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
@@ -82,7 +82,6 @@ class Receiver:
             Logger.set_uuid(orig_uuid)
 
     def __stop_video_playback_if_playing(self):
-        self.__logger.debug(f"In __stop_video_playback_if_playing. __is_video_playback_in_progress: {self.__is_video_playback_in_progress}, self.__receive_and_play_video_proc_pgid: {self.__receive_and_play_video_proc_pgid}")
         if not self.__is_video_playback_in_progress:
             return
         if self.__receive_and_play_video_proc_pgid:
