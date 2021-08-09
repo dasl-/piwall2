@@ -18,8 +18,11 @@ def parseArgs():
 
 
 args = parseArgs()
+if args.log_uuid:
+    Logger.set_uuid(args.log_uuid)
+
 try:
-    VideoReceiver().receive(args.command, args.log_uuid)
+    VideoReceiver().receive_and_play_video(args.command)
 except Exception:
     logger = Logger().set_namespace(os.path.basename(__file__))
     logger.error(f'Caught exception: {traceback.format_exc()}')

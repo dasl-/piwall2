@@ -1,18 +1,17 @@
 import os
-import os
 import shlex
 import subprocess
 import time
 import traceback
 import youtube_dl
 
+from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
-from piwall2.configloader import ConfigLoader
+from piwall2.receiver.receiver import Receiver
 from piwall2.volumecontroller import VolumeController
-import piwall2.receiver.videoreceiver
 
 # Broadcasts a video for playback on the piwall
 class VideoBroadcaster:
@@ -28,8 +27,8 @@ class VideoBroadcaster:
     __AUDIO_FORMAT = 'bestaudio'
 
     # Touch this file when video playing is done.
-    # We check for its existence to determine when video playing is over.
-    __VIDEO_PLAY_DONE_FILE = '/tmp/video_play_done.file'
+    # We check for its existence to determine when video playback is over.
+    __VIDEO_PLAYBACK_DONE_FILE = '/tmp/video_playback_done.file'
 
     # video_url may be a youtube url or a path to a file on disk
     def __init__(self, video_url):
@@ -67,10 +66,10 @@ class VideoBroadcaster:
             audio_clause = '-c:a copy'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
-        mbuffer_size = round(piwall2.receiver.videoreceiver.VideoReceiver.MBUFFER_SIZE_BYTES / 2)
+        mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
         burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
-            '{ ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
-            'touch ' + self.__VIDEO_PLAY_DONE_FILE + ' ; }')
+            'ffmpeg -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
+            f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
         broadcasting_clause = DirectoryUtils().root_dir + f"/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
 
         # Mix the best audio with the video and send via multicast
@@ -79,6 +78,9 @@ class VideoBroadcaster:
             f"-c:v copy {audio_clause} -f mpegts - | " +
             f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {cmd}")
+
+        # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
+        # Allows killing all processes (subshells, children, grandchildren, etc as a group)
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
@@ -86,11 +88,15 @@ class VideoBroadcaster:
         self.__logger.info("Waiting for broadcast to end...")
         while proc.poll() is None:
             time.sleep(0.1)
-        self.__logger.info("Video broadcast process ended.")
+        self.__logger.info("Video broadcast command ended.")
         MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
 
-        while not os.path.isfile(self.__VIDEO_PLAY_DONE_FILE):
+        while not os.path.isfile(self.__VIDEO_PLAYBACK_DONE_FILE):
             time.sleep(0.1)
+
+        # Wait to ensure video playback is done. Data collected suggests one second is sufficient:
+        # https://docs.google.com/spreadsheets/d/1YzxsD3GPzsIeKYliADN3af7ORys5nXHCRBykSnHaaxk/edit#gid=0
+        time.sleep(1)
         self.__logger.info("Video playback is likely over.")
         self.__do_housekeeping()
 
@@ -277,9 +283,11 @@ class VideoBroadcaster:
             This allows us to keep retrying whenever it is necessary.
 
             Use yt-dlp, a fork of youtube-dl that has a workaround (for now) for an issue where youtube has been
-            throttling youtube-dl’s download speed: https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
+            throttling youtube-dl’s download speed:
+            https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
-            youtube_dl_cmd_template = "yt-dlp --extractor-args youtube:player_client=android {0} --retries infinite --format {1} --output - | mbuffer -q -Q -m {2}b"
+            youtube_dl_cmd_template = ("yt-dlp --extractor-args youtube:player_client=android {0} " +
+                "--retries infinite --format {1} --output - | mbuffer -q -Q -m {2}b")
 
             # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
             # be enough buffer for ~139s
@@ -332,7 +340,8 @@ class VideoBroadcaster:
             # error.
             #
             # The youtube-dl package needs updating periodically when youtube make updates. This is
-            # handled on a cron once a day: https://github.com/dasl-/pifi/blob/a614b33e1be093f6ee3bb62b036ee6472ffe5132/install/pifi_cron.sh#L5
+            # handled on a cron once a day:
+            # https://github.com/dasl-/pifi/blob/a614b33e1be093f6ee3bb62b036ee6472ffe5132/install/pifi_cron.sh#L5
             #
             # But we also attempt to update it on the fly here if we get youtube-dl errors when trying to play
             # a video.
@@ -369,7 +378,8 @@ class VideoBroadcaster:
                 f"{self.__video_info['width']}x{self.__video_info['height']}")
         elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
             # TODO: guard against unsupported video formats
-            ffprobe_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height {shlex.quote(self.__video_url)}'
+            ffprobe_cmd = ('ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height ' +
+                shlex.quote(self.__video_url))
             ffprobe_output = (subprocess
                 .check_output(ffprobe_cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT)
                 .decode("utf-8"))
@@ -390,6 +400,6 @@ class VideoBroadcaster:
 
     def __do_housekeeping(self):
         try:
-            os.remove(self.__VIDEO_PLAY_DONE_FILE)
+            os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
         except Exception:
             pass
