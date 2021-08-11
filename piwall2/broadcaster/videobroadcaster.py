@@ -38,10 +38,11 @@ class VideoBroadcaster:
         Logger.set_uuid(Logger.make_uuid())
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
-        self.__are_video_receivers_running = False
-        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
+
+        # Store the PGIDs separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__video_broadcast_proc_pgid = None
+        self.__download_and_convert_video_proc_pgid = None
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
         # Access should go through self.__get_video_info() to populate it lazily
@@ -69,14 +70,24 @@ class VideoBroadcaster:
             stderr = subprocess.STDOUT
         ))
 
+        """
+        What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:
+        1) To populate video metadata, including dimensions which allow us to know how much to crop the video
+        2) To download the proper video format (which generally does not have sound included) and mux it with (3)
+        3) To download the best audio quality
+
+        Ytdl takes couple of seconds to be invoked. Luckily, (2) and (3) happen in parallel
+        (see self.____get_ffmpeg_input_clause). But that would still leave us with effectively two groups of ytdl
+        invocations which are happening serially: the group consisting of "1" and the group consisting of "2 and 3".
+        Note that (1) happens in self.__get_video_info.
+
+        By starting a separate process for "2 and 3", we can actually ensure that all three of these invocations
+        happen in parallel. This separate process is started in self.__start_download_and_convert_video_proc.
+        This shaves 2-3 seconds off of video start up time.
+        """
+        download_and_convert_video_proc = self.__start_download_and_convert_video_proc()
+        self.__get_video_info(assert_data_not_yet_loaded = True)
         self.__start_receivers()
-
-        # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
-        ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
-
-        audio_clause = '-c:a mp2 -b:a 192k'
-        if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
-            audio_clause = '-c:a copy'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
         mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
@@ -87,15 +98,14 @@ class VideoBroadcaster:
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        cmd = (f"set -o pipefail && ffmpeg {ffmpeg_input_clause} " +
-            f"-c:v copy {audio_clause} -f mpegts - | " +
-            f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
+        cmd = (f"set -o pipefail && tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {cmd}")
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
         # Allows killing all processes (subshells, children, grandchildren, etc as a group)
         video_broadcast_proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True,
+            stdin = download_and_convert_video_proc.stdout
         )
         self.__video_broadcast_proc_pgid = os.getpgid(video_broadcast_proc.pid)
 
@@ -114,15 +124,40 @@ class VideoBroadcaster:
 
         # Skip the video for good measure, just in case it is somehow still running
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
-        self.__are_video_receivers_running = False
         self.__logger.info("Video playback is likely over.")
+
+    """
+    Process to download video via youtube-dl and convert it to proper format via ffmpeg.
+    Note that we only download the video if the input was a youtube_url. If playing a local file, no
+    download is necessary.
+    """
+    def __start_download_and_convert_video_proc(self):
+        # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
+        ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
+
+        audio_clause = '-c:a mp2 -b:a 192k' # TODO: is this necessary? Can we use mp3?
+        if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
+            # Don't transcode audio if we don't need to
+            audio_clause = '-c:a copy'
+
+        # Mix the best audio with the video and send via multicast
+        # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
+        cmd = (f"set -o pipefail && ffmpeg {ffmpeg_input_clause} " +
+            f"-c:v copy {audio_clause} -f mpegts -")
+
+        # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
+        # Allows killing all processes (subshells, children, grandchildren, etc as a group)
+        download_and_convert_video_proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True, stdout = subprocess.PIPE
+        )
+        self.__download_and_convert_video_proc_pgid = os.getpgid(download_and_convert_video_proc.pid)
+        return download_and_convert_video_proc
 
     def __start_receivers(self):
         msg = {}
         for receiver in self.__config_loader.get_receivers_list():
             msg[receiver] = self.__get_receiver_params_list(receiver)
         msg['log_uuid'] = Logger.get_uuid()
-        self.__are_video_receivers_running = True
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
         self.__logger.info("Sent play_video control message.")
 
@@ -338,10 +373,12 @@ class VideoBroadcaster:
             # ffmpeg an opportunity to start-up without us having to explicitly sleep.
             return f"-i <( sleep 2 ; cat {shlex.quote(self.__video_url)} )"
 
-    # Lazily populate video_info from youtube. This takes a couple seconds.
+    # Lazily populate video_info from youtube. This takes a couple seconds, as it invokes youtube-dl on the video.
     # Must return a dict containing the keys: width, height
-    def __get_video_info(self):
+    def __get_video_info(self, assert_data_not_yet_loaded = False):
         if self.__video_info:
+            if assert_data_not_yet_loaded:
+                raise Exception('Failed asserting that data was not yet loaded')
             return self.__video_info
 
         video_url_type = self.__get_video_url_type()
@@ -417,13 +454,23 @@ class VideoBroadcaster:
             return self.__VIDEO_URL_TYPE_FILE
 
     def __do_housekeeping(self):
-        if self.__are_video_receivers_running:
-            if self.__video_broadcast_proc_pgid:
-                self.__logger.info("Killing video broadcast process group...")
+        if self.__download_and_convert_video_proc_pgid:
+            self.__logger.info("Killing download and convert video process group (PGID: " +
+                f"{self.__download_and_convert_video_proc_pgid})...")
+            try:
+                os.killpg(self.__download_and_convert_video_proc_pgid, signal.SIGTERM)
+            except Exception:
+                # might raise: `ProcessLookupError: [Errno 3] No such process`
+                pass
+        if self.__video_broadcast_proc_pgid:
+            self.__logger.info("Killing video broadcast process group (PGID: " +
+                f"{self.__video_broadcast_proc_pgid}...")
+            try:
                 os.killpg(self.__video_broadcast_proc_pgid, signal.SIGTERM)
-
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
-            self.__are_video_receivers_running = False
+            except Exception:
+                # might raise: `ProcessLookupError: [Errno 3] No such process`
+                pass
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
         try:
             os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
         except Exception:
