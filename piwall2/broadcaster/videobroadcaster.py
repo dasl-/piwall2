@@ -84,6 +84,9 @@ class VideoBroadcaster:
         By starting a separate process for "2 and 3", we can actually ensure that all three of these invocations
         happen in parallel. This separate process is started in self.__start_download_and_convert_video_proc.
         This shaves 2-3 seconds off of video start up time.
+
+        This requires that we break up the original single pipeline into two halves. Originally, a single
+        pipeline was responsible for downloading, converting, and broadcasting the video. Receivers were
         """
         download_and_convert_video_proc = self.__start_download_and_convert_video_proc()
         self.__get_video_info(assert_data_not_yet_loaded = True)
@@ -121,9 +124,6 @@ class VideoBroadcaster:
         # Wait to ensure video playback is done. Data collected suggests one second is sufficient:
         # https://docs.google.com/spreadsheets/d/1YzxsD3GPzsIeKYliADN3af7ORys5nXHCRBykSnHaaxk/edit#gid=0
         time.sleep(1)
-
-        # Skip the video for good measure, just in case it is somehow still running
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
         self.__logger.info("Video playback is likely over.")
 
     """
