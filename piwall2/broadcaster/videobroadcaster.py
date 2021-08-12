@@ -7,13 +7,14 @@ import time
 import traceback
 import youtube_dl
 
+from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
-from piwall2.receiver.receiver import Receiver
 from piwall2.volumecontroller import VolumeController
+from piwall2.receiver.receiver import Receiver
 
 # Broadcasts a video for playback on the piwall
 class VideoBroadcaster:
@@ -53,10 +54,23 @@ class VideoBroadcaster:
         self.__register_signal_handlers()
 
     def broadcast(self):
-        try:
-            self.__broadcast_internal()
-        finally:
-            self.__do_housekeeping()
+        attempt = 1
+        max_attempts = 2
+        while attempt <= max_attempts:
+            try:
+                self.__broadcast_internal()
+                break
+            except YoutubeDlException as e:
+                if attempt < max_attempts:
+                    self.__logger.warning("Caught exception in VideoBroadcaster.__broadcast_internal: " +
+                        traceback.format_exc())
+                    self.__logger.warning("Updating youtube-dl and retrying broadcast...")
+                    self.__update_youtube_dl()
+                if attempt >= max_attempts:
+                    raise e
+            finally:
+                self.__do_housekeeping()
+            attempt += 1
 
     def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
@@ -112,9 +126,20 @@ class VideoBroadcaster:
         )
         self.__video_broadcast_proc_pgid = os.getpgid(video_broadcast_proc.pid)
 
-        self.__logger.info("Waiting for broadcast command to end...")
+        self.__logger.info("Waiting for download_and_convert_video proc to end...")
+        while download_and_convert_video_proc.poll() is None:
+            time.sleep(0.1)
+        if download_and_convert_video_proc.returncode != 0:
+            raise YoutubeDlException("The download_and_convert_video process exited non-zero: " +
+                f"{download_and_convert_video_proc.returncode}. This could mean an issue with youtube-dl; " +
+                "it may require updating.")
+
+        self.__logger.info("The download_and_convert_video proc ended. Waiting for broadcast command to end...")
         while video_broadcast_proc.poll() is None:
             time.sleep(0.1)
+        if video_broadcast_proc.returncode != 0:
+            raise Exception(f"The video broadcast process exited non-zero: {video_broadcast_proc.returncode}")
+
         self.__logger.info("Video broadcast command ended. Waiting for video playback to end...")
         MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
 
@@ -414,15 +439,7 @@ class VideoBroadcaster:
                         .format(attempt, max_attempts, caught_or_raising, traceback.format_exc()))
                     if attempt < max_attempts:
                         self.__logger.warning("Attempting to update youtube-dl before retrying download...")
-                        update_youtube_dl_output = (subprocess
-                            .check_output(
-                                'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
-                                shell = True,
-                                executable = '/usr/bin/bash',
-                                stderr = subprocess.STDOUT
-                            )
-                            .decode("utf-8"))
-                        self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
+                        self.__update_youtube_dl()
                     else:
                         self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
                         raise e
@@ -453,6 +470,17 @@ class VideoBroadcaster:
         else:
             return self.__VIDEO_URL_TYPE_FILE
 
+    def __update_youtube_dl(self):
+        update_youtube_dl_output = (subprocess
+            .check_output(
+                'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
+                shell = True,
+                executable = '/usr/bin/bash',
+                stderr = subprocess.STDOUT
+            )
+            .decode("utf-8"))
+        self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
+
     def __do_housekeeping(self):
         if self.__download_and_convert_video_proc_pgid:
             self.__logger.info("Killing download and convert video process group (PGID: " +
@@ -464,7 +492,7 @@ class VideoBroadcaster:
                 pass
         if self.__video_broadcast_proc_pgid:
             self.__logger.info("Killing video broadcast process group (PGID: " +
-                f"{self.__video_broadcast_proc_pgid}...")
+                f"{self.__video_broadcast_proc_pgid})...")
             try:
                 os.killpg(self.__video_broadcast_proc_pgid, signal.SIGTERM)
             except Exception:
@@ -475,6 +503,7 @@ class VideoBroadcaster:
             os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
         except Exception:
             pass
+        self.__video_info = None
 
     def __register_signal_handlers(self):
         signal.signal(signal.SIGINT, self.__signal_handler)
