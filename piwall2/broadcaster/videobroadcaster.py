@@ -97,7 +97,8 @@ class VideoBroadcaster:
 
         By starting a separate process for "2 and 3", we can actually ensure that all three of these invocations
         happen in parallel. This separate process is started in self.__start_download_and_convert_video_proc.
-        This shaves 2-3 seconds off of video start up time.
+        This shaves 2-3 seconds off of video start up time -- although this time saving is partially canceled out
+        by the `time.sleep(2)` we had to add below.
 
         This requires that we break up the original single pipeline into two halves. Originally, a single
         pipeline was responsible for downloading, converting, and broadcasting the video. Receivers were
@@ -106,25 +107,21 @@ class VideoBroadcaster:
         self.__get_video_info(assert_data_not_yet_loaded = True)
         self.__start_receivers()
 
-        # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
-        mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
-        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
-            'ffmpeg -hide_banner -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
-            f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
-        broadcasting_clause = DirectoryUtils().root_dir + f"/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
+        """
+        I have ~70% confidence that this makes the videos more likely to start in-sync across all the TVs.
+        I'm not exactly sure why this helps. Perhaps this gives ffmpeg / youtube-dl in the
+        download_and_convert_video_proc time to finish initializing before connecting them to
+        video_broadcast_cmd? Still not exactly sure why that would help. Perhaps adding more TVs to my wall
+        will make testing this easier as it gives more opportunity for a single TV to start out of sync.
+        Another potential solution is making use of delay_buffer in video_broadcast_cmd, although I have
+        abandoned that approach for now: https://gist.github.com/dasl-/9ed9d160384a8dd77382ce6a07c43eb6
 
-        # Mix the best audio with the video and send via multicast
-        # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        cmd = (f"set -o pipefail && tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
-        self.__logger.info(f"Running broadcast command: {cmd}")
+        See data collected on the effectiveness of this sleep:
+        https://gist.github.com/dasl-/e5c05bf89c7a92d43881a2ff978dc889
+        """
+        time.sleep(2)
 
-        # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
-        # Allows killing all processes (subshells, children, grandchildren, etc as a group)
-        video_broadcast_proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True,
-            stdin = download_and_convert_video_proc.stdout
-        )
-        self.__video_broadcast_proc_pgid = os.getpgid(video_broadcast_proc.pid)
+        video_broadcast_proc = self.__start_video_broadcast_proc(download_and_convert_video_proc)
 
         self.__logger.info("Waiting for download_and_convert_video proc to end...")
         while download_and_convert_video_proc.poll() is None:
@@ -169,6 +166,7 @@ class VideoBroadcaster:
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         cmd = (f"set -o pipefail && ffmpeg -hide_banner {ffmpeg_input_clause} " +
             f"-c:v copy {audio_clause} -f mpegts -")
+        self.__logger.info(f"Running download_and_convert_video_proc command: {cmd}")
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
         # Allows killing all processes (subshells, children, grandchildren, etc as a group)
@@ -177,6 +175,30 @@ class VideoBroadcaster:
         )
         self.__download_and_convert_video_proc_pgid = os.getpgid(download_and_convert_video_proc.pid)
         return download_and_convert_video_proc
+
+    def __start_video_broadcast_proc(self, download_and_convert_video_proc):
+        # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
+        mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
+        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
+            'ffmpeg -hide_banner -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
+            f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
+        broadcasting_clause = DirectoryUtils().root_dir + f"/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
+
+        # Mix the best audio with the video and send via multicast
+        # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
+        video_broadcast_cmd = ("set -o pipefail && " +
+            f"{DirectoryUtils().root_dir}/delay_buffer --delay 2 --log-uuid {shlex.quote(Logger.get_uuid())} | " +
+            f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
+        self.__logger.info(f"Running broadcast command: {video_broadcast_cmd}")
+
+        # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
+        # Allows killing all processes (subshells, children, grandchildren, etc as a group)
+        video_broadcast_proc = subprocess.Popen(
+            video_broadcast_cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True,
+            stdin = download_and_convert_video_proc.stdout
+        )
+        self.__video_broadcast_proc_pgid = os.getpgid(video_broadcast_proc.pid)
+        return video_broadcast_proc
 
     def __start_receivers(self):
         msg = {}
