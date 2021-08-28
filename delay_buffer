@@ -22,7 +22,7 @@ if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 
 logger = Logger(dont_log_to_stdout = True).set_namespace(os.path.basename(__file__))
-logger.info("Starting delay_buffer...")
+logger.debug("Starting delay_buffer...")
 
 start = time.time()
 buffer = b''
@@ -31,6 +31,7 @@ while True:
     is_delay_over = (time.time() - start) > args.delay_s
     if is_delay_over:
         if buffer:
+            logger.debug("Sending initial bytes...")
             sys.stdout.buffer.write(buffer)
             buffer = b''
         if data:
@@ -41,4 +42,4 @@ while True:
         if data:
             buffer += data
 
-logger.info("Finished delay_buffer.")
+logger.debug("Finished delay_buffer.")
