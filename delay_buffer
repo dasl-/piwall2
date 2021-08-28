@@ -25,15 +25,14 @@ logger = Logger(dont_log_to_stdout = True).set_namespace(os.path.basename(__file
 logger.info("Starting delay_buffer...")
 
 start = time.time()
-buffer = None
-
+buffer = ''
 while True:
     data = sys.stdin.buffer.read(4096)
     is_delay_over = (time.time() - start) > args.delay_s
     if is_delay_over:
         if buffer:
             sys.stdout.buffer.write(buffer)
-            buffer = None
+            buffer = ''
         if data:
             sys.stdout.buffer.write(data)
         else:
