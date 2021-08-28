@@ -11,7 +11,7 @@ def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 delay buffer')
     parser.add_argument('--log-uuid', dest='log_uuid', action='store',
         help='Logger UUID')
-    parser.add_argument('--delay', dest='delay_s', action='store', type=int, help='Delay in seconds')
+    parser.add_argument('--delay', dest='delay_s', action='store', type=float, help='Delay in seconds')
     args = parser.parse_args()
     return args
 
