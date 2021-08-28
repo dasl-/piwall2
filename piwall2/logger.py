@@ -16,8 +16,9 @@ class Logger:
 
     __uuid = ''
 
-    def __init__(self):
+    def __init__(self, dont_log_to_stdout = False):
         self.__namespace = ""
+        self.__dont_log_to_stdout = dont_log_to_stdout
 
     def set_namespace(self, namespace):
         self.__namespace = namespace
@@ -55,14 +56,22 @@ class Logger:
             return
 
         msg = self.__format_msg(level = 'debug', msg = msg)
-        print(msg, file = sys.stdout, flush = True)
+        if self.__dont_log_to_stdout:
+            file = sys.stderr
+        else:
+            file = sys.stdout
+        print(msg, file = file, flush = True)
 
     def info(self, msg):
         if Logger.__level is not None and Logger.__level > Logger.INFO:
             return
 
         msg = self.__format_msg(level = 'info', msg = msg)
-        print(msg, file = sys.stdout, flush = True)
+        if self.__dont_log_to_stdout:
+            file = sys.stderr
+        else:
+            file = sys.stdout
+        print(msg, file = file, flush = True)
 
     def warning(self, msg):
         if Logger.__level is not None and Logger.__level > Logger.WARNING:
