@@ -8,7 +8,7 @@ import traceback
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
-from piwall2.omxplayercontroller import OmxplayerController
+from piwall2.receiver.omxplayercontroller import OmxplayerController
 
 class Receiver:
 
