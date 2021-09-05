@@ -126,8 +126,12 @@ setupSystemdServices(){
 
     # stop and disable units in case we are changing which host is the broadcaster / receiver
     # and unit files already existed...
-    sudo systemctl disable $(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }') || true
-    sudo systemctl stop $(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }') || true
+    local piwall2_units
+    piwall2_units=$(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }')
+    if [ -n "${piwall2_units}" ]; then
+        sudo systemctl disable "$piwall2_units" || true
+        sudo systemctl stop "$piwall2_units" || true
+    fi
 
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
         echo "TODO..."
