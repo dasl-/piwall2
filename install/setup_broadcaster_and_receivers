@@ -219,11 +219,11 @@ def restart_hosts_if_required(hostnames):
     # restart receivers, if necessary
     hostnames.remove(broadcaster_hostname)
     cmd = ('\'{ [ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && ' +
-        'sudo shutdown -r now ; } || true\'')
+        'sudo shutdown -r now ; } || echo "Restart not needed."\'')
     run_dsh(cmd, hostnames)
 
     # restart broadcaster, if necessary
-    run_cmd_with_realtime_output(cmd)
+    run_cmd_with_realtime_output(cmd.strip("'"))
 
 
 main()
