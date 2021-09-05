@@ -129,8 +129,10 @@ setupSystemdServices(){
     local piwall2_units
     piwall2_units=$(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }' | paste -sd ' ')
     if [ -n "${piwall2_units}" ]; then
-        sudo systemctl disable "$piwall2_units" || true
-        sudo systemctl stop "$piwall2_units" || true
+        # shellcheck disable=SC2086
+        sudo systemctl disable $piwall2_units || true
+        # shellcheck disable=SC2086
+        sudo systemctl stop $piwall2_units || true
     fi
 
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
