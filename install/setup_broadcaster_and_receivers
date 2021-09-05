@@ -39,8 +39,8 @@ def parse_args():
 f"""Applies the receivers config located in: {ConfigLoader.get_receivers_config_path()}.
 This script should be run on the broadcaster. This script does several things:
 1) Sets up passwordless SSH from the broadcaster to each receiver
-2) Sets up the control daemon on the broadcaster
-3) Sets up the receiver daemon on each receiver
+2) Installs piwall2 dependencies on the broadcaster and receivers
+3) Installs the application on the broadcaster and receivers
 """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dont-setup-ssh', dest='setup_ssh', action='store_false', default=True,
@@ -117,7 +117,7 @@ def authorize_ssh_key(file, password, config_loader):
 def install_dependencies(config_loader):
     hostnames = get_broadcaster_and_receivers_hostname_list(config_loader)
     broadcaster_hostname = socket.gethostname()
-    print(f"Installing dependencies on this {hostnames}...")
+    print(f"Installing dependencies on: {hostnames}...")
     install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install_dependencies.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)'")
     run_dsh(install_deps_cmd, hostnames)
@@ -136,6 +136,7 @@ def install_app(config_loader, enable_receivers_composite_video_out, dont_disabl
     run_dsh(install_deps_cmd, hostnames)
 
 def run_cmd_with_realtime_output(cmd):
+    echo f"Running cmd: {cmd}"
     proc = subprocess.Popen(
         cmd, shell = True, executable = '/usr/bin/bash'
     )
@@ -144,7 +145,6 @@ def run_cmd_with_realtime_output(cmd):
     if proc.returncode != 0:
         raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
             f"{proc.returncode}.")
-
 
 def run_dsh(cmd, machines):
     machines_string = ''
@@ -175,9 +175,12 @@ def install_bootstrap_dependencies():
     for dep in deps:
         if not is_program_installed(dep):
             deps_to_install.append(dep)
-    deps_to_install = ' '.join(deps_to_install)
-    print(f"Installing dependencies: {deps_to_install}...")
-    run_cmd_with_realtime_output(f"sudo apt -y install {deps_to_install}")
+    if deps_to_install:
+        deps_to_install = ' '.join(deps_to_install)
+        print(f"Installing bootstrap dependencies: {deps_to_install}...")
+        run_cmd_with_realtime_output(f"sudo apt -y install {deps_to_install}")
+    else:
+        print("No bootstrap dependencies needed installing.")
 
 def is_program_installed(program):
     try:
