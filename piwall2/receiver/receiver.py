@@ -1,8 +1,10 @@
 import os
+import pathlib
 import shlex
 import signal
 import socket
 import subprocess
+import time
 import traceback
 
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -28,6 +30,7 @@ class Receiver:
 
     def run(self):
         self.__logger.info("Started receiver!")
+        self.__ensure_warmup_video_has_run()
         while True:
             try:
                 self.__run_internal()
@@ -148,6 +151,27 @@ class Receiver:
         receiver_cmd_template = (DirectoryUtils().root_dir + '/bin/receive_and_play_video --command "{0}" ' +
             '--log-uuid ' + shlex.quote(Logger.get_uuid()))
         return receiver_cmd_template.format(cmd)
+
+    # The first video that is played after a system restart appears to have a lag in starting,
+    # which can affect video synchronization across the receivers. Ensure we have played at
+    # least one video since system startup. This is a short, one-second video.
+    def __ensure_warmup_video_has_run(self):
+        # The raspberry pi deletes all files in /tmp at every shutdown
+        success_file = "/tmp/first_video_played.file"
+        if os.path.isfile(success_file):
+            self.__logger.info("Receiver warmup video has already played since last restart...")
+            return
+        self.__logger.info("Playing receiver warmup video...")
+        warmup_cmd = f'omxplayer --vol 0 {DirectoryUtils().root_dir}/utils/short_black_screen.ts'
+        proc = subprocess.Popen(
+            warmup_cmd, shell = True, executable = '/usr/bin/bash'
+        )
+        while proc.poll() is None:
+            time.sleep(0.1)
+        if proc.returncode != 0:
+            raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
+                f"{proc.returncode}.")
+        pathlib.Path.touch(success_file)
 
     def __get_local_ip(self):
         return (subprocess
