@@ -126,17 +126,18 @@ setupSystemdServices(){
 
     # stop and disable units in case we are changing which host is the broadcaster / receiver
     # and unit files already existed...
-    sudo systemctl disable /etc/systemd/system/piwall2_*.service || true
-    sudo systemctl stop /etc/systemd/system/piwall2_*.service || true
-
-    sudo systemctl enable /etc/systemd/system/piwall2_*.service
-    sudo systemctl daemon-reload
+    sudo systemctl disable $(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }') || true
+    sudo systemctl stop $(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }') || true
 
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
         echo "TODO..."
+        # sudo systemctl enable piwall2_queue.service piwall2_server.service
+        # sudo systemctl daemon-reload
         # sudo systemctl restart piwall2_queue.service piwall2_server.service
     fi
     if [[ "$installation_type" == 'receiver' || "$installation_type" == 'all' ]]; then
+        sudo systemctl enable piwall2_receiver.service
+        sudo systemctl daemon-reload
         sudo systemctl restart piwall2_receiver.service
     fi
 }
