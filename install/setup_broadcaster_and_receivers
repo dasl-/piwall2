@@ -121,6 +121,7 @@ def install_dependencies(config_loader):
     install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install_dependencies.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)'")
     run_dsh(install_deps_cmd, hostnames)
+    restart_hosts_if_required(hostnames)
 
 def install_app(config_loader, enable_receivers_composite_video_out, dont_disable_wifi):
     hostnames = get_broadcaster_and_receivers_hostname_list(config_loader)
@@ -134,6 +135,7 @@ def install_app(config_loader, enable_receivers_composite_video_out, dont_disabl
         install_deps_cmd += " -w"
     install_deps_cmd += "'"
     run_dsh(install_deps_cmd, hostnames)
+    restart_hosts_if_required(hostnames)
 
 def run_cmd_with_realtime_output(cmd):
     print(f"Running command: {cmd}")
@@ -201,6 +203,26 @@ def is_program_installed(program):
     except Exception as e:
         raise e
     return True
+
+
+"""
+The install scripts will create a special file in /tmp if a restart is required after they run.
+After the install scripts run, we let this coordinator script determine if a restart is required to avoid
+restarting the broadcaster while it is still in the middle of running a dsh command
+
+The raspberry pi appears to delete the whole /tmp directory upon restart, so we don't need to do anything
+special to delete the file once we've restarted.
+"""
+def restart_hosts_if_required(hostnames):
+    broadcaster_hostname = socket.gethostname() + ".local"
+
+    # restart receivers, if necessary
+    hostnames.remove(broadcaster_hostname)
+    cmd = '[ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && sudo shutdown -r now'
+    run_dsh(cmd, hostnames)
+
+    # restart broadcaster, if necessary
+    run_cmd_with_realtime_output(cmd)
 
 
 main()

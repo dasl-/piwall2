@@ -3,6 +3,7 @@
 set -eou pipefail
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+RESTART_REQUIRED_FILE='/tmp/piwall2_install_restart_required'
 CONFIG=/boot/config.txt
 is_restart_required=false
 installation_type=false
@@ -37,8 +38,8 @@ main(){
     setGpuMem
 
     if [ $is_restart_required = true ] ; then
-        echo "Restarting..."
-        sudo shutdown -r now
+        echo "Please restart to complete installation!"
+        touch "$RESTART_REQUIRED_FILE"
     fi
 }
 
