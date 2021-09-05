@@ -145,7 +145,7 @@ class Receiver:
         else:
             cmd += f'{mbuffer_cmd} | {omx_cmd}'
 
-        receiver_cmd_template = (DirectoryUtils().root_dir + '/receive_and_play_video --command "{0}" ' +
+        receiver_cmd_template = (DirectoryUtils().root_dir + '/bin/receive_and_play_video --command "{0}" ' +
             '--log-uuid ' + shlex.quote(Logger.get_uuid()))
         return receiver_cmd_template.format(cmd)
 

@@ -9,7 +9,7 @@ Wants=network-online.target
 
 [Service]
 # Command to execute when the service is started
-ExecStart=$BASE_DIR/receiver
+ExecStart=$BASE_DIR/bin/receiver
 Restart=on-failure
 StandardOutput=syslog
 StandardError=syslog
