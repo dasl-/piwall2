@@ -85,10 +85,10 @@ installNode(){
     echo -e "\\nInstalling latest version of node and its app dependencies..."
 
     # The `apt install npm` command installs a very old version of npm. Use npm to upgrade itself to latest.
-    npm install npm@latest -g
+    sudo npm install npm@latest -g
 
     # Install app dependencies
-    # npm install --prefix "$BASE_DIR/app"
+    # sudo npm install --prefix "$BASE_DIR/app"
 }
 
 main

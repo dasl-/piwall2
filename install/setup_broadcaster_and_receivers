@@ -136,7 +136,7 @@ def install_app(config_loader, enable_receivers_composite_video_out, dont_disabl
     run_dsh(install_deps_cmd, hostnames)
 
 def run_cmd_with_realtime_output(cmd):
-    echo f"Running cmd: {cmd}"
+    print(f"Running command: {cmd}")
     proc = subprocess.Popen(
         cmd, shell = True, executable = '/usr/bin/bash'
     )
@@ -150,13 +150,14 @@ def run_dsh(cmd, machines):
     machines_string = ''
     for machine in machines:
         machines_string += f'pi@{machine},'
-    machines_string.strip(',')
+    machines_string = machines_string.strip(',')
 
     dsh_cmd = (f"dsh -r ssh --forklimit {CONCURRENCY_LIMIT} " +
         "--remoteshellopt '-o UserKnownHostsFile=/dev/null' " +
         "--remoteshellopt '-o StrictHostKeyChecking=no' " +
         "--remoteshellopt '-o LogLevel=ERROR' " +
-        f'--remoteshellopt "-i {shlex.quote(VideoBroadcaster.SSH_KEY_PATH)}" ' +
+        # Lack of space after `-i` is necessary: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=578683#10
+        f'--remoteshellopt "-i{shlex.quote(VideoBroadcaster.SSH_KEY_PATH)}" ' +
         f"--show-machine-names --machine {machines_string} {cmd}")
     run_cmd_with_realtime_output(dsh_cmd)
 
