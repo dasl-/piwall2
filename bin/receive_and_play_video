@@ -2,7 +2,12 @@
 
 import argparse
 import os
+import sys
 import traceback
+
+# This is necessary for the imports below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
 from piwall2.receiver.videoreceiver import VideoReceiver
 from piwall2.logger import Logger
 

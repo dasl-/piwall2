@@ -4,6 +4,9 @@ import sys
 import argparse
 import os
 
+# This is necessary for the imports below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 
