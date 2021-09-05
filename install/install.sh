@@ -10,7 +10,7 @@ enable_composite_video_output=false
 disable_wifi=true
 
 main(){
-    parseOpts
+    parseOpts "$@"
 
     setTimezone
     setupLogging
@@ -114,9 +114,8 @@ setupLogging(){
 setupSystemdServices(){
     echo "Setting up systemd services..."
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
-        echo "TODO..."
-        # sudo "$BASE_DIR/install/piwall2_queue_service.sh"
-        # sudo "$BASE_DIR/install/piwall2_server_service.sh"
+        sudo "$BASE_DIR/install/piwall2_queue_service.sh"
+        sudo "$BASE_DIR/install/piwall2_server_service.sh"
     fi
     if [[ "$installation_type" == 'receiver' || "$installation_type" == 'all' ]]; then
         sudo "$BASE_DIR/install/piwall2_receiver_service.sh"
@@ -126,8 +125,8 @@ setupSystemdServices(){
 
     # stop and disable units in case we are changing which host is the broadcaster / receiver
     # and unit files already existed...
-    sudo systemctl disable /etc/systemd/system/piwall2_*.service
-    sudo systemctl stop /etc/systemd/system/piwall2_*.service
+    sudo systemctl disable /etc/systemd/system/piwall2_*.service || true
+    sudo systemctl stop /etc/systemd/system/piwall2_*.service || true
 
     sudo systemctl enable /etc/systemd/system/piwall2_*.service
     sudo systemctl daemon-reload
@@ -220,4 +219,4 @@ setGpuMem(){
     fi
 }
 
-main
+main "$@"

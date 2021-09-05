@@ -7,12 +7,7 @@ is_restart_required=false
 installation_type=false
 
 main(){
-    # installing and upgrading npm from scratch required a restart / re-login for the shell to recognize the new version
-    # when the version changed between `apt install npm` and `npm install npm@latest -g`
-    if ! which npm
-    then
-        is_restart_required=true
-    fi
+    parseOpts "$@"
 
     updateAndInstallPackages
     clearYoutubedlCache
@@ -67,6 +62,13 @@ parseOpts(){
 
 updateAndInstallPackages(){
     echo -e "\\nUpdating and installing packages..."
+
+    # installing and upgrading npm from scratch required a restart / re-login for the shell to recognize the new version
+    # when the version changed between `apt install npm` and `npm install npm@latest -g`
+    if ! which npm >/dev/null ; then
+        is_restart_required=true
+    fi
+
     sudo apt update
     sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi parallel dsh sshpass mbuffer npm
     sudo apt -y full-upgrade
@@ -91,4 +93,4 @@ installNode(){
     # sudo npm install --prefix "$BASE_DIR/app"
 }
 
-main
+main "$@"

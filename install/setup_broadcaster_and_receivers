@@ -125,7 +125,7 @@ def install_dependencies(config_loader):
 def install_app(config_loader, enable_receivers_composite_video_out, dont_disable_wifi):
     hostnames = get_broadcaster_and_receivers_hostname_list(config_loader)
     broadcaster_hostname = socket.gethostname()
-    print(f"Installing dependencies on this {hostnames}...")
+    print(f"Installing app on: {hostnames}...")
     install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     if enable_receivers_composite_video_out:
