@@ -1,0 +1,8 @@
+/var/log/piwall2/*.log {
+    nocompress
+    copytruncate
+    daily
+    dateext
+    ifempty
+    rotate 7
+}

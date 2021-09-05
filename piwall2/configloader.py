@@ -6,7 +6,7 @@ class ConfigLoader:
 
     __RECEIVERS_CONFIG_FILE_NAME = 'receivers.toml'
 
-    def __init__(self, load = True):
+    def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__receivers_config = None
         self.__receivers = []
@@ -14,8 +14,7 @@ class ConfigLoader:
         self.__wall_height = None
         self.__youtube_dl_video_format = None
         self.__is_loaded = False
-        if load:
-            self.load_config_if_not_loaded()
+        self.__load_config_if_not_loaded()
 
     def get_receivers_config(self):
         return self.__receivers_config
@@ -34,10 +33,11 @@ class ConfigLoader:
     def get_youtube_dl_video_format(self):
         return self.__youtube_dl_video_format
 
-    def get_receivers_config_path(self):
-        return DirectoryUtils().root_dir + '/' + self.__RECEIVERS_CONFIG_FILE_NAME
+    @staticmethod
+    def get_receivers_config_path():
+        return DirectoryUtils().root_dir + '/' + ConfigLoader.__RECEIVERS_CONFIG_FILE_NAME
 
-    def load_config_if_not_loaded(self):
+    def __load_config_if_not_loaded(self):
         if self.__is_loaded:
             return
 

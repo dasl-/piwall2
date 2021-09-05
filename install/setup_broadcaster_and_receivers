@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import os
+import socket
+import sys
+import shlex
+import time
+
+# This is necessary for the imports below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
+from piwall2.broadcaster.videobroadcaster import VideoBroadcaster
+from piwall2.configloader import ConfigLoader
+from piwall2.directoryutils import DirectoryUtils
+
+CONCURRENCY_LIMIT = 16
+
+def main():
+    args = parse_args()
+
+    # load config after parsing args to avoid potentially throwing errors before printing the help text
+    config_loader = ConfigLoader()
+    install_bootstrap_dependencies()
+    if args.setup_ssh:
+        if args.ssh_password is None:
+            raise Exception("When setting up SSH, '--receiver-ssh-password' must be specified.")
+        generate_ssh_key(VideoBroadcaster.SSH_KEY_PATH)
+        authorize_ssh_key(VideoBroadcaster.SSH_KEY_PATH, args.ssh_password, config_loader)
+    if args.install_dependencies:
+        install_dependencies(config_loader)
+    if args.install_app:
+        install_app(config_loader, args.enable_receivers_composite_video_out, args.dont_disable_wifi)
+    print("Success!")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=
+f"""Applies the receivers config located in: {ConfigLoader.get_receivers_config_path()}.
+This script should be run on the broadcaster. This script does several things:
+1) Sets up passwordless SSH from the broadcaster to each receiver
+2) Sets up the control daemon on the broadcaster
+3) Sets up the receiver daemon on each receiver
+""",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--dont-setup-ssh', dest='setup_ssh', action='store_false', default=True,
+        help="Skip setting up SSH.")
+    parser.add_argument('--ssh-password', dest='ssh_password', action='store', default=None,
+        help="SSH password for logging into the broadcaster and receiver raspberry pis. If you " +
+        "haven't changed this, it will be 'raspberry'. Required if setting up SSH.")
+    parser.add_argument('--dont-install-dependencies', dest='install_dependencies', action='store_false',
+        default=True, help="Skip installing dependencies.")
+    parser.add_argument('--dont-install-app', dest='install_app', action='store_false',
+        default=True, help="Skip installing app.")
+    parser.add_argument('--enable-receivers-composite-video-out',
+        dest='enable_receivers_composite_video_out', action='store_true', default=False,
+        help="Enable composite video output on the receivers. This will detrimentally affect their " +
+        "performance to a small degree.")
+    parser.add_argument('--dont-disable-wifi', dest='dont_disable_wifi', action='store_true', default=False,
+        help="Don't disable wifi. Only specify this option if you know what you're doing.")
+    args = parser.parse_args()
+    return args
+
+# generate the SSH key that the broadcaster will use for passwordless SSH
+def generate_ssh_key(file):
+    print(f"Generating ssh key: {file} ...")
+
+    dirname = os.path.dirname(file)
+    output = (subprocess
+        .check_output(
+            f"mkdir -p {shlex.quote(dirname)}",
+            shell = True,
+            executable = '/usr/bin/bash',
+            stderr = subprocess.STDOUT
+        )
+    )
+
+    # https://stackoverflow.com/a/43235320/627663
+    output = (subprocess
+        .check_output(
+            f"ssh-keygen -q -t ed25519 -N '' -f {shlex.quote(file)} <<<y >/dev/null 2>&1",
+            shell = True,
+            executable = '/usr/bin/bash',
+            stderr = subprocess.STDOUT
+        )
+    )
+
+def authorize_ssh_key(file, password, config_loader):
+    hosts_to_authorize_on = ' '.join(get_broadcaster_and_receivers_hostname_list(config_loader))
+    print(f"Authorizing ssh key on: {hosts_to_authorize_on}")
+
+    authorize_ssh_key_cmd = (
+        f"sshpass -p {shlex.quote(password)} " +
+        "ssh-copy-id " +
+        "-o ConnectTimeout=5 " +
+        "-o UserKnownHostsFile=/dev/null " +
+        "-o StrictHostKeyChecking=no " +
+        "-o LogLevel=ERROR " +
+        f"-i {shlex.quote(file)} " + "pi@{}"
+    )
+    parallel_cmd = (
+        f"parallel --will-cite --max-procs {CONCURRENCY_LIMIT} " +
+        # exit when the first job fails. Kill running jobs.
+        # If fail=1 is used, the exit status will be the exit status of the failing job.
+        "--halt now,fail=1 " +
+        f'"{authorize_ssh_key_cmd}" ::: {hosts_to_authorize_on}'
+    )
+    output = (subprocess
+        .check_output(
+            parallel_cmd,
+            shell = True,
+            executable = '/usr/bin/bash',
+            stderr = subprocess.STDOUT
+        )
+    )
+
+def install_dependencies(config_loader):
+    hostnames = get_broadcaster_and_receivers_hostname_list(config_loader)
+    broadcaster_hostname = socket.gethostname()
+    print(f"Installing dependencies on this {hostnames}...")
+    install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install_dependencies.sh -t " +
+        f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)'")
+    run_dsh(install_deps_cmd, hostnames)
+
+def install_app(config_loader, enable_receivers_composite_video_out, dont_disable_wifi):
+    hostnames = get_broadcaster_and_receivers_hostname_list(config_loader)
+    broadcaster_hostname = socket.gethostname()
+    print(f"Installing dependencies on this {hostnames}...")
+    install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install.sh -t " +
+        f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
+    if enable_receivers_composite_video_out:
+        install_deps_cmd += " -c"
+    if dont_disable_wifi:
+        install_deps_cmd += " -w"
+    install_deps_cmd += "'"
+    run_dsh(install_deps_cmd, hostnames)
+
+def run_cmd_with_realtime_output(cmd):
+    proc = subprocess.Popen(
+        cmd, shell = True, executable = '/usr/bin/bash'
+    )
+    while proc.poll() is None:
+        time.sleep(0.1)
+    if proc.returncode != 0:
+        raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
+            f"{proc.returncode}.")
+
+
+def run_dsh(cmd, machines):
+    machines_string = ''
+    for machine in machines:
+        machines_string += f'pi@{machine},'
+    machines_string.strip(',')
+
+    dsh_cmd = (f"dsh -r ssh --forklimit {CONCURRENCY_LIMIT} " +
+        "--remoteshellopt '-o UserKnownHostsFile=/dev/null' " +
+        "--remoteshellopt '-o StrictHostKeyChecking=no' " +
+        "--remoteshellopt '-o LogLevel=ERROR' " +
+        f'--remoteshellopt "-i {shlex.quote(VideoBroadcaster.SSH_KEY_PATH)}" ' +
+        f"--show-machine-names --machine {machines_string} {cmd}")
+    run_cmd_with_realtime_output(dsh_cmd)
+
+def get_broadcaster_and_receivers_hostname_list(config_loader):
+    hostname_list = config_loader.get_receivers_list()
+    broadcaster_hostname = socket.gethostname() + ".local"
+    if broadcaster_hostname not in hostname_list:
+        hostname_list.append(broadcaster_hostname)
+    return hostname_list
+
+# install dependencies necessary to run this script
+def install_bootstrap_dependencies():
+    print("Determining which bootstrap dependencies to install...")
+    deps = ['parallel', 'dsh', 'sshpass']
+    deps_to_install = []
+    for dep in deps:
+        if not is_program_installed(dep):
+            deps_to_install.append(dep)
+    deps_to_install = ' '.join(deps_to_install)
+    print(f"Installing dependencies: {deps_to_install}...")
+    run_cmd_with_realtime_output(f"sudo apt -y install {deps_to_install}")
+
+def is_program_installed(program):
+    try:
+        output = (subprocess
+            .check_output(
+                f"which {shlex.quote(program)}",
+                shell = True,
+                executable = '/usr/bin/bash',
+                stderr = subprocess.STDOUT
+            )
+        )
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 1:
+            return False
+        else:
+            raise e
+    except Exception as e:
+        raise e
+    return True
+
+
+main()
