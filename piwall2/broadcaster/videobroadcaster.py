@@ -187,7 +187,6 @@ class VideoBroadcaster:
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
         video_broadcast_cmd = ("set -o pipefail && " +
-            f"{DirectoryUtils().root_dir}/delay_buffer --delay 2 --log-uuid {shlex.quote(Logger.get_uuid())} | " +
             f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {video_broadcast_cmd}")
 
