@@ -1,11 +1,36 @@
 #!/usr/bin/env python3
 
 import os
+import subprocess
 import sys
+import time
+import pathlib
 
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
-from piwall2.receiver.receiver import Receiver 
+from piwall2.directoryutils import DirectoryUtils
+from piwall2.receiver.receiver import Receiver
 
+# The first video that is played after a system restart appears to have a lag in starting,
+# which can affect video synchronization across the receivers. Ensure we have played at
+# least one video since system startup. This is a short, one-second video.
+def ensure_video_warmup_has_run():
+    # The raspberry pi deletes all files in /tmp at every shutdown
+    success_file = "/tmp/first_video_played.file"
+    if os.path.isfile(success_file):
+        return
+    warmup_cmd = f'omxplayer --vol 0 {DirectoryUtils.root_dir}/utils/short_black_screen.ts'
+    proc = subprocess.Popen(
+        warmup_cmd, shell = True, executable = '/usr/bin/bash'
+    )
+    while proc.poll() is None:
+        time.sleep(0.1)
+    if proc.returncode != 0:
+        raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
+            f"{proc.returncode}.")
+    pathlib.touch(success_file)
+
+
+ensure_video_warmup_has_run()
 Receiver().run()
