@@ -20,7 +20,7 @@ def ensure_video_warmup_has_run():
     success_file = "/tmp/first_video_played.file"
     if os.path.isfile(success_file):
         return
-    warmup_cmd = f'omxplayer --vol 0 {DirectoryUtils.root_dir}/utils/short_black_screen.ts'
+    warmup_cmd = f'omxplayer --vol 0 {DirectoryUtils().root_dir}/utils/short_black_screen.ts'
     proc = subprocess.Popen(
         warmup_cmd, shell = True, executable = '/usr/bin/bash'
     )
