@@ -171,7 +171,7 @@ class Receiver:
         if proc.returncode != 0:
             raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
-        pathlib.Path.touch(success_file)
+        pathlib.Path(success_file).touch()
 
     def __get_local_ip(self):
         return (subprocess
