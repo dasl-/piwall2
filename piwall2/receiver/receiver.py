@@ -22,6 +22,7 @@ class Receiver:
         self.__omxplayer_controller = OmxplayerController()
         self.__hostname = socket.gethostname() + ".local"
         self.__local_ip_address = self.__get_local_ip()
+        self.__orig_logger_uuid = Logger.get_uuid()
         self.__is_video_playback_in_progress = False
         self.__receive_and_play_video_proc = None
         # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
@@ -45,7 +46,8 @@ class Receiver:
 
         if self.__is_video_playback_in_progress:
             if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
-                self.__is_video_playback_in_progress = False
+                self.__logger.info("Ending video playback because receive_and_play_video_proc is no longer running...")
+                self.__stop_video_playback_if_playing()
 
         msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
         if self.__is_video_playback_in_progress:
@@ -60,40 +62,38 @@ class Receiver:
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-        orig_uuid = Logger.get_uuid()
+        self.__orig_logger_uuid = Logger.get_uuid()
         if 'log_uuid' in ctrl_msg_content:
             Logger.set_uuid(ctrl_msg_content['log_uuid'])
 
         params_list = None
-        try:
-            if self.__hostname in ctrl_msg_content:
-                params_list = ctrl_msg_content[self.__hostname]
-            elif self.__local_ip_address in ctrl_msg_content:
-                params_list = ctrl_msg_content[self.__local_ip_address]
-            else:
-                raise Exception(f"Unable to find hostname ({self.__hostname}) or local ip " +
-                    f"({self.__local_ip_address}) in control message content: {ctrl_msg_content}")
+        if self.__hostname in ctrl_msg_content:
+            params_list = ctrl_msg_content[self.__hostname]
+        elif self.__local_ip_address in ctrl_msg_content:
+            params_list = ctrl_msg_content[self.__local_ip_address]
+        else:
+            raise Exception(f"Unable to find hostname ({self.__hostname}) or local ip " +
+                f"({self.__local_ip_address}) in control message content: {ctrl_msg_content}")
 
-            cmd = self.__build_receive_and_play_video_command(params_list)
-            self.__logger.info(f"Running receive_and_play_video command: {cmd}")
-            self.__is_video_playback_in_progress = True
-            proc = subprocess.Popen(
-                cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
-            )
-            return proc
-        finally:
-            Logger.set_uuid(orig_uuid)
+        cmd = self.__build_receive_and_play_video_command(params_list)
+        self.__logger.info(f"Running receive_and_play_video command: {cmd}")
+        self.__is_video_playback_in_progress = True
+        proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
+        )
+        return proc
 
     def __stop_video_playback_if_playing(self):
         if not self.__is_video_playback_in_progress:
             return
         if self.__receive_and_play_video_proc_pgid:
-            self.__logger.info("Killing receive_and_play_video proc...")
+            self.__logger.info("Killing receive_and_play_video proc (if it's still running)...")
             try:
                 os.killpg(self.__receive_and_play_video_proc_pgid, signal.SIGTERM)
             except Exception:
                 # might raise: `ProcessLookupError: [Errno 3] No such process`
                 pass
+        Logger.set_uuid(self.__orig_logger_uuid)
         self.__is_video_playback_in_progress = False
 
     """
