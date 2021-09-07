@@ -136,11 +136,9 @@ setupSystemdServices(){
     fi
 
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
-        # TODO: add piwall2_server.service to the list
-        sudo systemctl enable piwall2_queue.service
+        sudo systemctl enable piwall2_queue.service piwall2_server.service
         sudo systemctl daemon-reload
-        # TODO: add piwall2_server.service to the list
-        sudo systemctl restart piwall2_queue.service
+        sudo systemctl restart piwall2_queue.service piwall2_server.service
     fi
     if [[ "$installation_type" == 'receiver' || "$installation_type" == 'all' ]]; then
         sudo systemctl enable piwall2_receiver.service
