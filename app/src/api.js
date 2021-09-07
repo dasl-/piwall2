@@ -14,15 +14,13 @@ const client = axios.create({
 });
 
 //On load, called to load the auth2 library and API client library.
-gapi.load('client:auth2', initGoogleClient);
+gapi.load('client', initGoogleClient);
 
 // Initialize the API client library
 function initGoogleClient() {
   gapi.client.init({
+    apiKey: process.env.REACT_APP_GOOGLE_API_KEY,
     discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
-    client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID
-  }).then(function () {
-    gapi.client.setApiKey(process.env.REACT_APP_GOOGLE_API_KEY);
   });
 }
 
