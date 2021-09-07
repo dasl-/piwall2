@@ -136,10 +136,11 @@ setupSystemdServices(){
     fi
 
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
-        echo "TODO..."
-        # sudo systemctl enable piwall2_queue.service piwall2_server.service
-        # sudo systemctl daemon-reload
-        # sudo systemctl restart piwall2_queue.service piwall2_server.service
+        # TODO: add piwall2_server.service to the list
+        sudo systemctl enable piwall2_queue.service
+        sudo systemctl daemon-reload
+        # TODO: add piwall2_server.service to the list
+        sudo systemctl restart piwall2_queue.service
     fi
     if [[ "$installation_type" == 'receiver' || "$installation_type" == 'all' ]]; then
         sudo systemctl enable piwall2_receiver.service
@@ -157,8 +158,7 @@ setupYoutubeDlUpdateCron(){
 
 updateDbSchema(){
     echo "Updating DB schema (if necessary)..."
-    echo "TODO"
-    # sudo "$BASE_DIR"/utils/make_db
+    sudo "$BASE_DIR"/utils/make_db
 }
 
 buildWebApp(){

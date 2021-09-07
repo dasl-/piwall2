@@ -34,9 +34,13 @@ class VideoBroadcaster:
     __VIDEO_PLAYBACK_DONE_FILE = '/tmp/video_playback_done.file'
 
     # video_url may be a youtube url or a path to a file on disk
-    def __init__(self, video_url):
+    def __init__(self, video_url, log_uuid):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        Logger.set_uuid(Logger.make_uuid())
+        if log_uuid:
+            Logger.set_uuid(log_uuid)
+        else:
+            Logger.set_uuid(Logger.make_uuid())
+
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
 

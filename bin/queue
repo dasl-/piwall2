@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+from pifi.queue import Queue
+
+Queue().run()

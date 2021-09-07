@@ -71,7 +71,7 @@ updateAndInstallPackages(){
     fi
 
     sudo apt update
-    sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi parallel dsh sshpass mbuffer npm
+    sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi parallel dsh sshpass mbuffer npm sqlite3
     sudo apt -y full-upgrade
     sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
 }

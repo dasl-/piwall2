@@ -13,10 +13,11 @@ def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video broadcaster')
     parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
         help='youtube video url or file path. default: The Smashing Pumpkins - Today.')
+    parser.add_argument('--log-uuid', dest='log_uuid', action='store', help='Logger UUID')
 
     args = parser.parse_args()
     return args
 
 
 args = parseArgs()
-VideoBroadcaster(args.url).broadcast()
+VideoBroadcaster(args.url, args.log_uuid).broadcast()

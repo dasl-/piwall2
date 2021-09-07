@@ -11,6 +11,7 @@ from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.receiver.omxplayercontroller import OmxplayerController
+from piwall2.volumecontroller import VolumeController
 
 class Receiver:
 
@@ -18,20 +19,23 @@ class Receiver:
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__logger.info("Started receiver!")
         self.__control_message_helper = ControlMessageHelper().setup_for_receiver()
         self.__omxplayer_controller = OmxplayerController()
         self.__hostname = socket.gethostname() + ".local"
         self.__local_ip_address = self.__get_local_ip()
-        self.__orig_logger_uuid = Logger.get_uuid()
+        self.__orig_log_uuid = Logger.get_uuid()
         self.__is_video_playback_in_progress = False
         self.__receive_and_play_video_proc = None
         # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__receive_and_play_video_proc_pgid = None
 
-    def run(self):
-        self.__logger.info("Started receiver!")
+        # house keeping
+        (VolumeController()).set_vol_pct(100)
         self.__ensure_warmup_video_has_run()
+
+    def run(self):
         while True:
             try:
                 self.__run_internal()
@@ -62,7 +66,7 @@ class Receiver:
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-        self.__orig_logger_uuid = Logger.get_uuid()
+        self.__orig_log_uuid = Logger.get_uuid()
         if 'log_uuid' in ctrl_msg_content:
             Logger.set_uuid(ctrl_msg_content['log_uuid'])
 
@@ -93,7 +97,7 @@ class Receiver:
             except Exception:
                 # might raise: `ProcessLookupError: [Errno 3] No such process`
                 pass
-        Logger.set_uuid(self.__orig_logger_uuid)
+        Logger.set_uuid(self.__orig_log_uuid)
         self.__is_video_playback_in_progress = False
 
     """
