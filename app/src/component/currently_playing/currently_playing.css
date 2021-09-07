@@ -1,0 +1,10 @@
+input.volume {
+    width: 100%;
+}
+.vol-icon {
+    font-size:1.15rem;
+}
+.volume-container {
+    padding-left: 20px !important;
+    padding-right: 25px !important;
+}
