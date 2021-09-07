@@ -120,7 +120,7 @@ class OmxplayerController:
             self.__logger.debug(f"Unable to open {dbus_pid_file_path}")
             return False
 
-        self.__dbus_addr = dbus_addr_file.read()
-        self.__dbus_pid = dbus_pid_file.read()
+        self.__dbus_addr = dbus_addr_file.read().strip()
+        self.__dbus_pid = dbus_pid_file.read().strip()
         if self.__dbus_addr and self.__dbus_pid:
             return True
