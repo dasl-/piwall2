@@ -15,6 +15,7 @@ class Queue:
     def __init__(self):
         self.__playlist = Playlist()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__logger.info("Starting queue...")
         self.__orig_log_uuid = Logger.get_uuid()
         self.__broadcast_proc = None
         self.__playlist_item = None
@@ -44,6 +45,7 @@ class Queue:
         self.__orig_log_uuid = Logger.get_uuid()
         log_uuid = Logger.make_uuid()
         Logger.set_uuid(log_uuid)
+        self.__logger.info(f"Starting broadcast for playlist_video_id: {playlist_item['playlist_video_id']}")
         cmd = (f"{DirectoryUtils().root_dir}/bin/broadcast --url {shlex.quote(playlist_item['url'])} " +
             f"--log-uuid {shlex.quote(log_uuid)}")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
@@ -90,3 +92,4 @@ class Queue:
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
+        self.__logger.info("Ended video broadcast.")
