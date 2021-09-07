@@ -38,10 +38,9 @@ class Queue:
             time.sleep(0.050)
 
     def __play_playlist_item(self, playlist_item):
-        if playlist_item["type"] == Playlist.TYPE_VIDEO:
-            if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
-                # Someone deleted the item from the queue in between getting the item and starting it.
-                return
+        if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
+            # Someone deleted the item from the queue in between getting the item and starting it.
+            return
         self.__orig_log_uuid = Logger.get_uuid()
         log_uuid = Logger.make_uuid()
         Logger.set_uuid(log_uuid)
