@@ -138,7 +138,7 @@ class Receiver:
         video, and no matter where in the pipeline the delay is coming from. Using mbuffer seems simpler, and it is
         easier to monitor. By checking its logs, we can see how close the mbuffer gets to becoming full.
         """
-        mbuffer_cmd = f'mbuffer -q -l /tmp/mbuffer.out -m {self.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b'
+        mbuffer_cmd = f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {self.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b'
         omx_cmd_template = 'omxplayer --crop {0} {1}'
 
         params = params_list[0]

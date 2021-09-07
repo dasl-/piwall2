@@ -183,7 +183,7 @@ class VideoBroadcaster:
     def __start_video_broadcast_proc(self, download_and_convert_video_proc):
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
         mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
-        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
+        burst_throttling_clause = (f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
             'ffmpeg -hide_banner -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
             f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
         broadcasting_clause = DirectoryUtils().root_dir + f"/bin/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
@@ -390,7 +390,7 @@ class VideoBroadcaster:
             https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
             youtube_dl_cmd_template = ("yt-dlp --extractor-args youtube:player_client=android {0} " +
-                "--retries infinite --format {1} --output - | mbuffer -q -Q -m {2}b")
+                "--retries infinite --format {1} --output - | HOME=/home/pi mbuffer -q -Q -m {2}b")
 
             # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
             # be enough buffer for ~139s
