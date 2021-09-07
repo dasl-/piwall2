@@ -32,7 +32,7 @@ class Receiver:
 
         # house keeping
         (VolumeController()).set_vol_pct(100)
-        self.__ensure_warmup_video_has_run()
+        self.__play_warmup_video()
 
         # This must come after the warmup video. When run as a systemd service, omxplayer wants to
         # start new dbus sessions / processes every time the service is restarted. This means it will
@@ -166,12 +166,18 @@ class Receiver:
     # The first video that is played after a system restart appears to have a lag in starting,
     # which can affect video synchronization across the receivers. Ensure we have played at
     # least one video since system startup. This is a short, one-second video.
-    def __ensure_warmup_video_has_run(self):
-        # The raspberry pi deletes all files in /tmp at every shutdown
-        success_file = "/tmp/first_video_played.file"
-        if os.path.isfile(success_file):
-            self.__logger.info("Receiver warmup video has already played since last restart...")
-            return
+    #
+    # Perhaps one thing this warmup video does is start the various dbus processes for the first
+    # time, which can involve some sleeps:
+    # https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer#L50-L59
+    #
+    # When the receiver is run as as a systemd service, the first time a video is played after the service
+    # is restarted, it seems that omxplayer must initialize dbus. Thus, it is important to run the warmup
+    # video whenever the service is restarted.
+    #
+    # This is as opposed to when running the service as a regular user / process -- the dbus stuff stays
+    # initialized until the pi is rebooted.
+    def __play_warmup_video(self):
         self.__logger.info("Playing receiver warmup video...")
         warmup_cmd = f'omxplayer --vol 0 {DirectoryUtils().root_dir}/utils/short_black_screen.ts'
         proc = subprocess.Popen(
@@ -182,7 +188,6 @@ class Receiver:
         if proc.returncode != 0:
             raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
-        pathlib.Path(success_file).touch()
 
     def __get_local_ip(self):
         return (subprocess
