@@ -446,7 +446,7 @@ class VideoBroadcaster:
             #
             # The youtube-dl package needs updating periodically when youtube make updates. This is
             # handled on a cron once a day:
-            # https://github.com/dasl-/pifi/blob/a614b33e1be093f6ee3bb62b036ee6472ffe5132/install/pifi_cron.sh#L5
+            # https://github.com/dasl-/piwall2/blob/3aa6dee264102baf2646aab1baebdcae0148b4bc/install/piwall2_cron.sh#L5
             #
             # But we also attempt to update it on the fly here if we get youtube-dl errors when trying to play
             # a video.

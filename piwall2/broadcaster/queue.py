@@ -25,7 +25,6 @@ class Queue:
         self.__playlist.clean_up_state()
 
     def run(self):
-        # TODO: check for video skips here (rather than in the broadcaster process (which is the pifi model))
         while True:
             if self.__is_broadcast_in_progress:
                 self.__maybe_skip_broadcast()

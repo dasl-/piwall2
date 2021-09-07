@@ -7,5 +7,5 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-from pifi.database import Database
+from piwall2.database import Database
 Database().construct()
