@@ -91,7 +91,7 @@ installNode(){
     sudo npm install npm@latest -g
 
     # Install app dependencies
-    # sudo npm install --prefix "$BASE_DIR/app"
+    sudo npm install --prefix "$BASE_DIR/app"
 }
 
 main "$@"
