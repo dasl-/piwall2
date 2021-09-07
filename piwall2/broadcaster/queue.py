@@ -88,8 +88,8 @@ class Queue:
         if self.__playlist_item:
             self.__playlist.end_video(self.__playlist_item["playlist_video_id"])
 
+        self.__logger.info("Ended video broadcast.")
         Logger.set_uuid(self.__orig_log_uuid)
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
-        self.__logger.info("Ended video broadcast.")
