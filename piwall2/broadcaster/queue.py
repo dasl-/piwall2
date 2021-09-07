@@ -32,10 +32,10 @@ class Queue:
                 if self.__broadcast_proc and self.__broadcast_proc.poll() is not None:
                     self.__logger.info("Ending broadcast because broadcast proc is no longer running...")
                     self.__stop_broadcast_if_broadcasting()
-
-            next_item = self.__playlist.get_next_playlist_item()
-            if next_item:
-                self.__play_playlist_item(next_item)
+            else:
+                next_item = self.__playlist.get_next_playlist_item()
+                if next_item:
+                    self.__play_playlist_item(next_item)
             time.sleep(0.050)
 
     def __play_playlist_item(self, playlist_item):
