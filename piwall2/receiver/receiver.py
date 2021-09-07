@@ -21,7 +21,6 @@ class Receiver:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Started receiver!")
         self.__control_message_helper = ControlMessageHelper().setup_for_receiver()
-        self.__omxplayer_controller = OmxplayerController()
         self.__hostname = socket.gethostname() + ".local"
         self.__local_ip_address = self.__get_local_ip()
         self.__orig_log_uuid = Logger.get_uuid()
@@ -34,6 +33,14 @@ class Receiver:
         # house keeping
         (VolumeController()).set_vol_pct(100)
         self.__ensure_warmup_video_has_run()
+
+        # This must come after the warmup video. When run as a systemd service, omxplayer wants to
+        # start new dbus sessions / processes every time the service is restarted. This means it will
+        # create new dbus files in /tmp when the first video is played after the service is restarted
+        # But the old files will still be in /tmp. So if we initialize the OmxplayerController before
+        # the new dbus files are created by playing the first video since restarting the service, we
+        # will be reading stale dbus info from the files in /tmp.
+        self.__omxplayer_controller = OmxplayerController()
 
     def run(self):
         while True:
