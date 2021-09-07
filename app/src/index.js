@@ -9,7 +9,7 @@ import 'css/main.css';
 import 'css/bootstrap.min.css';
 import 'css/custom-theme.css';
 
-if (process.env.REACT_APP_GOOGLE_API_KEY && process.env.REACT_APP_GOOGLE_API_CLIENT_ID) {
+if (process.env.REACT_APP_GOOGLE_API_KEY) {
   render(
     <App
       is_new_session={!utils.hasExistingSession()}
