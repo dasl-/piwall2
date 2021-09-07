@@ -25,7 +25,7 @@ class OmxplayerController:
         if not self.__load_dbus_session_info_if_not_loaded():
             return 0
 
-        cmd = (f"sudo DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
+        cmd = (f"sudo -u {self.__user} DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
             "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get " +
             "string:'org.mpris.MediaPlayer2.Player' string:'Volume'")
@@ -54,7 +54,7 @@ class OmxplayerController:
         vol_pct = vol_pct / 100
         vol_pct = max(0, vol_pct)
         vol_pct = min(1, vol_pct)
-        cmd = (f"sudo DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
+        cmd = (f"sudo -u {self.__user} DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
             "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set " +
             f"string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{vol_pct}")
@@ -77,7 +77,7 @@ class OmxplayerController:
         if not self.__load_dbus_session_info_if_not_loaded():
             return False
 
-        cmd = (f"sudo DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
+        cmd = (f"sudo -u {self.__user} DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
             "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetVideoCropPos " +
             f"objpath:/not/used string:'{crop_string}'")
