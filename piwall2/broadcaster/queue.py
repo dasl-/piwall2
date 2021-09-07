@@ -6,6 +6,7 @@ import time
 
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
+from piwall2.broadcaster.controlmessagehelper import ControlMessageHelper
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.volumecontroller import VolumeController
 
@@ -17,12 +18,15 @@ class Queue:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Starting queue...")
         self.__orig_log_uuid = Logger.get_uuid()
+        self.__volume_controller = VolumeController()
+        self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
+        self.__last_receiver_volume_set_time = 0
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
 
         # house keeping
-        (VolumeController()).set_vol_pct(100)
+        self.__volume_controller.set_vol_pct(50)
         self.__playlist.clean_up_state()
 
     def run(self):
@@ -32,6 +36,7 @@ class Queue:
                 if self.__broadcast_proc and self.__broadcast_proc.poll() is not None:
                     self.__logger.info("Ending broadcast because broadcast proc is no longer running...")
                     self.__stop_broadcast_if_broadcasting()
+                self.__maybe_set_receiver_volume()
             else:
                 next_item = self.__playlist.get_next_playlist_item()
                 if next_item:
@@ -93,3 +98,14 @@ class Queue:
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
+
+    def __maybe_set_receiver_volume(self):
+        if not self.__is_broadcast_in_progress:
+            return
+
+        num_seconds_between_setting_volume = 2
+        now = time.time()
+        if (now - self.__last_receiver_volume_set_time) > num_seconds_between_setting_volume:
+            vol_pct = self.__volume_controller.get_vol_pct()
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
+            self.__last_receiver_volume_set_time = now
