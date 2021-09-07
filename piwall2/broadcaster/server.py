@@ -1,5 +1,5 @@
-import http.server 
-import io 
+import http.server
+import io
 import json
 import traceback
 import urllib
@@ -36,7 +36,7 @@ class Piwall2Api():
 
     def enqueue(self, post_data):
         self.__playlist.enqueue(
-            post_data['url'], post_data['thumbnail'], post_data['title'], 
+            post_data['url'], post_data['thumbnail'], post_data['title'],
             post_data['duration'], ''
         )
         response_details = post_data
@@ -206,7 +206,10 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 class Server:
 
     def __init__(self):
-        self.__server = http.serverThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__logger.info('Starting up server...')
+        self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
 
     def serve_forever(self):
+        self.__logger.info('Server is serving forever...')
         self.__server.serve_forever()
