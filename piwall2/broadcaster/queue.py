@@ -6,7 +6,7 @@ import time
 
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
-from piwall2.playlist import Playlist
+from piwall2.broadcaster.playlist import Playlist
 from piwall2.volumecontroller import VolumeController
 
 # The Queue is responsible for playing the next video in the Playlist

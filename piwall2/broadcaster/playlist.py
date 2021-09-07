@@ -1,5 +1,5 @@
 from piwall2.logger import Logger
-import piwall2.database
+import piwall2.broadcaster.database
 
 class Playlist:
 
@@ -12,7 +12,7 @@ class Playlist:
     __logger = None
 
     def __init__(self):
-        self.__cursor = piwall2.database.Database().get_cursor()
+        self.__cursor = piwall2.broadcaster.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def construct(self):

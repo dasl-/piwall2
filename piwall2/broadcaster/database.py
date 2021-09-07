@@ -4,7 +4,7 @@ import time
 
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
-import piwall2.playlist
+import piwall2.broadcaster.playlist
 
 def dict_factory(cursor, row):
     d = {}
@@ -49,7 +49,7 @@ class Database:
             # construct from scratch
             self.__logger.info("Constructing database schema from scratch...")
             self.__construct_schema_version()
-            piwall2.playlist.Playlist().construct()
+            piwall2.broadcaster.playlist.Playlist().construct()
         elif current_schema_version < self.__SCHEMA_VERSION:
             self.__logger.info(
                 f"Database schema is outdated. Updating from version {current_schema_version} to " +

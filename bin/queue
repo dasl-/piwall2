@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
-from piwall2.queue import Queue
+from piwall2.broadcaster.queue import Queue
 
 Queue().run()
