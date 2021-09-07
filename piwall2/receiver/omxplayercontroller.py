@@ -101,6 +101,7 @@ class OmxplayerController:
 
         dbus_addr_file_path = f"/tmp/omxplayerdbus.{self.__user}"
         dbus_pid_file_path = f"/tmp/omxplayerdbus.{self.__user}.pid"
+        self.__logger.info(f"Reading dbus info from files {dbus_addr_file_path} and {dbus_pid_file_path}.")
 
         # Omxplayer creates these files on its first run after a reboot.
         # These files might not yet exist if omxplayer has not been started since the pi
