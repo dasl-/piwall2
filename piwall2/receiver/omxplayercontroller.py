@@ -63,7 +63,7 @@ class OmxplayerController:
             vol_cmd_output = (subprocess
                 .check_output(cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT))
         except Exception:
-            self.__logger.debug(f"failed to set omxplayer volume with command: [{cmd}], output: [{vol_cmd_output}].")
+            self.__logger.debug(f"failed to set omxplayer volume with command: [{cmd}].")
             return False
         elapsed_ms = (time.time() - start) * 1000
 
