@@ -18,6 +18,7 @@ class Piwall2Api():
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__is_tiled = False
+        self.__logger.info(f"dasl uuid: {Logger.make_uuid()}")
 
     # get all the data that we poll for every second in the piwall2
     def get_queue(self):
