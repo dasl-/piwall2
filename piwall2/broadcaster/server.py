@@ -17,6 +17,7 @@ class Piwall2Api():
         self.__vol_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__is_tiled = False
 
     # get all the data that we poll for every second in the piwall2
     def get_queue(self):
@@ -72,6 +73,15 @@ class Piwall2Api():
             'success': True
         }
 
+    def toggle_tile(self):
+        if self.__is_tiled:
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_TILE, False)
+            self.__is_tiled = False
+        else:
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_TILE, True)
+            self.__is_tiled = True
+
+
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
@@ -119,6 +129,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.get_queue()
         elif parsed_path.path == 'vol_pct':
             response = self.__api.get_volume()
+        elif parsed_path.path == 'tile':
+            response = self.__api.toggle_tile()
         else:
             self.__do_404()
             return

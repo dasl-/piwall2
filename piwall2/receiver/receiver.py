@@ -28,6 +28,7 @@ class Receiver:
         # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__receive_and_play_video_proc_pgid = None
+        self.__crop = None
 
         # house keeping
         (VolumeController()).set_vol_pct(100)
@@ -63,8 +64,11 @@ class Receiver:
         if self.__is_video_playback_in_progress:
             if msg_type == ControlMessageHelper.TYPE_VOLUME:
                 self.__omxplayer_controller.set_vol_pct(ctrl_msg[ControlMessageHelper.CONTENT_KEY])
+            elif msg_type == ControlMessageHelper.TYPE_TILE:
+                if ctrl_msg[ControlMessageHelper.CONTENT_KEY]:
+                    self.__omxplayer_controller.set_crop("0 0 1920 1080")
             elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
-                self.__stop_video_playback_if_playing()
+                self.__omxplayer_controller.set_crop(self.__crop)
         if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
             self.__stop_video_playback_if_playing()
             self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
@@ -150,6 +154,7 @@ class Receiver:
         params = params_list[0]
         params2 = None
         omx_cmd = omx_cmd_template.format(shlex.quote(params['crop']), params['misc'])
+        self.__crop = params['crop']
         cmd = 'set -o pipefail && '
         if params_list_len == 2:
             params2 = params[1]

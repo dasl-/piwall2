@@ -12,6 +12,7 @@ class ControlMessageHelper:
     TYPE_VOLUME = 'volume'
     TYPE_PLAY_VIDEO = 'play_video'
     TYPE_SKIP_VIDEO = 'skip_video'
+    TYPE_TILE = 'tile'
 
     CTRL_MSG_TYPE_KEY = 'msg_type'
     CONTENT_KEY = 'content'
