@@ -164,8 +164,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
     def __serve_static_asset(self):
         if self.path == '/':
             self.path = '/index.html'
-        if False: # TODO what happens if i remove this?
-            pass
+        # if False: # TODO what happens if i remove this?
+        #     pass
         elif self.path.startswith('/assets/'):
             self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]
         else:
