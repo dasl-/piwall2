@@ -68,8 +68,9 @@ class Receiver:
                 if ctrl_msg[ControlMessageHelper.CONTENT_KEY]:
                     self.__omxplayer_controller.set_crop("0 0 1920 1080")
                 else:
-                    self.__logger.info(f"Setting crop to {self.__crop}")
-                    self.__omxplayer_controller.set_crop(self.__crop)
+                    crop = self.__crop.replace(',', ' ')
+                    self.__logger.info(f"Setting crop to {crop}")
+                    self.__omxplayer_controller.set_crop(crop)
             elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
                 self.__stop_video_playback_if_playing()
         if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
