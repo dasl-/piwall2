@@ -67,8 +67,10 @@ class Receiver:
             elif msg_type == ControlMessageHelper.TYPE_TILE:
                 if ctrl_msg[ControlMessageHelper.CONTENT_KEY]:
                     self.__omxplayer_controller.set_crop("0 0 1920 1080")
+                else:
+                    self.__omxplayer_controller.set_crop(self.__crop)
             elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
-                self.__omxplayer_controller.set_crop(self.__crop)
+                self.__stop_video_playback_if_playing()
         if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
             self.__stop_video_playback_if_playing()
             self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)

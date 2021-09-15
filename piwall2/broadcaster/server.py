@@ -75,10 +75,8 @@ class Piwall2Api():
     def toggle_tile(self, is_tiled):
         if is_tiled:
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_TILE, False)
-            self.__is_tiled = False
         else:
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_TILE, True)
-            self.__is_tiled = True
 
 
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
