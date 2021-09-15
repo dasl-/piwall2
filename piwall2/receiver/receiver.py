@@ -1,5 +1,4 @@
 import os
-import pathlib
 import shlex
 import signal
 import socket

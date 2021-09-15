@@ -8,9 +8,6 @@ class Playlist:
     STATUS_PLAYING = 'STATUS_PLAYING'
     STATUS_DONE = 'STATUS_DONE'
 
-    __cursor = None
-    __logger = None
-
     def __init__(self):
         self.__cursor = piwall2.broadcaster.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)

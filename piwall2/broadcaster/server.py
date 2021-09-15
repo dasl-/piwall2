@@ -5,6 +5,7 @@ import traceback
 import urllib
 
 from piwall2.broadcaster.playlist import Playlist
+from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.logger import Logger
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.volumecontroller import VolumeController
@@ -14,6 +15,7 @@ class Piwall2Api():
     def __init__(self):
         self.__playlist = Playlist()
         self.__vol_controller = VolumeController()
+        self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     # get all the data that we poll for every second in the piwall2
@@ -64,6 +66,7 @@ class Piwall2Api():
     def set_vol_pct(self, post_data):
         vol_pct = int(post_data['vol_pct'])
         self.__vol_controller.set_vol_pct(vol_pct)
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
         return {
             'vol_pct': vol_pct,
             'success': True

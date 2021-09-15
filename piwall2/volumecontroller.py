@@ -3,6 +3,22 @@ import re
 import math
 
 # Gets and sets alsa volume
+#
+# On the receivers, we use this to ensure their audio output is at max volume when the receiver
+# process starts. Volume adjustments on receivers are made by setting the volume in software
+# (in omxplayer). Receiver alsa volume should always be at 100%.
+#
+# On the broadcaster, we use the alsa volume as a mere state store. The broadcaster is not hooked
+# up to any audio output device, yet we set its alsa volume whenever volume adjustments are made
+# in the web UI. This is to allow the broadcaster's queue process to read the volume level and set
+# it on the receivers. In effect, we use the broadcaster's alsa volume as a form of interprocess
+# communication (IPC). It allows the broadcaster's server process to set the volume and the
+# broadcaster's queue process can read it.
+#
+# We tried porting the broadcasters volume state store from this (ab)use of alsa to a sqlite3
+# backed state store. With sqlite3, setting the volume took anywhere from 33% - 1000% as long
+# as with alsa, and occasionally resulted in `sqlite3.OperationalError: database is locked`
+# errors: https://gist.github.com/dasl-/3858c6473aa434f1487372f0a188ca05
 class VolumeController:
 
     """
