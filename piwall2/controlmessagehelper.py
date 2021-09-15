@@ -24,7 +24,7 @@ class ControlMessageHelper:
         return self
 
     def setup_for_receiver(self):
-        self.__multicast_helper = MulticastHelper().setup_receiver_control_sockets()
+        self.__multicast_helper = MulticastHelper().setup_receiver_control_socket()
         return self
 
     def send_msg(self, ctrl_msg_type, content):

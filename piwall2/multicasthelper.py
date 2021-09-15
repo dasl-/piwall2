@@ -56,7 +56,7 @@ class MulticastHelper:
             " bytes on receiver video socket.")
         return self
 
-    def setup_receiver_control_sockets(self):
+    def setup_receiver_control_socket(self):
         self.__setup_socket_receive_buffer_configuration()
         self.__receive_control_socket = self.__make_receive_socket(self.ADDRESS, self.CONTROL_PORT)
         return self

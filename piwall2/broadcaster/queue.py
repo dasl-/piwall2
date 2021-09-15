@@ -99,6 +99,15 @@ class Queue:
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
 
+    # We already set the volume in the server in response to a user setting the volume in the web UI.
+    # Here we just ensure the change took effect by re-setting the volume every N seconds.
+    #
+    # Possible failure scenarios:
+    # 1) A UDP packet was dropped, so a receiver missed a volume adjustment. This seems unlikely given that
+    #   we tuned everything to minimize UDP packet loss (very important for a successful video broadcast).
+    #
+    # Perhaps this is not totally necessary to do -- we could simply rely on setting the volume in the
+    # server in response to a user setting the volume in the web UI.
     def __maybe_set_receiver_volume(self):
         if not self.__is_broadcast_in_progress:
             return
