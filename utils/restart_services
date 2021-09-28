@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import sys
+
+# This is necessary for the import below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
+
+from piwall2.cmdrunner import CmdRunner
+from piwall2.directoryutils import DirectoryUtils
+from piwall2.configloader import ConfigLoader
+
+def main():
+    args = parse_args()
+    cmd_runner = CmdRunner()
+    if args.should_copy_config:
+        copy_config_to_receivers(cmd_runner)
+    if args.should_git_pull:
+        git_pull(cmd_runner, args.git_branch)
+    restart_services(cmd_runner)
+    print("Done!")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=
+f"""This script should be run from the broadcaster. It restarts all piwall2 services on the
+broadcaster and receivers. Optionally copies the config located at {ConfigLoader.RECEIVERS_CONFIG_PATH}
+from the broadcaster to the receivers. Optionally pulls the latest code from git.
+""",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--copy-config', dest='should_copy_config', action='store_true', default=False,
+        help=f"Copy config located at {ConfigLoader.RECEIVERS_CONFIG_PATH} from broadcaster to receivers.")
+    parser.add_argument('--git-pull', dest='should_git_pull', action='store_true',
+        default=False, help="Pull latest code from git before restarting services.")
+    parser.add_argument('--git-branch', dest='git_branch', type=str, default='main',
+        help="Checkout the specified git branch. Default: %(default)s")
+    args = parser.parse_args()
+    return args
+
+def copy_config_to_receivers(cmd_runner):
+    print("Copying config to receivers...")
+    cmd = DirectoryUtils().root_dir + "/utils/copy_config_to_receivers"
+    cmd_runner.run_cmd_with_realtime_output(cmd)
+
+def git_pull(cmd_runner, git_branch):
+    print(f"Pulling git and checking out branch {git_branch}...")
+    cmd = f"git pull && git checkout {git_branch}"
+    cmd_runner.run_cmd_with_realtime_output(cmd)
+
+def restart_services(cmd_runner):
+    print("Restarting services...")
+    cmd = "sudo systemctl restart 'piwall2_*.service' --all"
+    cmd_runner.run_cmd_with_realtime_output(cmd)
+
+
+main()
