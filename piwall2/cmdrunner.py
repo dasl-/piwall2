@@ -27,7 +27,7 @@ class CmdRunner:
 
         # populate self.__broadcaster_and_receivers_list
         broadcaster_hostname = self.get_broadcaster_hostname()
-        broadcaster_ip = socket.gethostbyname(self.__broadcaster)
+        broadcaster_ip = socket.gethostbyname(broadcaster_hostname)
         broadcaster_and_receivers_list = self.__receivers_list
         if (
             broadcaster_hostname not in self.__broadcaster_and_receivers_list and
