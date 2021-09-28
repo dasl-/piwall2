@@ -107,8 +107,8 @@ def install_dependencies(cmd_runner):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
     print(f"Installing dependencies on: {broadcaster_and_receivers}...")
-    install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install_dependencies.sh -t " +
-        f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)'")
+    install_deps_cmd = (f"{DirectoryUtils().root_dir}/install/install_dependencies.sh -t " +
+        f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     cmd_runner.run_dsh(install_deps_cmd)
     restart_hosts_if_required(cmd_runner)
 
@@ -116,13 +116,12 @@ def install_app(cmd_runner, enable_receivers_composite_video_out, dont_disable_w
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
     print(f"Installing app on: {broadcaster_and_receivers}...")
-    install_app_cmd = (f"'{DirectoryUtils().root_dir}/install/install.sh -t " +
+    install_app_cmd = (f"{DirectoryUtils().root_dir}/install/install.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     if enable_receivers_composite_video_out:
         install_app_cmd += " -c"
     if dont_disable_wifi:
         install_app_cmd += " -w"
-    install_app_cmd += "'"
     cmd_runner.run_dsh(install_app_cmd)
     restart_hosts_if_required(cmd_runner)
 
@@ -171,8 +170,8 @@ special to delete the file once we've restarted.
 """
 def restart_hosts_if_required(cmd_runner):
     # restart receivers, if necessary
-    cmd = ('\'{ [ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && ' +
-        'sudo shutdown -r now ; } || echo "Restart not needed."\'')
+    cmd = ('{ [ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && ' +
+        'sudo shutdown -r now ; } || echo "Restart not needed."')
     cmd_runner.run_dsh(cmd, include_broadcaster = False)
 
     # restart broadcaster, if necessary
