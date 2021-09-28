@@ -46,12 +46,12 @@ def git_pull(cmd_runner, git_branch):
     print(f"Pulling git and checking out branch {git_branch} ...")
     root_dir = DirectoryUtils().root_dir
     cmd = f"cd {root_dir} && git pull && git checkout {git_branch}"
-    cmd_runner.run_cmd_with_realtime_output(cmd)
+    cmd_runner.run_dsh(cmd)
 
 def restart_services(cmd_runner):
     print("Restarting services...")
     cmd = "sudo systemctl restart 'piwall2_*.service' --all"
-    cmd_runner.run_cmd_with_realtime_output(cmd)
+    cmd_runner.run_dsh(cmd)
 
 
 main()
