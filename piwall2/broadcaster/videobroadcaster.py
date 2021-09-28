@@ -213,6 +213,11 @@ class VideoBroadcaster:
         log_opts = '-nostats'
         if sys.stderr.isatty():
             log_opts = '-stats '
+
+        if Logger.get_level() <= Logger.DEBUG:
+            pass # don't change anything, ffmpeg is pretty verbose by default
+        else:
+            log_opts += '-loglevel error'
         return f"ffmpeg -hide_banner {log_opts} "
 
     def __get_ffmpeg_input_clause(self):
