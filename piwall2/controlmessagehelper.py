@@ -5,7 +5,10 @@ from piwall2.multicasthelper import MulticastHelper
 # Helper for sending "control messages". Control messages are sent from the broadcaster via
 # UDP multicast to control various aspects of the receivers:
 # 1) controls volume on the receivers
-# 2)
+# 2) signalling for starting video playback
+# 3) signalling for skipping a video
+# 4) signalling when to apply video effects, like adjusting the video tiling mode
+# 5) etc
 class ControlMessageHelper:
 
     # Control message types

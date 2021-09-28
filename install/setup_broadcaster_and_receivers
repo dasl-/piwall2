@@ -6,37 +6,35 @@ import os
 import socket
 import sys
 import shlex
-import time
 
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
-from piwall2.broadcaster.videobroadcaster import VideoBroadcaster
 from piwall2.configloader import ConfigLoader
+from piwall2.cmdrunner import CmdRunner
 from piwall2.directoryutils import DirectoryUtils
-
-CONCURRENCY_LIMIT = 16
 
 def main():
     args = parse_args()
 
-    # load config after parsing args to avoid potentially throwing errors before printing the help text
-    config_loader = ConfigLoader()
-    install_bootstrap_dependencies()
+    cmd_runner = CmdRunner()
+
+    install_bootstrap_dependencies(cmd_runner)
     if args.setup_ssh:
         if args.ssh_password is None:
             raise Exception("When setting up SSH, '--receiver-ssh-password' must be specified.")
-        generate_ssh_key(VideoBroadcaster.SSH_KEY_PATH)
-        authorize_ssh_key(VideoBroadcaster.SSH_KEY_PATH, args.ssh_password, config_loader)
+        generate_ssh_key(CmdRunner.SSH_KEY_PATH)
+        authorize_ssh_key(CmdRunner.SSH_KEY_PATH, args.ssh_password, cmd_runner)
+    copy_config_to_receivers(cmd_runner)
     if args.install_dependencies:
-        install_dependencies(config_loader)
+        install_dependencies(cmd_runner)
     if args.install_app:
-        install_app(config_loader, args.enable_receivers_composite_video_out, args.dont_disable_wifi)
+        install_app(cmd_runner, args.enable_receivers_composite_video_out, args.dont_disable_wifi)
     print("Success!")
 
 def parse_args():
     parser = argparse.ArgumentParser(description=
-f"""Applies the receivers config located in: {ConfigLoader.get_receivers_config_path()}.
+f"""Applies the receivers config located in: {ConfigLoader.RECEIVERS_CONFIG_PATH}.
 This script should be run on the broadcaster. This script does several things:
 1) Sets up passwordless SSH from the broadcaster to each receiver
 2) Installs piwall2 dependencies on the broadcaster and receivers
@@ -85,93 +83,54 @@ def generate_ssh_key(file):
         )
     )
 
-def authorize_ssh_key(file, password, config_loader):
-    hosts_to_authorize_on = ' '.join(get_broadcaster_and_receivers_hostname_list(config_loader))
+def authorize_ssh_key(file, password, cmd_runner):
+    hosts_to_authorize_on = ' '.join(cmd_runner.get_broadcaster_and_receivers_hostname_list)
     print(f"Authorizing ssh key on: {hosts_to_authorize_on}")
 
+    ssh_opts = CmdRunner.STANDARD_SSH_OPTS.join(' ')
     authorize_ssh_key_cmd = (
         f"sshpass -p {shlex.quote(password)} " +
-        "ssh-copy-id " +
-        "-o ConnectTimeout=5 " +
-        "-o UserKnownHostsFile=/dev/null " +
-        "-o StrictHostKeyChecking=no " +
-        "-o LogLevel=ERROR " +
+        f"ssh-copy-id {ssh_opts} " +
         f"-i {shlex.quote(file)} " + "pi@{}"
     )
-    parallel_cmd = (
-        f"parallel --will-cite --max-procs {CONCURRENCY_LIMIT} " +
-        # exit when the first job fails. Kill running jobs.
-        # If fail=1 is used, the exit status will be the exit status of the failing job.
-        "--halt now,fail=1 " +
-        f'"{authorize_ssh_key_cmd}" ::: {hosts_to_authorize_on}'
-    )
-    output = (subprocess
-        .check_output(
-            parallel_cmd,
-            shell = True,
-            executable = '/usr/bin/bash',
-            stderr = subprocess.STDOUT
-        )
-    )
+    cmd = f'"{authorize_ssh_key_cmd}" ::: {hosts_to_authorize_on}'
+    cmd_runner.run_parallel(cmd)
 
-def install_dependencies(config_loader):
-    hostnames = get_broadcaster_and_receivers_hostname_list(config_loader)
+def copy_config_to_receivers(cmd_runner):
+    cmd = DirectoryUtils().root_dir + "/utils/copy_config_to_receivers"
+    exit_code = cmd_runner.run_cmd_with_realtime_output(cmd, raise_on_failure = False)
+    if exit_code == 99:
+        # This indicates the config file could not be found. That's ok, let people be able to define it later
+        # and finish the setup.
+        pass
+    else:
+        raise Exception(f"Unable to run {cmd}!")
+
+def install_dependencies(cmd_runner):
+    broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
-    print(f"Installing dependencies on: {hostnames}...")
+    print(f"Installing dependencies on: {broadcaster_and_receivers}...")
     install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install_dependencies.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)'")
-    run_dsh(install_deps_cmd, hostnames)
-    restart_hosts_if_required(hostnames)
+    cmd_runner.run_dsh(install_deps_cmd)
+    restart_hosts_if_required(cmd_runner)
 
-def install_app(config_loader, enable_receivers_composite_video_out, dont_disable_wifi):
-    hostnames = get_broadcaster_and_receivers_hostname_list(config_loader)
+def install_app(cmd_runner, enable_receivers_composite_video_out, dont_disable_wifi):
+    broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
-    print(f"Installing app on: {hostnames}...")
-    install_deps_cmd = (f"'{DirectoryUtils().root_dir}/install/install.sh -t " +
+    print(f"Installing app on: {broadcaster_and_receivers}...")
+    install_app_cmd = (f"'{DirectoryUtils().root_dir}/install/install.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     if enable_receivers_composite_video_out:
-        install_deps_cmd += " -c"
+        install_app_cmd += " -c"
     if dont_disable_wifi:
-        install_deps_cmd += " -w"
-    install_deps_cmd += "'"
-    run_dsh(install_deps_cmd, hostnames)
-    restart_hosts_if_required(hostnames)
-
-def run_cmd_with_realtime_output(cmd):
-    print(f"Running command: {cmd}")
-    proc = subprocess.Popen(
-        cmd, shell = True, executable = '/usr/bin/bash'
-    )
-    while proc.poll() is None:
-        time.sleep(0.1)
-    if proc.returncode != 0:
-        raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
-            f"{proc.returncode}.")
-
-def run_dsh(cmd, machines):
-    machines_string = ''
-    for machine in machines:
-        machines_string += f'pi@{machine},'
-    machines_string = machines_string.strip(',')
-
-    dsh_cmd = (f"dsh -r ssh --forklimit {CONCURRENCY_LIMIT} " +
-        "--remoteshellopt '-o UserKnownHostsFile=/dev/null' " +
-        "--remoteshellopt '-o StrictHostKeyChecking=no' " +
-        "--remoteshellopt '-o LogLevel=ERROR' " +
-        # Lack of space after `-i` is necessary: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=578683#10
-        f'--remoteshellopt "-i{shlex.quote(VideoBroadcaster.SSH_KEY_PATH)}" ' +
-        f"--show-machine-names --machine {machines_string} {cmd}")
-    run_cmd_with_realtime_output(dsh_cmd)
-
-def get_broadcaster_and_receivers_hostname_list(config_loader):
-    hostname_list = config_loader.get_receivers_list()
-    broadcaster_hostname = socket.gethostname() + ".local"
-    if broadcaster_hostname not in hostname_list:
-        hostname_list.append(broadcaster_hostname)
-    return hostname_list
+        install_app_cmd += " -w"
+    install_app_cmd += "'"
+    cmd_runner.run_dsh(install_app_cmd)
+    restart_hosts_if_required(cmd_runner)
 
 # install dependencies necessary to run this script
-def install_bootstrap_dependencies():
+def install_bootstrap_dependencies(cmd_runner):
     print("Determining which bootstrap dependencies to install...")
     deps = ['parallel', 'dsh', 'sshpass']
     deps_to_install = []
@@ -181,7 +140,7 @@ def install_bootstrap_dependencies():
     if deps_to_install:
         deps_to_install = ' '.join(deps_to_install)
         print(f"Installing bootstrap dependencies: {deps_to_install}...")
-        run_cmd_with_realtime_output(f"sudo apt -y install {deps_to_install}")
+        cmd_runner.run_cmd_with_realtime_output(f"sudo apt -y install {deps_to_install}")
     else:
         print("No bootstrap dependencies needed installing.")
 
@@ -213,17 +172,14 @@ restarting the broadcaster while it is still in the middle of running a dsh comm
 The raspberry pi appears to delete the whole /tmp directory upon restart, so we don't need to do anything
 special to delete the file once we've restarted.
 """
-def restart_hosts_if_required(hostnames):
-    broadcaster_hostname = socket.gethostname() + ".local"
-
+def restart_hosts_if_required(cmd_runner):
     # restart receivers, if necessary
-    hostnames.remove(broadcaster_hostname)
     cmd = ('\'{ [ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && ' +
         'sudo shutdown -r now ; } || echo "Restart not needed."\'')
-    run_dsh(cmd, hostnames)
+    cmd_runner.run_dsh(cmd, include_broadcaster = False)
 
     # restart broadcaster, if necessary
-    run_cmd_with_realtime_output(cmd.strip("'"))
+    cmd_runner.run_cmd_with_realtime_output(cmd.strip("'"))
 
 
 main()

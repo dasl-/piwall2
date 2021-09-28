@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+# This is called in the ./install/setup_broadcaster_and_receivers script
+import os
+import sys
+
+# This is necessary for the import below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
+
+from piwall2.cmdrunner import CmdRunner
+from piwall2.configloader import ConfigLoader
+
+if not os.path.isfile(ConfigLoader.RECEIVERS_CONFIG_PATH):
+    print(f"Receivers config file does not exist at path {ConfigLoader.RECEIVERS_CONFIG_PATH}.")
+    sys.exit(99)
+
+cmd_runner = CmdRunner()
+ssh_opts = CmdRunner.STANDARD_SSH_OPTS.join(' ')
+scp_cmd = (
+    f'scp {CmdRunner.SSH_KEY_PATH_FLAG} {ssh_opts} ' +
+    f'{ConfigLoader.RECEIVERS_CONFIG_PATH} {{}}:{ConfigLoader.RECEIVERS_CONFIG_PATH}'
+)
+cmd = f'{scp_cmd} ::: {cmd_runner.get_receivers_hostname_list().join(" ")}'
+cmd_runner.run_parallel(cmd)

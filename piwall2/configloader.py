@@ -5,6 +5,7 @@ from piwall2.logger import Logger
 class ConfigLoader:
 
     __RECEIVERS_CONFIG_FILE_NAME = 'receivers.toml'
+    RECEIVERS_CONFIG_PATH = DirectoryUtils().root_dir + '/' + __RECEIVERS_CONFIG_FILE_NAME
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -33,17 +34,12 @@ class ConfigLoader:
     def get_youtube_dl_video_format(self):
         return self.__youtube_dl_video_format
 
-    @staticmethod
-    def get_receivers_config_path():
-        return DirectoryUtils().root_dir + '/' + ConfigLoader.__RECEIVERS_CONFIG_FILE_NAME
-
     def __load_config_if_not_loaded(self):
         if self.__is_loaded:
             return
 
-        config_path = self.get_receivers_config_path()
-        self.__logger.info(f"Loading piwall2 config from: {config_path}.")
-        raw_config = toml.load(config_path)
+        self.__logger.info(f"Loading piwall2 config from: {self.RECEIVERS_CONFIG_PATH}.")
+        raw_config = toml.load(self.RECEIVERS_CONFIG_PATH)
         self.__logger.info(f"Validating piwall2 config: {raw_config}")
 
         is_any_receiver_dual_video_out = False

@@ -7,8 +7,8 @@ import time
 import traceback
 import youtube_dl
 
-from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.configloader import ConfigLoader
+from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
@@ -18,10 +18,6 @@ from piwall2.receiver.receiver import Receiver
 
 # Broadcasts a video for playback on the piwall
 class VideoBroadcaster:
-
-    # For passwordless ssh from the broadcaster to the receivers.
-    # See: https://github.com/dasl-/piwall2/blob/main/utils/setup_broadcaster_and_receivers
-    SSH_KEY_PATH = '/home/pi/.ssh/piwall2_broadcaster/id_ed25519'
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
 
@@ -339,7 +335,7 @@ class VideoBroadcaster:
             self.__logger.warn(f"The crop y1 coordinate ({y1}) " +
                 f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
 
-        crop = f"{x0},{y0},{x1},{y1}"
+        crop = f"{x0} {y0} {x1} {y1}"
 
         crop2 = None
         if receiver_config['is_dual_video_output']:
@@ -361,7 +357,7 @@ class VideoBroadcaster:
                 self.__logger.warn(f"The crop y1_2 coordinate ({y1_2}) " +
                     f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
 
-            crop2 = f"{x0_2},{y0_2},{x1_2},{y1_2}"
+            crop2 = f"{x0_2} {y0_2} {x1_2} {y1_2}"
 
         return (crop, crop2)
 
