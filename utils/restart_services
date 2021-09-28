@@ -43,8 +43,9 @@ def copy_config_to_receivers(cmd_runner):
     cmd_runner.run_cmd_with_realtime_output(cmd)
 
 def git_pull(cmd_runner, git_branch):
-    print(f"Pulling git and checking out branch {git_branch}...")
-    cmd = f"git pull && git checkout {git_branch}"
+    print(f"Pulling git and checking out branch {git_branch} ...")
+    root_dir = DirectoryUtils().root_dir
+    cmd = f"cd {root_dir} && git pull && git checkout {git_branch}"
     cmd_runner.run_cmd_with_realtime_output(cmd)
 
 def restart_services(cmd_runner):
