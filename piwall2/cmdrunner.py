@@ -71,7 +71,7 @@ class CmdRunner:
         )
         while proc.poll() is None:
             time.sleep(0.1)
-        if proc.returncode != 0 && raise_on_failure:
+        if proc.returncode != 0 and raise_on_failure:
             raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
         return proc.returncode
