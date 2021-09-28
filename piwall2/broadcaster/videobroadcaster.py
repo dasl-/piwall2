@@ -7,8 +7,8 @@ import time
 import traceback
 import youtube_dl
 
-from piwall2.configloader import ConfigLoader
 from piwall2.broadcaster.youtubedlexception import YoutubeDlException
+from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
@@ -49,6 +49,15 @@ class VideoBroadcaster:
         # Access should go through self.__get_video_info() to populate it lazily
         self.__video_info = None
 
+        # Bind multicast traffic to eth0. Otherwise it might send over wlan0 -- multicast doesn't work well over wifi.
+        # `|| true` to avoid 'RTNETLINK answers: File exists' if the route has already been added.
+        (subprocess.check_output(
+            f"sudo ip route add {MulticastHelper.ADDRESS}/32 dev eth0 || true",
+            shell = True,
+            executable = '/usr/bin/bash',
+            stderr = subprocess.STDOUT
+        ))
+
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__do_housekeeping()
         self.__register_signal_handlers()
@@ -74,16 +83,6 @@ class VideoBroadcaster:
 
     def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
-
-        # Bind multicast traffic to eth0. Otherwise it might send over wlan0 -- multicast doesn't work well over wifi.
-        # `|| true` to avoid 'RTNETLINK answers: File exists' if the route has already been added.
-        (subprocess.check_output(
-            f"sudo ip route add {MulticastHelper.ADDRESS}/32 dev eth0 || true",
-            shell = True,
-            executable = '/usr/bin/bash',
-            stderr = subprocess.STDOUT
-        ))
-
         """
         What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:
         1) To populate video metadata, including dimensions which allow us to know how much to crop the video
@@ -200,166 +199,14 @@ class VideoBroadcaster:
         return video_broadcast_proc
 
     def __start_receivers(self):
-        msg = {}
-        for receiver in self.__config_loader.get_receivers_list():
-            msg[receiver] = self.__get_receiver_params_list(receiver)
-        msg['log_uuid'] = Logger.get_uuid()
+        msg = {
+            'log_uuid': Logger.get_uuid(),
+            'video_width': self.__get_video_info()['width'],
+            'video_height': self.__get_video_info()['height'],
+            'volume': VolumeController().get_vol_millibels(),
+        }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
         self.__logger.info("Sent play_video control message.")
-
-    def __get_receiver_params_list(self, receiver):
-        receiver_config = self.__config_loader.get_receivers_config()[receiver]
-        adev, adev2 = self.__get_adevs_for_receiver(receiver, receiver_config)
-        display, display2 = self.__get_displays_for_receiver(receiver, receiver_config)
-        crop, crop2 = self.__get_crops_for_receiver(receiver, receiver_config)
-        volume = VolumeController().get_vol_millibels()
-
-        # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_misc_params_template = ('--adev {0} --display {1} --vol {2} ' +
-            '--no-keys --timeout 20 --threshold 0.2 --video_fifo 35 --genlog pipe:0')
-        omx_misc_params = omx_misc_params_template.format(shlex.quote(adev), shlex.quote(display),
-            shlex.quote(str(volume)))
-
-        params = {
-            'crop': crop,
-            'misc': omx_misc_params,
-        }
-
-        if receiver_config['is_dual_video_output']:
-            omx_misc_params2 = omx_misc_params_template.format(shlex.quote(adev2), shlex.quote(display2),
-                shlex.quote(str(volume)))
-            params2 = {
-                'crop': crop2,
-                'misc': omx_misc_params2,
-            }
-            params_list = [params, params2]
-        else:
-            params_list = [params]
-
-        self.__logger.debug(f"Using params_list for {receiver}: {params_list}")
-        return params_list
-
-    def __get_adevs_for_receiver(self, receiver, receiver_config):
-        adev = None
-        if receiver_config['audio'] == 'hdmi' or receiver_config['audio'] == 'hdmi0':
-            adev = 'hdmi'
-        elif receiver_config['audio'] == 'headphone':
-            adev = 'local'
-        elif receiver_config['audio'] == 'hdmi_alsa' or receiver_config['audio'] == 'hdmi0_alsa':
-            adev = 'alsa:default:CARD=b1'
-        else:
-            raise Exception(f"Unexpected audio config value for receiver: {receiver}, value: {receiver_config['audio']}")
-
-        adev2 = None
-        if receiver_config['is_dual_video_output']:
-            if receiver_config['audio2'] == 'hdmi1':
-                adev2 = 'hdmi1'
-            elif receiver_config['audio2'] == 'headphone':
-                adev2 = 'local'
-            elif receiver_config['audio'] == 'hdmi1_alsa':
-                adev2 = 'alsa:default:CARD=b2'
-            else:
-                raise Exception(f"Unexpected audio2 config value for receiver: {receiver}, value: {receiver_config['audio2']}")
-
-        return (adev, adev2)
-
-    def __get_displays_for_receiver(self, receiver, receiver_config):
-        display = None
-        if receiver_config['video'] == 'hdmi' or receiver_config['video'] == 'hdmi0':
-            display = '2'
-        elif receiver_config['video'] == 'composite':
-            display = '3'
-        else:
-            raise Exception(f"Unexpected video config value for receiver: {receiver}, value: {receiver_config['video']}")
-
-        display2 = None
-        if receiver_config['is_dual_video_output']:
-            if receiver_config['video2'] == 'hdmi1':
-                display2 = '7'
-            else:
-                raise Exception(f"Unexpected video2 config value for receiver: {receiver}, value: {receiver_config['video2']}")
-
-        return (display, display2)
-
-    def __get_crops_for_receiver(self, receiver, receiver_config):
-        video_width = self.__get_video_info()['width']
-        video_height = self.__get_video_info()['height']
-        video_aspect_ratio = video_width / video_height
-
-        wall_width = self.__config_loader.get_wall_width()
-        wall_height = self.__config_loader.get_wall_height()
-        wall_aspect_ratio = wall_width / wall_height
-
-        # The displayable width and height represents the section of the video that the wall will be
-        # displaying. A section of these dimensions will be taken from the center of the original
-        # video.
-        #
-        # Currently, the piwall only supports displaying videos in "fill" mode. This means that every
-        # portion of the TVs will be displaying some section of the video (i.e. there will be no
-        # letterboxing). Furthermore, there will be no warping of the video's aspect ratio. Instead,
-        # regions of the original video will be cropped out if necessary.
-        displayable_video_width = None
-        displayable_video_height = None
-        if wall_aspect_ratio >= video_aspect_ratio:
-            displayable_video_width = video_width
-            displayable_video_height = video_width / wall_aspect_ratio
-        else:
-            displayable_video_height = video_height
-            displayable_video_width = wall_aspect_ratio * video_height
-
-        if displayable_video_width > video_width:
-            self.__logger.warn(f"The displayable_video_width ({displayable_video_width}) " +
-                f"was greater than the video_width ({video_width}). This may indicate a misconfiguration.")
-        if displayable_video_height > video_height:
-            self.__logger.warn(f"The displayable_video_height ({displayable_video_height}) " +
-                f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
-
-        x_offset = (video_width - displayable_video_width) / 2
-        y_offset = (video_height - displayable_video_height) / 2
-
-        x0 = round(x_offset + ((receiver_config['x'] / wall_width) * displayable_video_width))
-        y0 = round(y_offset + ((receiver_config['y'] / wall_height) * displayable_video_height))
-        x1 = round(x_offset + (((receiver_config['x'] + receiver_config['width']) / wall_width) * displayable_video_width))
-        y1 = round(y_offset + (((receiver_config['y'] + receiver_config['height']) / wall_height) * displayable_video_height))
-
-        if x0 > video_width:
-            self.__logger.warn(f"The crop x0 coordinate ({x0}) " +
-                f"was greater than the video_width ({video_width}). This may indicate a misconfiguration.")
-        if x1 > video_width:
-            self.__logger.warn(f"The crop x1 coordinate ({x1}) " +
-                f"was greater than the video_width ({video_width}). This may indicate a misconfiguration.")
-        if y0 > video_height:
-            self.__logger.warn(f"The crop y0 coordinate ({y0}) " +
-                f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
-        if y1 > video_height:
-            self.__logger.warn(f"The crop y1 coordinate ({y1}) " +
-                f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
-
-        crop = f"{x0} {y0} {x1} {y1}"
-
-        crop2 = None
-        if receiver_config['is_dual_video_output']:
-            x0_2 = round(x_offset + ((receiver_config['x2'] / wall_width) * displayable_video_width))
-            y0_2 = round(y_offset + ((receiver_config['y2'] / wall_height) * displayable_video_height))
-            x1_2 = round(x_offset + (((receiver_config['x2'] + receiver_config['width2']) / wall_width) * displayable_video_width))
-            y1_2 = round(y_offset + (((receiver_config['y2'] + receiver_config['height2']) / wall_height) * displayable_video_height))
-
-            if x0_2 > video_width:
-                self.__logger.warn(f"The crop x0_2 coordinate ({x0_2}) " +
-                    f"was greater than the video_width ({video_width}). This may indicate a misconfiguration.")
-            if x1_2 > video_width:
-                self.__logger.warn(f"The crop x1_2 coordinate ({x1_2}) " +
-                    f"was greater than the video_width ({video_width}). This may indicate a misconfiguration.")
-            if y0_2 > video_height:
-                self.__logger.warn(f"The crop y0_2 coordinate ({y0_2}) " +
-                    f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
-            if y1_2 > video_height:
-                self.__logger.warn(f"The crop y1_2 coordinate ({y1_2}) " +
-                    f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
-
-            crop2 = f"{x0_2} {y0_2} {x1_2} {y1_2}"
-
-        return (crop, crop2)
 
     def __get_ffmpeg_input_clause(self):
         video_url_type = self.__get_video_url_type()
