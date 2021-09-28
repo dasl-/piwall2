@@ -84,10 +84,10 @@ def generate_ssh_key(file):
     )
 
 def authorize_ssh_key(file, password, cmd_runner):
-    hosts_to_authorize_on = cmd_runner.get_broadcaster_and_receivers_hostname_list().join(' ')
+    hosts_to_authorize_on = ' '.join(cmd_runner.get_broadcaster_and_receivers_hostname_list())
     print(f"Authorizing ssh key on: {hosts_to_authorize_on}")
 
-    ssh_opts = CmdRunner.STANDARD_SSH_OPTS.join(' ')
+    ssh_opts = ' '.join(CmdRunner.STANDARD_SSH_OPTS)
     authorize_ssh_key_cmd = (
         f"sshpass -p {shlex.quote(password)} " +
         f"ssh-copy-id {ssh_opts} " +
