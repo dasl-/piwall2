@@ -53,13 +53,18 @@ class CmdRunner:
             f"--show-machine-names --machine {machines_string} {shlex.quote(cmd)}")
         self.run_cmd_with_realtime_output(dsh_cmd)
 
-    def run_parallel(self, cmd):
+    def run_parallel(self, cmd, include_broadcaster = True):
+        machines_list = self.__receivers_list
+        if include_broadcaster:
+            machines_list = self.__broadcaster_and_receivers_list
+        machines_string = ' '.join(machines_list)
+
         parallel_cmd = (
             f"parallel --will-cite --max-procs {self.__CONCURRENCY_LIMIT} " +
             # exit when the first job fails. Kill running jobs.
             # If fail=1 is used, the exit status will be the exit status of the failing job.
             "--halt now,fail=1 " +
-            shlex.quote(cmd)
+            f"{shlex.quote(cmd)} ::: {machines_string}"
         )
         self.run_cmd_with_realtime_output(parallel_cmd)
 

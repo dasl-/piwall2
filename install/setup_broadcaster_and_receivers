@@ -84,17 +84,14 @@ def generate_ssh_key(file):
     )
 
 def authorize_ssh_key(file, password, cmd_runner):
-    hosts_to_authorize_on = ' '.join(cmd_runner.get_broadcaster_and_receivers_hostname_list())
-    print(f"Authorizing ssh key on: {hosts_to_authorize_on}")
-
+    print("Authorizing ssh key on broadcaster and receivers...")
     ssh_opts = ' '.join(CmdRunner.STANDARD_SSH_OPTS)
     authorize_ssh_key_cmd = (
         f"sshpass -p {shlex.quote(password)} " +
         f"ssh-copy-id {ssh_opts} " +
         f"-i {shlex.quote(file)} " + "pi@{}"
     )
-    cmd = f'"{authorize_ssh_key_cmd}" ::: {hosts_to_authorize_on}'
-    cmd_runner.run_parallel(cmd)
+    cmd_runner.run_parallel(authorize_ssh_key_cmd)
 
 def copy_config_to_receivers(cmd_runner):
     cmd = DirectoryUtils().root_dir + "/utils/copy_config_to_receivers"
