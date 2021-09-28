@@ -163,7 +163,7 @@ class VideoBroadcaster:
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        cmd = (f"set -o pipefail && ffmpeg -hide_banner {ffmpeg_input_clause} " +
+        cmd = (f"set -o pipefail && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
             f"-c:v copy {audio_clause} -f mpegts -")
         self.__logger.info(f"Running download_and_convert_video_proc command: {cmd}")
 
@@ -179,7 +179,7 @@ class VideoBroadcaster:
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
         mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
         burst_throttling_clause = (f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
-            'ffmpeg -hide_banner -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
+            f'{self.__get_standard_ffmpeg_cmd()} -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
             f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
         broadcasting_clause = DirectoryUtils().root_dir + f"/bin/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
 
@@ -207,6 +207,13 @@ class VideoBroadcaster:
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
         self.__logger.info("Sent play_video control message.")
+
+    def __get_standard_ffmpeg_cmd(self):
+        # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks
+        log_opts = '-nostats'
+        if sys.stderr.isatty():
+            log_opts = '-stats '
+        return f"ffmpeg -hide_banner {log_opts} "
 
     def __get_ffmpeg_input_clause(self):
         video_url_type = self.__get_video_url_type()
