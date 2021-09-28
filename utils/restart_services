@@ -33,7 +33,7 @@ from the broadcaster to the receivers. Optionally pulls the latest code from git
     parser.add_argument('--git-pull', dest='should_git_pull', action='store_true',
         default=False, help="Pull latest code from git before restarting services.")
     parser.add_argument('--git-branch', dest='git_branch', type=str, default='main',
-        help="Checkout the specified git branch. Default: %(default)s")
+        help="Checkout the specified git branch.")
     args = parser.parse_args()
     return args
 
