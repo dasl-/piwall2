@@ -94,6 +94,7 @@ def authorize_ssh_key(file, password, cmd_runner):
     cmd_runner.run_parallel(authorize_ssh_key_cmd)
 
 def copy_config_to_receivers(cmd_runner):
+    print("Copying config (if it exists) from broadcaster to receivers...")
     cmd = DirectoryUtils().root_dir + "/utils/copy_config_to_receivers"
     exit_code = cmd_runner.run_cmd_with_realtime_output(cmd, raise_on_failure = False)
     if exit_code == 99:
