@@ -233,7 +233,13 @@ class VideoBroadcaster:
             https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
             youtube_dl_cmd_template = ("yt-dlp --extractor-args youtube:player_client=android {0} " +
-                "--retries infinite --format {1} --output - | HOME=/home/pi mbuffer -q -Q -m {2}b")
+                "--retries infinite --format {1} --output - {2} | HOME=/home/pi mbuffer -q -Q -m {3}b")
+
+            log_opts = '--no-progress'
+            if Logger.get_level() <= Logger.DEBUG:
+                log_opts = '' # show video download progress
+            if not sys.stderr.isatty():
+                log_opts += ' --newline'
 
             # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
             # be enough buffer for ~139s
@@ -241,6 +247,7 @@ class VideoBroadcaster:
             youtube_dl_video_cmd = youtube_dl_cmd_template.format(
                 shlex.quote(self.__video_url),
                 shlex.quote(self.__config_loader.get_youtube_dl_video_format()),
+                log_opts,
                 video_buffer_size
             )
 
@@ -250,6 +257,7 @@ class VideoBroadcaster:
             youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
                 shlex.quote(self.__video_url),
                 shlex.quote(self.__AUDIO_FORMAT),
+                log_opts,
                 audio_buffer_size
             )
 
