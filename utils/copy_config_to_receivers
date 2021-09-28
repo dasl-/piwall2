@@ -15,7 +15,7 @@ if not os.path.isfile(ConfigLoader.RECEIVERS_CONFIG_PATH):
     sys.exit(99)
 
 cmd_runner = CmdRunner()
-ssh_opts = CmdRunner.STANDARD_SSH_OPTS.join(' ')
+ssh_opts = ' '.join(CmdRunner.STANDARD_SSH_OPTS)
 scp_cmd = (
     f'scp {CmdRunner.SSH_KEY_PATH_FLAG} {ssh_opts} ' +
     f'{ConfigLoader.RECEIVERS_CONFIG_PATH} pi@{{}}:{ConfigLoader.RECEIVERS_CONFIG_PATH}'
