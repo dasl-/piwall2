@@ -1,3 +1,4 @@
+import shlex
 import socket
 import subprocess
 import time
@@ -33,7 +34,7 @@ class CmdRunner:
             broadcaster_hostname not in self.__broadcaster_and_receivers_list and
             broadcaster_ip not in self.__broadcaster_and_receivers_list
         ):
-            self.__broadcaster_and_receivers_list.append(broadcaster_hostname)
+            self.__broadcaster_and_receivers_list.insert(0, broadcaster_hostname)
 
     def run_dsh(self, cmd, include_broadcaster = True):
         machines_list = self.__receivers_list
@@ -48,9 +49,8 @@ class CmdRunner:
         for ssh_opt in self.STANDARD_SSH_OPTS:
             ssh_opts += f"--remoteshellopt '{ssh_opt}' "
         dsh_cmd = (f"dsh -r ssh --forklimit {self.__CONCURRENCY_LIMIT} {ssh_opts}" +
-
             f'--remoteshellopt "{self.SSH_KEY_PATH_FLAG}" ' +
-            f"--show-machine-names --machine {machines_string} {cmd}")
+            f"--show-machine-names --machine {machines_string} {shlex.quote(cmd)}")
         self.run_cmd_with_realtime_output(dsh_cmd)
 
     def run_parallel(self, cmd):
@@ -59,7 +59,7 @@ class CmdRunner:
             # exit when the first job fails. Kill running jobs.
             # If fail=1 is used, the exit status will be the exit status of the failing job.
             "--halt now,fail=1 " +
-            cmd
+            shlex.quote(cmd)
         )
         self.run_cmd_with_realtime_output(parallel_cmd)
 
