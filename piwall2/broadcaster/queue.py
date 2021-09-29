@@ -115,6 +115,6 @@ class Queue:
         num_seconds_between_setting_volume = 2
         now = time.time()
         if (now - self.__last_receiver_volume_set_time) > num_seconds_between_setting_volume:
-            vol_pct = self.__volume_controller.get_vol_pct()
+            vol_pct = self.__volume_controller.get_vol_pct_omxplayer_algorithm()
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
             self.__last_receiver_volume_set_time = now
