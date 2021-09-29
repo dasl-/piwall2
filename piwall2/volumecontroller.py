@@ -52,21 +52,6 @@ class VolumeController:
         vol_pct = min(100, vol_pct)
         return vol_pct
 
-    # gets a perceptual loudness %
-    # returns a float in the range [0, 100]
-    # See: https://github.com/popcornmix/omxplayer#volume-rw
-    #
-    # This is an alternate algorithm used by omxplayer
-    def get_vol_pct_omxplayer_algorithm(self):
-        mb_level = self.get_vol_millibels()
-        if mb_level <= self.__GLOBAL_MIN_VOL_VAL:
-            return 0
-
-        vol_pct = math.pow(10, mb_level / 2000) * 100
-        vol_pct = max(0, vol_pct)
-        vol_pct = min(100, vol_pct)
-        return vol_pct
-
     # takes a perceptual loudness %.
     # vol_pct should be a float in the range [0, 100]
     def set_vol_pct(self, vol_pct):

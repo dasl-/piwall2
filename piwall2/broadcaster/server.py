@@ -67,8 +67,7 @@ class Piwall2Api():
     def set_vol_pct(self, post_data):
         vol_pct = int(post_data['vol_pct'])
         self.__vol_controller.set_vol_pct(vol_pct)
-        vol_pct_omx = self.__vol_controller.get_vol_pct_omxplayer_algorithm()
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct_omx)
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
         return {
             'vol_pct': vol_pct,
             'success': True
