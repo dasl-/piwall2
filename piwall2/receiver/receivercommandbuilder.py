@@ -6,7 +6,7 @@ import subprocess
 from piwall2.configloader import ConfigLoader
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
-from piwall2.receiver.receiver import Receiver
+import piwall2.receiver.receiver
 from piwall2.volumecontroller import VolumeController
 
 # Helper to build the "receive and play video" command
@@ -70,7 +70,7 @@ class ReceiverCommandBuilder:
         video, and no matter where in the pipeline the delay is coming from. Using mbuffer seems simpler, and it is
         easier to monitor. By checking its logs, we can see how close the mbuffer gets to becoming full.
         """
-        mbuffer_cmd = f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b'
+        mbuffer_cmd = f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b'
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
         omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} ' +
@@ -229,12 +229,12 @@ class ReceiverCommandBuilder:
             repeat_mode_crop2 = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {x_offset + displayable_video_height}"
 
         crop_args = {
-            Receiver.DISPLAY_MODE_TILE: tile_mode_crop,
-            Receiver.DISPLAY_MODE_REPEAT: repeat_mode_crop,
+            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_TILE: tile_mode_crop,
+            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_REPEAT: repeat_mode_crop,
         }
         crop_args2 = {
-            Receiver.DISPLAY_MODE_TILE: tile_mode_crop2,
-            Receiver.DISPLAY_MODE_REPEAT: repeat_mode_crop2,
+            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_TILE: tile_mode_crop2,
+            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_REPEAT: repeat_mode_crop2,
         }
         return (crop_args, crop_args2)
 
