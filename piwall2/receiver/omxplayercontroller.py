@@ -2,12 +2,16 @@ import getpass
 import re
 import subprocess
 import time
+
 from piwall2.logger import Logger
+from piwall2.volumecontroller import VolumeController
 
 # Controls omxplayer via dbus.
 # See:
 # https://github.com/popcornmix/omxplayer/blob/master/dbuscontrol.sh
 # https://github.com/popcornmix/omxplayer#dbus-control
+#
+# TODO: support dual video output. Perhaps send dbus messages in parallel to both?
 class OmxplayerController:
 
     __DBUS_TIMEOUT_MS = 2000
@@ -51,9 +55,7 @@ class OmxplayerController:
         if not self.__load_dbus_session_info_if_not_loaded():
             return False
 
-        vol_pct = vol_pct / 100
-        vol_pct = max(0, vol_pct)
-        vol_pct = min(1, vol_pct)
+        vol_pct = VolumeController.normalize_vol_pct(vol_pct)
         cmd = (f"sudo -u {self.__user} DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
             "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set " +

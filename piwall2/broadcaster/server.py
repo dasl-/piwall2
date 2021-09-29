@@ -6,8 +6,9 @@ import urllib
 
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.controlmessagehelper import ControlMessageHelper
-from piwall2.logger import Logger
 from piwall2.directoryutils import DirectoryUtils
+from piwall2.logger import Logger
+from piwall2.receiver.receiver import Receiver
 from piwall2.volumecontroller import VolumeController
 
 class Piwall2Api():
@@ -74,9 +75,9 @@ class Piwall2Api():
 
     def toggle_tile(self, is_tiled):
         if is_tiled:
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_TILE, False)
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, Receiver.DISPLAY_MODE_TILE)
         else:
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_TILE, True)
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, Receiver.DISPLAY_MODE_REPEAT)
 
 
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):

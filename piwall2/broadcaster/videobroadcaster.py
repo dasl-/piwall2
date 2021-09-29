@@ -13,7 +13,6 @@ from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
-from piwall2.volumecontroller import VolumeController
 from piwall2.receiver.receiver import Receiver
 
 # Broadcasts a video for playback on the piwall
@@ -203,7 +202,6 @@ class VideoBroadcaster:
             'log_uuid': Logger.get_uuid(),
             'video_width': self.__get_video_info()['width'],
             'video_height': self.__get_video_info()['height'],
-            'volume': VolumeController().get_vol_millibels(),
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
         self.__logger.info("Sent play_video control message.")

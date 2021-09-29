@@ -79,3 +79,11 @@ class VolumeController:
         mb_level = max(self.__GLOBAL_MIN_VOL_VAL, mb_level)
         mb_level = min(0, mb_level)
         return mb_level
+
+    # Map the volume from [0, 100] to [0, 1]
+    @staticmethod
+    def normalize_vol_pct(self, vol_pct):
+        vol_pct_normalized = vol_pct / 100
+        vol_pct_normalized = max(0, vol_pct_normalized)
+        vol_pct_normalized = min(1, vol_pct_normalized)
+        return vol_pct_normalized
