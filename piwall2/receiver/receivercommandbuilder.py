@@ -137,71 +137,6 @@ class ReceiverCommandBuilder:
         return (display, display2)
 
     """
-    The displayable width and height represents the section of the video that the wall will be
-    displaying. A section of these dimensions will be taken from the center of the original
-    video.
-
-    Currently, the piwall only supports displaying videos in "fill" mode (as opposed to
-    "letterbox" or "stretch"). This means that every portion of the TVs will be displaying
-    some section of the video (i.e. there will be no letterboxing). Furthermore, there will be
-    no warping of the video's aspect ratio. Instead, regions of the original video will be
-    cropped or stretched if necessary.
-
-    The units of the width and height arguments are not important. We are just concerned with
-    the aspect ratio. Thus, as long as video_width and video_height are in the same units
-    (probably pixels), and as long as screen_width and screen_height are in the same units
-    (probably inches or centimeters), everything will work.
-
-    The returned dimensions will be in the units of the inputed video_width and video_height
-    (probably pixels).
-    """
-    def __get_displayable_video_dimensions_for_screen(self, video_width, video_height, screen_width, screen_height):
-        video_aspect_ratio = video_width / video_height
-        screen_aspect_ratio = screen_width / screen_height
-        if screen_aspect_ratio >= video_aspect_ratio:
-            displayable_video_width = video_width
-            displayable_video_height = video_width / screen_aspect_ratio
-            """
-            Note that `video_width = video_aspect_ratio * video_height`.
-            Thus, via substitution, we have:
-                displayable_video_height = (video_aspect_ratio * video_height) / screen_aspect_ratio
-                displayable_video_height = (video_aspect_ratio / screen_aspect_ratio) * video_height
-
-            And because of the above inequality, we know that:
-                (video_aspect_ratio / screen_aspect_ratio) <= 1
-
-            Thus, in this case, we have: `displayable_video_height <= video_height`. The video height
-            will be "cropped" such that when the video is proportionally stretched, it will fill the
-            screen size.
-            """
-
-        else:
-            displayable_video_height = video_height
-            displayable_video_width = screen_aspect_ratio * video_height
-            """
-            Note that `video_height = video_width / video_aspect_ratio`.
-            Thus, via substitution, we have:
-                displayable_video_width = screen_aspect_ratio * (video_width / video_aspect_ratio)
-                displayable_video_width = video_width * (screen_aspect_ratio / video_aspect_ratio)
-
-            And because of the above inequality for which we are now in the `else` clause, we know that:
-                (screen_aspect_ratio / video_aspect_ratio) <= 1
-
-            Thus, in this case, we have: `displayable_video_width <= video_width`. The video width
-            will be "cropped" such that when the video is proportionally stretched, it will fill the
-            screen size.
-            """
-
-        if displayable_video_width > video_width:
-            self.__logger.warn(f"The displayable_video_width ({displayable_video_width}) " +
-                f"was greater than the video_width ({video_width}). This may indicate a misconfiguration.")
-        if displayable_video_height > video_height:
-            self.__logger.warn(f"The displayable_video_height ({displayable_video_height}) " +
-                f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
-
-        return (displayable_video_width, displayable_video_height)
-
-    """
     Returns a set of crop args supporting two display modes: tile mode and repeat mode.
     Tile mode is like this: https://i.imgur.com/BBrA1Cr.png
     Repeat mode is like this: https://i.imgur.com/cpS61s8.png
@@ -302,6 +237,71 @@ class ReceiverCommandBuilder:
             Receiver.DISPLAY_MODE_REPEAT: repeat_mode_crop2,
         }
         return (crop_args, crop_args2)
+
+    """
+    The displayable width and height represents the section of the video that the wall will be
+    displaying. A section of these dimensions will be taken from the center of the original
+    video.
+
+    Currently, the piwall only supports displaying videos in "fill" mode (as opposed to
+    "letterbox" or "stretch"). This means that every portion of the TVs will be displaying
+    some section of the video (i.e. there will be no letterboxing). Furthermore, there will be
+    no warping of the video's aspect ratio. Instead, regions of the original video will be
+    cropped or stretched if necessary.
+
+    The units of the width and height arguments are not important. We are just concerned with
+    the aspect ratio. Thus, as long as video_width and video_height are in the same units
+    (probably pixels), and as long as screen_width and screen_height are in the same units
+    (probably inches or centimeters), everything will work.
+
+    The returned dimensions will be in the units of the inputed video_width and video_height
+    (probably pixels).
+    """
+    def __get_displayable_video_dimensions_for_screen(self, video_width, video_height, screen_width, screen_height):
+        video_aspect_ratio = video_width / video_height
+        screen_aspect_ratio = screen_width / screen_height
+        if screen_aspect_ratio >= video_aspect_ratio:
+            displayable_video_width = video_width
+            displayable_video_height = video_width / screen_aspect_ratio
+            """
+            Note that `video_width = video_aspect_ratio * video_height`.
+            Thus, via substitution, we have:
+                displayable_video_height = (video_aspect_ratio * video_height) / screen_aspect_ratio
+                displayable_video_height = (video_aspect_ratio / screen_aspect_ratio) * video_height
+
+            And because of the above inequality, we know that:
+                (video_aspect_ratio / screen_aspect_ratio) <= 1
+
+            Thus, in this case, we have: `displayable_video_height <= video_height`. The video height
+            will be "cropped" such that when the video is proportionally stretched, it will fill the
+            screen size.
+            """
+
+        else:
+            displayable_video_height = video_height
+            displayable_video_width = screen_aspect_ratio * video_height
+            """
+            Note that `video_height = video_width / video_aspect_ratio`.
+            Thus, via substitution, we have:
+                displayable_video_width = screen_aspect_ratio * (video_width / video_aspect_ratio)
+                displayable_video_width = video_width * (screen_aspect_ratio / video_aspect_ratio)
+
+            And because of the above inequality for which we are now in the `else` clause, we know that:
+                (screen_aspect_ratio / video_aspect_ratio) <= 1
+
+            Thus, in this case, we have: `displayable_video_width <= video_width`. The video width
+            will be "cropped" such that when the video is proportionally stretched, it will fill the
+            screen size.
+            """
+
+        if displayable_video_width > video_width:
+            self.__logger.warn(f"The displayable_video_width ({displayable_video_width}) " +
+                f"was greater than the video_width ({video_width}). This may indicate a misconfiguration.")
+        if displayable_video_height > video_height:
+            self.__logger.warn(f"The displayable_video_height ({displayable_video_height}) " +
+                f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
+
+        return (displayable_video_width, displayable_video_height)
 
     def __get_local_ip(self):
         return (subprocess

@@ -30,13 +30,12 @@ class Receiver:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Started receiver!")
 
-        self.__video_player_volume_pct = 50
-
         # The current crop modes for up to two TVs that may be hooked up to this receiver
         self.__display_mode = self.DISPLAY_MODE_TILE
         self.__display_mode2 = self.DISPLAY_MODE_TILE
 
-        # Crop arguments to send to omxplayer for the currently playing video if the display mode changes
+        # Crop arguments to send to omxplayer for the currently playing video if the display mode changes.
+        # These change per video, thus we just initialize them to dummy values in the constructor.
         self.__crop_args = self.__DEFAULT_CROP_ARGS
         self.__crop_args2 = self.__DEFAULT_CROP_ARGS
 
@@ -51,6 +50,8 @@ class Receiver:
         self.__receive_and_play_video_proc_pgid = None
 
         # house keeping
+        # Set the video player volume to 50%, but set the hardware volume to 100%.
+        self.__video_player_volume_pct = 50
         (VolumeController()).set_vol_pct(100)
         self.__play_warmup_video()
 
