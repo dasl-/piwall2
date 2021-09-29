@@ -55,17 +55,8 @@ class VolumeController:
     # takes a perceptual loudness %.
     # vol_pct should be a float in the range [0, 100]
     def set_vol_pct(self, vol_pct):
-        if (vol_pct <= 0):
-            db_level = self.__GLOBAL_MIN_VOL_VAL / 100
-        else:
-            # get the decibel adjustment required for the human perceived loudness %.
-            # see: http://www.sengpielaudio.com/calculator-levelchange.htm
-            db_level = 10 * math.log(vol_pct / 100, 2)
-
-        db_level = max(self.__GLOBAL_MIN_VOL_VAL / 100, db_level)
-        db_level = min(self.__LIMITED_MAX_VOL_VAL, db_level)
-
-        pct_to_set = (((db_level * 100) - self.__GLOBAL_MIN_VOL_VAL) / (self.__GLOBAL_MAX_VOL_VAL - self.__GLOBAL_MIN_VOL_VAL)) * 100
+        mb_level = VolumeController.pct_to_millibels(vol_pct)
+        pct_to_set = ((mb_level - self.__GLOBAL_MIN_VOL_VAL) / (self.__GLOBAL_MAX_VOL_VAL - self.__GLOBAL_MIN_VOL_VAL)) * 100
         subprocess.check_output(('amixer', 'cset', 'numid=1', '{}%'.format(pct_to_set)))
 
     # Return volume in millibels. Returns an integer in the range [self.__GLOBAL_MIN_VOL_VAL, 0]
@@ -87,3 +78,18 @@ class VolumeController:
         vol_pct_normalized = max(0, vol_pct_normalized)
         vol_pct_normalized = min(1, vol_pct_normalized)
         return vol_pct_normalized
+
+    # input: [0, 100]
+    # output: [self.__GLOBAL_MIN_VOL_VAL, 0]
+    @staticmethod
+    def pct_to_millibels(vol_pct):
+        if (vol_pct <= 0):
+            mb_level = VolumeController.__GLOBAL_MIN_VOL_VAL
+        else:
+            # get the decibel adjustment required for the human perceived loudness %.
+            # see: http://www.sengpielaudio.com/calculator-levelchange.htm
+            mb_level = 1000 * math.log(vol_pct / 100, 2)
+
+        mb_level = max(VolumeController.__GLOBAL_MIN_VOL_VAL, mb_level)
+        mb_level = min(VolumeController.__LIMITED_MAX_VOL_VAL, mb_level)
+        return mb_level
