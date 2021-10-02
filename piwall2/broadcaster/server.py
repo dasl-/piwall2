@@ -191,7 +191,7 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
         elif path == 'receivers_display_mode':
-            response = self.__api.set_receiver_display_mode(post_data)
+            response = self.__api.set_receivers_display_mode(post_data)
         else:
             self.__do_404()
             return
