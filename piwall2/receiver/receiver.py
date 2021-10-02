@@ -102,13 +102,15 @@ class Receiver:
         elif msg_type == ControlMessageHelper.TYPE_DISPLAY_MODE:
             display_mode = ctrl_msg[ControlMessageHelper.CONTENT_KEY]['display_mode']
             tvs_to_set_display_mode_on = ctrl_msg[ControlMessageHelper.CONTENT_KEY]['tvs']
+            should_set_display_mode_on_this_receiver = False
             for tv in tvs_to_set_display_mode_on:
                 if self.__is_hostname_this_receiver(tv['hostname']):
+                    should_set_display_mode_on_this_receiver = True
                     if tv['tv_id'] == 1:
                         self.__display_mode = display_mode
                     elif tv['tv_id'] == 2:
                         self.__display_mode2 = display_mode
-            if self.__is_video_playback_in_progress:
+            if self.__is_video_playback_in_progress and should_set_display_mode_on_this_receiver:
                 if display_mode == self.DISPLAY_MODE_REPEAT:
                     self.__omxplayer_controller.set_crop(self.__crop_args[self.DISPLAY_MODE_REPEAT])
                 else:
