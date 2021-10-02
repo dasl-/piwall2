@@ -27,10 +27,10 @@ class CurrentlyPlayingVideo extends React.Component {
 
   render() {
     var row_class = 'now-playing ' + (this.props.loading ? 'loading' : '');
-    const display_mode_tile_links = this.state.receivers_coordinates.map(receiver =>
+    const display_mode_tile_links = this.state.receivers_coordinates.tvs.map(receiver =>
       <a href='#' onClick={(e) => this.handleSetDisplayMode(e, receiver.hostname, receiver.tv_id, 'tile')}>{receiver.hostname} tile </a>
     );
-    const display_mode_repeat_links = this.state.receivers_coordinates.map(receiver =>
+    const display_mode_repeat_links = this.state.receivers_coordinates.tvs.map(receiver =>
       <a href='#' onClick={(e) => this.handleSetDisplayMode(e, receiver.hostname, receiver.tv_id, 'repeat')}>{receiver.hostname} repeat </a>
     );
 
