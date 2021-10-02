@@ -180,7 +180,7 @@ class CurrentlyPlayingRight extends React.Component {
 
     var data = this.getData();
     this.setState({data : data});
-  },
+  }
 
 }
 
