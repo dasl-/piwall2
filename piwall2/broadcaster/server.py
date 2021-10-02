@@ -77,9 +77,6 @@ class Piwall2Api():
             'success': True
         }
 
-    def get_receivers_coordinates(self):
-        return config_loader.get_receivers_coordinates()
-
     def set_receivers_display_mode(self, post_data):
         display_mode = post_data['display_mode']
         self.__logger.info(display_mode)
@@ -162,8 +159,6 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.toggle_tile(True)
         elif parsed_path.path == 'tile2':
             response = self.__api.toggle_tile(False)
-        elif parsed_path.path == 'receivers_coordinates':
-            response = self.__api.get_receivers_coordinates()
         else:
             self.__do_404()
             return
@@ -253,10 +248,20 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
 class Server:
 
+    __RECEIVERS_COORDINATES_APP_FILE = DirectoryUtils().root_dir + "/app/src/receivers_coordinates.json"
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
+        self.__config_loader = ConfigLoader()
+        self.__write_receivers_coordinates_for_app()
+
+    def __write_receivers_coordinates_for_app(self):
+        receivers_coordinates_json = json.dumps(self.__config_loader.get_receivers_coordinates())
+        file = open(self.__RECEIVERS_COORDINATES_APP_FILE, "w")
+        file.write(receivers_coordinates_json)
+        file.close()
 
     def serve_forever(self):
         self.__logger.info('Server is serving forever...')

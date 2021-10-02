@@ -6,6 +6,8 @@ import 'rc-slider/assets/index.css';
 import React from 'react';
 import Slider from 'rc-slider';
 
+import receivers_coordinates from 'receivers_coordinates.json';
+
 class CurrentlyPlayingVideo extends React.Component {
   constructor(props) {
     super(props);
@@ -17,8 +19,10 @@ class CurrentlyPlayingVideo extends React.Component {
       is_vol_locked: false,
       is_vol_lock_releasable: true,
       vol_lock_marked_releasable_time: 0,
-      receivers_coordinates: [],
+      receivers_coordinates: receivers_coordinates,
     };
+
+    console.log(receivers_coordinates);
   }
 
   render() {
@@ -168,19 +172,6 @@ class CurrentlyPlayingVideo extends React.Component {
       this.setState({vol_pct: nextProps.vol_pct});
     }
   };
-
-  componentDidMount() {
-    // TODO: this fires twice on page load
-    this.apiClient.getReceiversCoordinates()
-      .then((data) => {
-        if (!Array.isArray(data)) {
-          return;
-        }
-        this.setState({
-          receivers_coordinates: data
-        });
-      });
-  }
 
 }
 

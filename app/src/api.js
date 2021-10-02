@@ -94,10 +94,6 @@ class APIClient {
     function(err) { console.error("Execute error", err); });
   }
 
-  getReceiversCoordinates() {
-    return this.perform('get', '/receivers_coordinates');
-  }
-
   setReceiversDisplayMode(tvs, display_mode) {
     return this.perform('post', '/receivers_display_mode', {
         tvs: tvs,
