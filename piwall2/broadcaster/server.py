@@ -89,7 +89,7 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
         self.__root_dir = DirectoryUtils().root_dir + "/app/build"
-        self.__api = Piwall2Api(self.server.configloader)
+        self.__api = Piwall2Api(server.configloader)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         http.server.BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
