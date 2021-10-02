@@ -24,8 +24,8 @@ class Wall extends React.Component {
     // width: 11
     // x: 0
     // y: 0.5
-    let wallHeight = 26;
-    let wallWidth = 21.875;
+    let wallHeight = this.state.wall_height;
+    let wallWidth = this.state.wall_width;
 
     let imgWidth = 320;
     let imgHeight = 180;
