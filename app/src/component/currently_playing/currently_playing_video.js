@@ -158,28 +158,27 @@ class CurrentlyPlayingRight extends React.Component {
         data.forEach(element => console.log(element));
 
       });
-    return;
-    this.apiClient.searchYoutube(this.state.search_term)
-      .then((data) => {
-        if (!data) {
-          return;
-        }
-        for (var i = Things.length - 1; i >= 0; i--) {
-          Things[i]
-        }
+    // this.apiClient.searchYoutube(this.state.search_term)
+    //   .then((data) => {
+    //     if (!data) {
+    //       return;
+    //     }
+    //     for (var i = Things.length - 1; i >= 0; i--) {
+    //       Things[i]
+    //     }
 
-        localStorage.setItem("latest_results", JSON.stringify(data));
-        this.setState({
-          search_results: SearchResultVideo.fromArray(data),
-          search_loading: false,
-          show_search: true
-        });
-      });
-
+    //     localStorage.setItem("latest_results", JSON.stringify(data));
+    //     this.setState({
+    //       search_results: SearchResultVideo.fromArray(data),
+    //       search_loading: false,
+    //       show_search: true
+    //     });
+    //   });
 
 
-    var data = this.getData();
-    this.setState({data : data});
+
+    // var data = this.getData();
+    // this.setState({data : data});
   }
 
 }
