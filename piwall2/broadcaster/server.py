@@ -5,6 +5,7 @@ import traceback
 import urllib
 
 from piwall2.broadcaster.playlist import Playlist
+from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
@@ -222,6 +223,8 @@ class Server:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
+        svg = ConfigLoader().get_receivers_svg()
+        self.__logger.info(svg)
 
     def serve_forever(self):
         self.__logger.info('Server is serving forever...')
