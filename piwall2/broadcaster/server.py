@@ -82,6 +82,7 @@ class Piwall2Api():
 
     def set_receivers_display_mode(self, post_data):
         display_mode = post_data['display_mode']
+        self.__logger.info(display_mode)
         if display_mode not in [Receiver.DISPLAY_MODE_TILE, Receiver.DISPLAY_MODE_REPEAT]:
             return {
                 'success': False
@@ -91,6 +92,9 @@ class Piwall2Api():
             'display_mode': display_mode,
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
+        return {
+            'success': True
+        }
 
     def toggle_tile(self, is_tiled):
         tvs = []
