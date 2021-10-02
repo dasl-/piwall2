@@ -14,10 +14,11 @@ from piwall2.volumecontroller import VolumeController
 
 class Piwall2Api():
 
-    def __init__(self):
+    def __init__(self, config_loader):
         self.__playlist = Playlist()
         self.__vol_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
+        self.__config_loader = config_loader
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     # get all the data that we poll for every second in the piwall2
@@ -74,6 +75,9 @@ class Piwall2Api():
             'success': True
         }
 
+    def get_receivers_coordinates(self):
+        return self.__config_loader.get_receivers_coordinates()
+
     def toggle_tile(self, is_tiled):
         if is_tiled:
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, Receiver.DISPLAY_MODE_TILE)
@@ -85,7 +89,7 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
         self.__root_dir = DirectoryUtils().root_dir + "/app/build"
-        self.__api = Piwall2Api()
+        self.__api = Piwall2Api(self.server.configloader)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         http.server.BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
@@ -132,6 +136,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.toggle_tile(True)
         elif parsed_path.path == 'tile2':
             response = self.__api.toggle_tile(False)
+        elif parsed_path.path == 'receivers_coordinates':
+            response = self.__api.get_receivers_coordinates()
         else:
             self.__do_404()
             return
@@ -222,9 +228,8 @@ class Server:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
+        self.config_loader = ConfigLoader()
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
-        svg = ConfigLoader().get_receivers_svg()
-        self.__logger.info(svg)
 
     def serve_forever(self):
         self.__logger.info('Server is serving forever...')

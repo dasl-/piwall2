@@ -12,6 +12,7 @@ class ConfigLoader:
         self.__receivers_config = None
         self.__receivers = []
         self.__receivers_svg = None
+        self.__receivers_coordinates = None
         self.__wall_width = None
         self.__wall_height = None
         self.__youtube_dl_video_format = None
@@ -26,6 +27,9 @@ class ConfigLoader:
 
     def get_receivers_svg(self):
         return self.__receivers_svg
+
+    def get_receivers_coordinates(self):
+        return self.__receivers_coordinates
 
     def get_wall_width(self):
         return self.__wall_width
@@ -89,6 +93,7 @@ class ConfigLoader:
             self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
         self.__logger.info(f"Using youtube-dl video format: {self.__youtube_dl_video_format}")
 
+        self.__generate_receivers_coordinates()
         self.__generate_receivers_svg()
 
         self.__is_loaded = True
@@ -121,14 +126,38 @@ class ConfigLoader:
             if 'video2' not in receiver_config:
                 raise Exception(f"Config missing field 'video2' for receiver: {receiver}.")
 
+    def __generate_receivers_coordinates(self):
+        receivers_coordinates = []
+        for receiver, cfg in self.__receivers_config.items():
+            data = {
+                'x': cfg['x'],
+                'y': cfg['y'],
+                'width': cfg['width'],
+                'height': cfg['height'],
+                'hostname': receiver,
+                'tv_id': 1,
+            }
+            receivers_coordinates.append(data)
+            if cfg['is_dual_video_output']:
+                data = {
+                    'x': cfg['x2'],
+                    'y': cfg['y2'],
+                    'width': cfg['width2'],
+                    'height': cfg['height2'],
+                    'hostname': receiver,
+                    'tv_id': 2,
+                }
+                receivers_coordinates.append(data)
+        return receivers_coordinates
+
     def __generate_receivers_svg(self):
         svg = '<?xml version="1.0" standalone="no"?>'
         svg += '<svg width="2000" height="2500" version="1.1" xmlns="http://www.w3.org/2000/svg">'
         rect_template = ('<rect x="{0}" y="{1}" width="{2}" height="{3}" stroke="black" ' +
-            'fill="transparent" stroke-width="0.1" data-hostname="{4}" />')
+            'fill="transparent" stroke-width="0.1" data-hostname="{4}"" data-tv-id="{5}"  />')
         for receiver, cfg in self.__receivers_config.items():
-            svg += rect_template.format(cfg["x"], cfg["y"], cfg["width"], cfg["height"], receiver)
+            svg += rect_template.format(cfg["x"], cfg["y"], cfg["width"], cfg["height"], receiver, 1)
             if cfg['is_dual_video_output']:
-                svg += rect_template.format(cfg["x2"], cfg["y2"], cfg["width2"], cfg["height2"], receiver)
+                svg += rect_template.format(cfg["x2"], cfg["y2"], cfg["width2"], cfg["height2"], receiver, 2)
         svg += '</svg>'
         self.__receivers_svg = svg
