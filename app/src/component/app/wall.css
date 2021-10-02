@@ -1,0 +1,23 @@
+.wallContainer {
+  position: relative;
+  top:0;
+  left:0;
+}
+.wall {
+  position: absolute;
+  top:0;
+  left:0;
+  /* Add the blur effect */
+  filter: blur(8px);
+  -webkit-filter: blur(8px);
+  
+}
+.tvs {
+  position: absolute;
+}
+.tv {
+  position: absolute;
+  border: 1px solid #F00;
+  filter: blur(0);
+  -webkit-filter: blur(0);
+}

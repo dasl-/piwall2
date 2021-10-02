@@ -110,6 +110,10 @@ class APIClient {
      }).then(resp => {
        return resp.data ? resp.data : [];
      })
+     .catch(resp => {
+       console.log('fail');
+       return {};
+     })
   }
 }
 
