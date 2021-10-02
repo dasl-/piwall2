@@ -12,13 +12,15 @@ from piwall2.logger import Logger
 from piwall2.receiver.receiver import Receiver
 from piwall2.volumecontroller import VolumeController
 
+# TODO: something like this https://stackoverflow.com/questions/21631799/how-can-i-pass-parameters-to-a-requesthandler
+config_loader = ConfigLoader()
+
 class Piwall2Api():
 
-    def __init__(self, config_loader):
+    def __init__(self):
         self.__playlist = Playlist()
         self.__vol_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
-        self.__config_loader = config_loader
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     # get all the data that we poll for every second in the piwall2
@@ -76,7 +78,7 @@ class Piwall2Api():
         }
 
     def get_receivers_coordinates(self):
-        return self.__config_loader.get_receivers_coordinates()
+        return config_loader.get_receivers_coordinates()
 
     def toggle_tile(self, is_tiled):
         if is_tiled:
@@ -89,7 +91,7 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
         self.__root_dir = DirectoryUtils().root_dir + "/app/build"
-        self.__api = Piwall2Api(server.config_loader)
+        self.__api = Piwall2Api()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         http.server.BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
@@ -228,7 +230,6 @@ class Server:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
-        self.config_loader = ConfigLoader()
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
 
     def serve_forever(self):
