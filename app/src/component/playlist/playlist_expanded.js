@@ -3,7 +3,7 @@ import React from 'react';
 import LoadWithVideo from 'component/util/load_with_video';
 import SwipeableList from 'component/lib/SwipeableList/SwipeableList';
 import SwipeableListItem from 'component/lib/SwipeableList/SwipeableListItem';
-import CurrentlyPlaying from 'component/currently_playing/currently_playing_video';
+import CurrentlyPlayingVideo from 'component/currently_playing/currently_playing_video';
 
 class PlaylistExpanded extends React.Component {
   constructor(props) {
@@ -23,7 +23,7 @@ class PlaylistExpanded extends React.Component {
             </div>
 
             <LoadWithVideo video={this.props.current_video}>
-              <CurrentlyPlaying
+              <CurrentlyPlayingVideo
                 nextVideo={this.props.nextVideo}
                 setVolPct={this.props.setVolPct}
                 vol_pct={this.props.vol_pct}

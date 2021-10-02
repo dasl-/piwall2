@@ -6,7 +6,7 @@ import 'rc-slider/assets/index.css';
 import React from 'react';
 import Slider from 'rc-slider';
 
-class CurrentlyPlayingRight extends React.Component {
+class CurrentlyPlayingVideo extends React.Component {
   constructor(props) {
     super(props);
 
@@ -184,4 +184,4 @@ class CurrentlyPlayingRight extends React.Component {
 
 }
 
-export default CurrentlyPlayingRight;
+export default CurrentlyPlayingVideo;
