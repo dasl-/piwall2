@@ -16,6 +16,10 @@ class Wall extends React.Component {
     this.state = config;
   }
 
+  // componentDidMount() {
+  //   this.props.onLoad();
+  // }
+
   render() {
     // hostname: "piwall2.local"
     // tv_id: 1
@@ -33,15 +37,21 @@ class Wall extends React.Component {
     let offsetX = (imgWidth - (wallWidth * scale)) / 2;
     let offsetY = 0;
 
-    console.log(scale);
+    let src = this.props.src;
 
     return (
-      <div className="wallContainer">
-        <div className='wall bg-primary bg-background' style={
+      <div className="wallContainer"style={
+        {
+          width: imgWidth,
+          height: imgHeight,
+        }
+        }>
+        <div className='wall' style={
           {
             width: imgWidth,
             height: imgHeight,
-            backgroundImage: `url(https://i.ytimg.com/vi/IcxWyfGR-2A/mqdefault.jpg)`,
+
+            backgroundImage: `url(${src})`,
           }
           } />
         <div className="tvs" style={
@@ -58,6 +68,7 @@ class Wall extends React.Component {
                 <TV
                   key={index}
                   scale={scale}
+                  src={src}
                   id={tv.tv_id}
                   height={tv.height}
                   hostname={tv.hostname}

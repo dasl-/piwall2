@@ -6,6 +6,8 @@ import 'rc-slider/assets/index.css';
 import React from 'react';
 import Slider from 'rc-slider';
 
+import Wall from 'component/app/wall';
+
 import receivers_coordinates from 'receivers_config.json';
 
 class CurrentlyPlayingVideo extends React.Component {
@@ -39,12 +41,18 @@ class CurrentlyPlayingVideo extends React.Component {
         <div className={row_class}>
           <div className='bg-dark position-relative'>
             <div className='loading-cover'><div className='dot-pulse'></div></div>
-            <img
+            <Wall
               src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
               className='img-fluid video-thumbnail w-100'
               alt={(this.props.video) ? this.props.video.title : ''}
+            />
+            
+            <img
+              src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
+              style={{display:'none'}}
               onLoad={this.props.setImageLoaded}
             />
+
             {(this.props.video) &&
               <span className='duration badge badge-dark position-absolute mr-1 mb-1'>{this.props.video.duration}</span>
             }
