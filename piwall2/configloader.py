@@ -148,7 +148,7 @@ class ConfigLoader:
                     'tv_id': 2,
                 }
                 receivers_coordinates.append(data)
-        return receivers_coordinates
+        self.__receivers_coordinates = receivers_coordinates
 
     def __generate_receivers_svg(self):
         svg = '<?xml version="1.0" standalone="no"?>'
