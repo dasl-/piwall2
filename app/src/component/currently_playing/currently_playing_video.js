@@ -28,7 +28,9 @@ class CurrentlyPlayingVideo extends React.Component {
   }
 
   render() {
-    var row_class = 'now-playing ' + (this.props.loading ? 'loading' : '');
+    let loading = this.props.loading;
+    
+    var row_class = 'now-playing ' + (loading ? 'loading' : '');
     const display_mode_tile_links = this.state.receivers_coordinates.tvs.map(receiver =>
       <a href='#' onClick={(e) => this.handleSetDisplayMode(e, receiver.hostname, receiver.tv_id, 'tile')}>{receiver.hostname} tile </a>
     );

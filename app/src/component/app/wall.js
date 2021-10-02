@@ -16,9 +16,6 @@ class Wall extends React.Component {
     this.state = config;
   }
 
-  // componentDidMount() {
-  //   this.props.onLoad();
-  // }
 
   render() {
     // hostname: "piwall2.local"
@@ -40,7 +37,7 @@ class Wall extends React.Component {
     let src = this.props.src;
 
     return (
-      <div className="wallContainer"style={
+      <div className="wallContainer" style={
         {
           width: imgWidth,
           height: imgHeight,

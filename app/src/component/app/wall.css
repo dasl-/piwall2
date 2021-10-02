@@ -10,9 +10,12 @@
   filter: brightness(50%);
 
   /* Add the blur effect */
-  filter: blur(8px);
-  -webkit-filter: blur(8px);
+  filter: blur(2px);
+  -webkit-filter: blur(2px);
   
+}
+.loading .wall {
+  opacity: .3;
 }
 .tvs {
   position: absolute;
@@ -21,4 +24,8 @@
   position: absolute;
   filter: blur(0);
   -webkit-filter: blur(0);
+  border: 1px solid #AAA;
+}
+.loading .tv {
+  opacity: .3;
 }
