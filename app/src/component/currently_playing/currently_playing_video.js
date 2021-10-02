@@ -1,5 +1,6 @@
 import './currently_playing.css';
 import App from '../app/app';
+import api from 'api';
 
 import 'rc-slider/assets/index.css';
 import React from 'react';
@@ -10,6 +11,7 @@ class CurrentlyPlayingRight extends React.Component {
     super(props);
 
     this.handleSkip = this.handleSkip.bind(this);
+    this.apiClient = new api();
     this.state = {
       vol_pct: this.props.vol_pct,
       is_vol_locked: false,
@@ -144,7 +146,41 @@ class CurrentlyPlayingRight extends React.Component {
     if (!this.state.is_vol_locked) {
       this.setState({vol_pct: nextProps.vol_pct});
     }
-  }
+  };
+
+  componentDidMount() {
+    console.log("componentDidMount!!");
+    this.apiClient.getReceiversCoordinates()
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          return;
+        }
+        data.forEach(element => console.log(element));
+
+      });
+    return;
+    this.apiClient.searchYoutube(this.state.search_term)
+      .then((data) => {
+        if (!data) {
+          return;
+        }
+        for (var i = Things.length - 1; i >= 0; i--) {
+          Things[i]
+        }
+
+        localStorage.setItem("latest_results", JSON.stringify(data));
+        this.setState({
+          search_results: SearchResultVideo.fromArray(data),
+          search_loading: false,
+          show_search: true
+        });
+      });
+
+
+
+    var data = this.getData();
+    this.setState({data : data});
+  },
 
 }
 

@@ -94,6 +94,10 @@ class APIClient {
     function(err) { console.error("Execute error", err); });
   }
 
+  getReceiversCoordinates() {
+    return this.perform('get', '/receivers_coordinates');
+  }
+
   async perform (method, resource, data) {
     return client({
        method,
