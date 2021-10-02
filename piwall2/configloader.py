@@ -12,7 +12,7 @@ class ConfigLoader:
         self.__receivers_config = None
         self.__receivers = []
         self.__receivers_svg = None
-        self.__receivers_coordinates = None
+        self.__receivers_app_config = None # Config read by the react app
         self.__wall_width = None
         self.__wall_height = None
         self.__youtube_dl_video_format = None
@@ -28,8 +28,8 @@ class ConfigLoader:
     def get_receivers_svg(self):
         return self.__receivers_svg
 
-    def get_receivers_coordinates(self):
-        return self.__receivers_coordinates
+    def get_receivers_app_config(self):
+        return self.__receivers_app_config
 
     def get_wall_width(self):
         return self.__wall_width
@@ -38,7 +38,7 @@ class ConfigLoader:
         return self.__wall_height
 
     # youtube-dl video format depends on whether any receiver has dual video output
-    # see: https://github.com/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#one-vs-two-tvs-per-receiver-raspberry-pi
+    # see: https://github.zm/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#one-vs-two-tvs-per-receiver-raspberry-pi
     def get_youtube_dl_video_format(self):
         return self.__youtube_dl_video_format
 
@@ -93,7 +93,7 @@ class ConfigLoader:
             self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
         self.__logger.info(f"Using youtube-dl video format: {self.__youtube_dl_video_format}")
 
-        self.__generate_receivers_coordinates()
+        self.__generate_receivers_app_config()
         self.__generate_receivers_svg()
 
         self.__is_loaded = True
@@ -126,8 +126,9 @@ class ConfigLoader:
             if 'video2' not in receiver_config:
                 raise Exception(f"Config missing field 'video2' for receiver: {receiver}.")
 
-    def __generate_receivers_coordinates(self):
-        receivers_coordinates = []
+    # Config read by the react app
+    def __generate_receivers_app_config(self):
+        tvs = []
         for receiver, cfg in self.__receivers_config.items():
             data = {
                 'x': cfg['x'],
@@ -137,7 +138,7 @@ class ConfigLoader:
                 'hostname': receiver,
                 'tv_id': 1,
             }
-            receivers_coordinates.append(data)
+            tvs.append(data)
             if cfg['is_dual_video_output']:
                 data = {
                     'x': cfg['x2'],
@@ -147,8 +148,13 @@ class ConfigLoader:
                     'hostname': receiver,
                     'tv_id': 2,
                 }
-                receivers_coordinates.append(data)
-        self.__receivers_coordinates = receivers_coordinates
+                tvs.append(data)
+
+        self.__receivers_app_config = {
+            'tvs': tvs,
+            'wall_width': self.get_wall_width(),
+            'wall_height': self.get_wall_height(),
+        }
 
     def __generate_receivers_svg(self):
         svg = '<?xml version="1.0" standalone="no"?>'
