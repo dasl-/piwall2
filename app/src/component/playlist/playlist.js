@@ -5,7 +5,7 @@ import { CSSTransition } from 'react-transition-group';
 import './playlist.css';
 
 import LoadWithVideo from 'component/util/load_with_video';
-import CurrentlyPlayingVideo from 'component/currently_playing/currently_playing_video';
+import CurrentlyPlaying from 'component/currently_playing/currently_playing_video';
 import PlaylistVideo from './playlist_video';
 
 class Playlist extends React.Component {
@@ -49,7 +49,7 @@ class Playlist extends React.Component {
             <div className="p-2 px-4">
               <div className="pt-3">
                 <LoadWithVideo video={this.props.current_video}>
-                  <CurrentlyPlayingVideo
+                  <CurrentlyPlaying
                     nextVideo={this.props.nextVideo}
                     setVolPct={this.props.setVolPct}
                     vol_pct={this.props.vol_pct}

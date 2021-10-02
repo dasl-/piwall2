@@ -13,6 +13,7 @@ class TV extends React.Component {
 
   render() {
     let props = this.props;
+    let src = props.src;
     let scale = props.scale;
     let bgPos = "-" + ((props.x * scale) + props.offsetX) + "px -" + ((props.y * scale) + props.offsetY) + "px";
 
@@ -23,7 +24,7 @@ class TV extends React.Component {
           left:(props.x * scale),
           width:props.width * scale,
           height:props.height * scale,
-          backgroundImage: `url(https://i.ytimg.com/vi/IcxWyfGR-2A/mqdefault.jpg)`,
+          backgroundImage: `url(${src})`,
           backgroundPosition: bgPos
         }
         }>
