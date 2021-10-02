@@ -6,7 +6,7 @@ import 'rc-slider/assets/index.css';
 import React from 'react';
 import Slider from 'rc-slider';
 
-import receivers_coordinates from 'receivers_coordinates.json';
+import receivers_coordinates from 'receivers_config.json';
 
 class CurrentlyPlayingVideo extends React.Component {
   constructor(props) {
