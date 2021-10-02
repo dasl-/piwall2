@@ -98,6 +98,13 @@ class APIClient {
     return this.perform('get', '/receivers_coordinates');
   }
 
+  setReceiversDisplayMode(tvs, display_mode) {
+    return this.perform('post', '/receivers_display_mode', {
+        tvs: tvs,
+        display_mode: display_mode,
+    });
+  }
+
   async perform (method, resource, data) {
     return client({
        method,

@@ -80,11 +80,31 @@ class Piwall2Api():
     def get_receivers_coordinates(self):
         return config_loader.get_receivers_coordinates()
 
+    def set_receivers_display_mode(self, post_data):
+        display_mode = post_data['display_mode']
+        if display_mode not in [Receiver.DISPLAY_MODE_TILE, Receiver.DISPLAY_MODE_REPEAT]:
+            return {
+                'success': False
+            }
+        msg_content = {
+            'tvs': post_data['tvs'],
+            'display_mode': display_mode,
+        }
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
+
     def toggle_tile(self, is_tiled):
+        tvs = []
+        for receiver, cfg in config_loader.get_receivers_config().items():
+            tvs.append({'hostname': receiver, 'tv_id': 1})
+            if cfg['is_dual_video_output']:
+                tvs.append({'hostname': receiver, 'tv_id': 2})
+        msg_content = {'tvs': tvs}
         if is_tiled:
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, Receiver.DISPLAY_MODE_TILE)
+            msg_content['display_mode'] = Receiver.DISPLAY_MODE_TILE
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
         else:
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, Receiver.DISPLAY_MODE_REPEAT)
+            msg_content['display_mode'] = Receiver.DISPLAY_MODE_REPEAT
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
 
 
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -170,6 +190,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.clear()
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
+        elif path == 'receivers_display_mode':
+            response = self.__api.set_receiver_display_mode(post_data)
         else:
             self.__do_404()
             return

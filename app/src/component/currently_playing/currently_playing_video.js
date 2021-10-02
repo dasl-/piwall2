@@ -16,12 +16,20 @@ class CurrentlyPlayingRight extends React.Component {
       vol_pct: this.props.vol_pct,
       is_vol_locked: false,
       is_vol_lock_releasable: true,
-      vol_lock_marked_releasable_time: 0
+      vol_lock_marked_releasable_time: 0,
+      receivers_coordinates: [],
     };
   }
 
   render() {
     var row_class = 'now-playing ' + (this.props.loading ? 'loading' : '');
+    const display_mode_tile_links = this.state.receivers_coordinates.map(receiver =>
+      <a href='#' onClick={(e) => this.handleSetDisplayMode(e, receiver.hostname, receiver.tv_id, 'tile')}>{receiver.hostname} tile </a>
+    );
+    const display_mode_repeat_links = this.state.receivers_coordinates.map(receiver =>
+      <a href='#' onClick={(e) => this.handleSetDisplayMode(e, receiver.hostname, receiver.tv_id, 'repeat')}>{receiver.hostname} repeat </a>
+    );
+
     return (
       <div>
         <div className={row_class}>
@@ -84,8 +92,12 @@ class CurrentlyPlayingRight extends React.Component {
 
         <div className='container pt-2 px-0 mt-2'>
           <div className='row mr-0'>
+            {display_mode_tile_links}
+            {display_mode_repeat_links}
+          </div>
+          <div className='row mr-0'>
             <div className='col-8 px-2 pl-3 small-vertical-center'>
-                Up Next2
+                Up Next
             </div>
             <div className='col-3 px-0'>
 
@@ -108,6 +120,15 @@ class CurrentlyPlayingRight extends React.Component {
     e.stopPropagation();
     this.props.setLoading();
     this.props.nextVideo();
+  }
+
+  handleSetDisplayMode(e, receiver_hostname, tv_id, display_mode) {
+    e.preventDefault();
+    const tvs = [{hostname: receiver_hostname, tv_id: tv_id}];
+    this.apiClient.setReceiversDisplayMode(tvs, display_mode)
+      .then((data) => {
+        // TODO: return the new display modes and update UI
+      });
   }
 
   onVolChange = (vol_pct) => {
@@ -149,36 +170,16 @@ class CurrentlyPlayingRight extends React.Component {
   };
 
   componentDidMount() {
-    console.log("componentDidMount!!");
+    // TODO: this fires twice on page load
     this.apiClient.getReceiversCoordinates()
       .then((data) => {
         if (!Array.isArray(data)) {
           return;
         }
-        data.forEach(element => console.log(element));
-
+        this.setState({
+          receivers_coordinates: data
+        });
       });
-    // this.apiClient.searchYoutube(this.state.search_term)
-    //   .then((data) => {
-    //     if (!data) {
-    //       return;
-    //     }
-    //     for (var i = Things.length - 1; i >= 0; i--) {
-    //       Things[i]
-    //     }
-
-    //     localStorage.setItem("latest_results", JSON.stringify(data));
-    //     this.setState({
-    //       search_results: SearchResultVideo.fromArray(data),
-    //       search_loading: false,
-    //       show_search: true
-    //     });
-    //   });
-
-
-
-    // var data = this.getData();
-    // this.setState({data : data});
   }
 
 }

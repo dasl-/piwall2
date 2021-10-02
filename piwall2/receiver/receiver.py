@@ -1,5 +1,6 @@
 import os
 import signal
+import socket
 import subprocess
 import time
 import traceback
@@ -30,6 +31,9 @@ class Receiver:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Started receiver!")
 
+        self.__hostname = socket.gethostname() + ".local"
+        self.__local_ip_address = self.__get_local_ip()
+
         # The current crop modes for up to two TVs that may be hooked up to this receiver
         self.__display_mode = self.DISPLAY_MODE_TILE
         self.__display_mode2 = self.DISPLAY_MODE_TILE
@@ -40,7 +44,9 @@ class Receiver:
         self.__crop_args2 = self.__DEFAULT_CROP_ARGS
 
         self.__config_loader = ConfigLoader()
-        self.__receiver_command_builder = ReceiverCommandBuilder(self.__config_loader)
+        self.__receiver_command_builder = ReceiverCommandBuilder(
+            self.__config_loader, self.__hostname, self.__local_ip_address
+        )
         self.__control_message_helper = ControlMessageHelper().setup_for_receiver()
         self.__orig_log_uuid = Logger.get_uuid()
         self.__is_video_playback_in_progress = False
@@ -94,10 +100,16 @@ class Receiver:
             if self.__is_video_playback_in_progress:
                 self.__omxplayer_controller.set_vol_pct(self.__video_player_volume_pct)
         elif msg_type == ControlMessageHelper.TYPE_DISPLAY_MODE:
-            self.__display_mode = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-            self.__display_mode2 = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
+            display_mode = ctrl_msg[ControlMessageHelper.CONTENT_KEY]['display_mode']
+            tvs_to_set_display_mode_on = ctrl_msg[ControlMessageHelper.CONTENT_KEY]['tvs']
+            for tv in tvs_to_set_display_mode_on:
+                if self.__is_hostname_this_receiver(tv['hostname']):
+                    if tv['tv_id'] == 1:
+                        self.__display_mode = display_mode
+                    elif tv['tv_id'] == 2:
+                        self.__display_mode2 = display_mode
             if self.__is_video_playback_in_progress:
-                if ctrl_msg[ControlMessageHelper.CONTENT_KEY] == self.DISPLAY_MODE_REPEAT:
+                if display_mode == self.DISPLAY_MODE_REPEAT:
                     self.__omxplayer_controller.set_crop(self.__crop_args[self.DISPLAY_MODE_REPEAT])
                 else:
                     self.__omxplayer_controller.set_crop(self.__crop_args[self.DISPLAY_MODE_TILE])
@@ -158,3 +170,19 @@ class Receiver:
         if proc.returncode != 0:
             raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
+
+    def __is_hostname_this_receiver(self, hostname):
+        if self.__hostname == hostname or self.__local_ip_address == hostname:
+            return True
+        return False
+
+    def __get_local_ip(self):
+        return (subprocess
+            .check_output(
+                'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
+                'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
+                stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
+            )
+            .decode("utf-8")
+            .strip()
+        )

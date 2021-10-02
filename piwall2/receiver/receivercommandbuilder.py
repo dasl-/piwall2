@@ -12,10 +12,8 @@ from piwall2.volumecontroller import VolumeController
 # Helper to build the "receive and play video" command
 class ReceiverCommandBuilder:
 
-    def __init__(self, config_loader):
+    def __init__(self, config_loader, hostname, local_ip_address):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        hostname = socket.gethostname() + ".local"
-        local_ip_address = self.__get_local_ip()
         self.__config_loader = config_loader
         receivers_config = self.__config_loader.get_receivers_config()
         if hostname in receivers_config:
@@ -302,14 +300,3 @@ class ReceiverCommandBuilder:
                 f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
 
         return (displayable_video_width, displayable_video_height)
-
-    def __get_local_ip(self):
-        return (subprocess
-            .check_output(
-                'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
-                'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
-                stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
-            )
-            .decode("utf-8")
-            .strip()
-        )
