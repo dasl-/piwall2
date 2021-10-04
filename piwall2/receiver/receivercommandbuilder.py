@@ -37,7 +37,10 @@ class ReceiverCommandBuilder:
         volume_pct = VolumeController.normalize_vol_pct(volume_pct)
 
         # See: https://github.com/popcornmix/omxplayer/#volume-rw
-        volume_millibels = 2000 * math.log(volume_pct, 10)
+        if volume_pct == 0:
+            volume_millibels = VolumeController.GLOBAL_MIN_VOL_VAL
+        else:
+            volume_millibels = 2000 * math.log(volume_pct, 10)
 
         """
         We use mbuffer in the receiver command. The mbuffer is here to solve two problems:
