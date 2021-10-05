@@ -12,6 +12,8 @@ receivers.toml
 # these css files are built via scss
 app/src/css/custom-theme.css
 app/src/css/themes/*.css
+app/src/css/**/*.css.map
+
 
 # config file written on python server start up
 app/src/receivers_config.json
