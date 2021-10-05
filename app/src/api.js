@@ -4,10 +4,21 @@ import gapi from 'gapi-client';
 // By default, include the port i.e. 'piwall.tv:666' in the api host to
 // support running the piwall2 on a custom port
 var api_host = window.location.host;
-if (process.env.NODE_ENV === 'development') {
-  // API url should not include the :3000 port that is present in the development server url
-  api_host = window.location.hostname;
+if (process.env.REACT_APP_API_HOST !== undefined) {
+  api_host = process.env.REACT_APP_API_HOST;
+} else {
+  if (process.env.NODE_ENV === 'development') {
+    if (window.location.hostname === 'localhost') {
+      // 'localhost' indicates we are probably running the npm development server on a laptop / desktop computer
+      // via `npm start --prefix app`
+      api_host = 'piwall.tv'; // Default to this
+    } else {
+      // API url should not include the :3000 port that is present in the development server url
+      api_host = window.location.hostname;
+    }
+  }
 }
+
 const client = axios.create({
   baseURL: "//" + api_host + "/api",
   json: true
@@ -111,7 +122,7 @@ class APIClient {
        return resp.data ? resp.data : [];
      })
      .catch(resp => {
-       console.log('fail');
+       console.log('ajax request failed');
        return {};
      })
   }
