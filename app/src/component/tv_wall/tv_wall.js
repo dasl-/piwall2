@@ -36,15 +36,16 @@ class TvWall extends React.Component {
               return (
                 <Tv
                   key={index}
-                  src={this.props.src}
-                  id={tv.tv_id}
-                  height={tv.height}
-                  hostname={tv.hostname}
-                  width={tv.width}
                   x={tv.x}
                   y={tv.y}
+                  width={tv.width}
+                  height={tv.height}
                   bgImgWidth={this.state.currently_playing_video_img_width}
                   bgImgHeight={this.state.currently_playing_video_img_height}
+                  src={this.props.src}
+                  hostname={tv.hostname}
+                  id={tv.tv_id}
+                  display_mode='DISPLAY_MODE_TILE'
                 />
               );
             })

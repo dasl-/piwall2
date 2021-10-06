@@ -11,8 +11,7 @@ class ConfigLoader:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__receivers_config = None
         self.__receivers = []
-        self.__receivers_svg = None
-        self.__receivers_app_config = None # Config read by the react app
+        self.__tv_config_for_app = None # Config read by the react app
         self.__wall_width = None
         self.__wall_height = None
         self.__youtube_dl_video_format = None
@@ -25,11 +24,8 @@ class ConfigLoader:
     def get_receivers_list(self):
         return self.__receivers
 
-    def get_receivers_svg(self):
-        return self.__receivers_svg
-
-    def get_receivers_app_config(self):
-        return self.__receivers_app_config
+    def get_tv_config_for_app(self):
+        return self.__tv_config_for_app
 
     def get_wall_width(self):
         return self.__wall_width
@@ -93,8 +89,7 @@ class ConfigLoader:
             self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
         self.__logger.info(f"Using youtube-dl video format: {self.__youtube_dl_video_format}")
 
-        self.__generate_receivers_app_config()
-        self.__generate_receivers_svg()
+        self.__generate_tv_config_for_app()
 
         self.__is_loaded = True
 
@@ -127,7 +122,7 @@ class ConfigLoader:
                 raise Exception(f"Config missing field 'video2' for receiver: {receiver}.")
 
     # Config read by the react app
-    def __generate_receivers_app_config(self):
+    def __generate_tv_config_for_app(self):
         tvs = []
         for receiver, cfg in self.__receivers_config.items():
             data = {
@@ -150,20 +145,8 @@ class ConfigLoader:
                 }
                 tvs.append(data)
 
-        self.__receivers_app_config = {
+        self.__tv_config_for_app = {
             'tvs': tvs,
             'wall_width': self.get_wall_width(),
             'wall_height': self.get_wall_height(),
         }
-
-    def __generate_receivers_svg(self):
-        svg = '<?xml version="1.0" standalone="no"?>'
-        svg += '<svg width="2000" height="2500" version="1.1" xmlns="http://www.w3.org/2000/svg">'
-        rect_template = ('<rect x="{0}" y="{1}" width="{2}" height="{3}" stroke="black" ' +
-            'fill="transparent" stroke-width="0.1" data-hostname="{4}"" data-tv-id="{5}"  />')
-        for receiver, cfg in self.__receivers_config.items():
-            svg += rect_template.format(cfg["x"], cfg["y"], cfg["width"], cfg["height"], receiver, 1)
-            if cfg['is_dual_video_output']:
-                svg += rect_template.format(cfg["x2"], cfg["y2"], cfg["width2"], cfg["height2"], receiver, 2)
-        svg += '</svg>'
-        self.__receivers_svg = svg

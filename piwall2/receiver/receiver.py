@@ -19,8 +19,8 @@ class Receiver:
 
     # Tile mode is like this: https://i.imgur.com/BBrA1Cr.png
     # Repeat mode is like this: https://i.imgur.com/cpS61s8.png
-    DISPLAY_MODE_TILE = 'tile'
-    DISPLAY_MODE_REPEAT = 'repeat'
+    DISPLAY_MODE_TILE = 'DISPLAY_MODE_TILE'
+    DISPLAY_MODE_REPEAT = 'DISPLAY_MODE_REPEAT'
 
     __DEFAULT_CROP_ARGS = {
         DISPLAY_MODE_TILE: None,

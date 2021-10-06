@@ -5,6 +5,7 @@ import traceback
 import urllib
 
 from piwall2.broadcaster.playlist import Playlist
+from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
@@ -19,6 +20,7 @@ class Piwall2Api():
 
     def __init__(self):
         self.__playlist = Playlist()
+        self.__settings_db = SettingsDb()
         self.__vol_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -79,18 +81,35 @@ class Piwall2Api():
 
     def set_receivers_display_mode(self, post_data):
         display_mode = post_data['display_mode']
-        self.__logger.info(display_mode)
         if display_mode not in [Receiver.DISPLAY_MODE_TILE, Receiver.DISPLAY_MODE_REPEAT]:
             return {
                 'success': False
             }
+
+        tvs = post_data['tvs']
+        if not isinstance(tvs, list):
+            return {
+                'success': False
+            }
+        for tv in tvs:
+            if 'hostname' not in tv or 'tv_id' not in tv:
+                return {
+                    'success': False
+                }
+
         msg_content = {
             'tvs': post_data['tvs'],
             'display_mode': display_mode,
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
+
+        kv_pairs = {}
+        for tv in post_data['tvs']:
+            key = SettingsDb.DISPLAY_MODE_TEMPLATE.format(hostname = tvs['hostname'], tv_id = tvs['tv_id'])
+            kv_pairs[key] = display_mode
+        success = self.__settings_db.set_multi(kv_pairs)
         return {
-            'success': True
+            'success': success
         }
 
     def toggle_tile(self, is_tiled):
@@ -248,19 +267,19 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
 class Server:
 
-    __RECEIVERS_APP_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/tv_config.json"
+    __APP_TV_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/tv_config.json"
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
-        self.__write_receivers_config_for_app()
+        self.__write_tv_config_for_app()
 
     # TODO: move this to the app build process, because it will require an app rebuild anyway.
-    def __write_receivers_config_for_app(self):
-        receivers_config_json = json.dumps(config_loader.get_receivers_app_config())
-        file = open(self.__RECEIVERS_APP_CONFIG_FILE, "w")
-        file.write(receivers_config_json)
+    def __write_tv_config_for_app(self):
+        tv_config_json = json.dumps(config_loader.get_tv_config_for_app())
+        file = open(self.__APP_TV_CONFIG_FILE, "w")
+        file.write(tv_config_json)
         file.close()
 
     def serve_forever(self):

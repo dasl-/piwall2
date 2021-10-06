@@ -5,6 +5,7 @@ import time
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 import piwall2.broadcaster.playlist
+import piwall2.broadcaster.settingsdb
 
 def dict_factory(cursor, row):
     d = {}
@@ -20,7 +21,7 @@ class Database:
     __DB_PATH = DirectoryUtils().root_dir + '/piwall2.db'
 
     # Zero indexed schema_version (first version is v0).
-    __SCHEMA_VERSION = 0
+    __SCHEMA_VERSION = 1
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -50,6 +51,7 @@ class Database:
             self.__logger.info("Constructing database schema from scratch...")
             self.__construct_schema_version()
             piwall2.broadcaster.playlist.Playlist().construct()
+            piwall2.broadcaster.settingsdb.SettingsDb().construct()
         elif current_schema_version < self.__SCHEMA_VERSION:
             self.__logger.info(
                 f"Database schema is outdated. Updating from version {current_schema_version} to " +
@@ -59,13 +61,12 @@ class Database:
                 self.__logger.info(
                     "Running database schema change to update from version {} to {}.".format(i - 1, i)
                 )
-                # When schema changes happen, do something like this:
-                # if i == 1:
-                #     self.__update_schema_to_v1()
+
+                if i == 1:
+                    self.__update_schema_to_v1()
+                # When next schema change happens, do something like this:
                 # elif i == 2:
                 #     self.__update_schema_to_v2()
-                if False:
-                    pass
                 else:
                     msg = "No update schema method defined for version: {}.".format(i)
                     self.__logger.error(msg)
@@ -101,3 +102,7 @@ class Database:
             "INSERT INTO schema_version (version) VALUES(?)",
             [self.__SCHEMA_VERSION]
         )
+
+    # Add new table for storing settings
+    def __update_schema_to_v1(self):
+        piwall2.broadcaster.settingsdb.SettingsDb().construct()
