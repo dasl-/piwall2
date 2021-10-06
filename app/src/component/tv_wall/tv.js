@@ -8,6 +8,7 @@ class Tv extends React.Component {
     this.state = {
       display_mode: this.props.display_mode,
     };
+    this.handleSetDisplayMode = this.handleSetDisplayMode.bind(this);
   }
 
   render() {
