@@ -1,4 +1,4 @@
-from pifi.logger import Logger
+from piwall2.logger import Logger
 import piwall2.broadcaster.database
 
 """
