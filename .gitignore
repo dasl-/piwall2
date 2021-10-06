@@ -16,4 +16,4 @@ app/src/css/**/*.css.map
 
 
 # config file written on python server start up
-app/src/receivers_config.json
+app/src/tv_config.json

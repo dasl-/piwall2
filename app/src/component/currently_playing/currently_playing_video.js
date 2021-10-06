@@ -6,14 +6,12 @@ import 'rc-slider/assets/index.css';
 import React from 'react';
 import Slider from 'rc-slider';
 
-import Wall from 'component/app/wall';
-
-import receivers_coordinates from 'receivers_config.json';
+import LoadWithVideo from '../util/load_with_video';
+import TvWall from '../tv_wall/tv_wall';
 
 class CurrentlyPlayingVideo extends React.Component {
   constructor(props) {
     super(props);
-
     this.handleSkip = this.handleSkip.bind(this);
     this.apiClient = new api();
     this.state = {
@@ -21,44 +19,20 @@ class CurrentlyPlayingVideo extends React.Component {
       is_vol_locked: false,
       is_vol_lock_releasable: true,
       vol_lock_marked_releasable_time: 0,
-      receivers_coordinates: receivers_coordinates,
     };
-
-    console.log(receivers_coordinates);
+    this.tv_wall = null;
   }
 
   render() {
-    let loading = this.props.loading;
-    
-    var row_class = 'now-playing ' + (loading ? 'loading' : '');
-    const display_mode_tile_links = this.state.receivers_coordinates.tvs.map(receiver =>
-      <a href='#' onClick={(e) => this.handleSetDisplayMode(e, receiver.hostname, receiver.tv_id, 'tile')}>{receiver.hostname} tile </a>
-    );
-    const display_mode_repeat_links = this.state.receivers_coordinates.tvs.map(receiver =>
-      <a href='#' onClick={(e) => this.handleSetDisplayMode(e, receiver.hostname, receiver.tv_id, 'repeat')}>{receiver.hostname} repeat </a>
-    );
-
     return (
       <div>
-        <div className={row_class}>
-          <div className='bg-dark position-relative'>
-            <div className='loading-cover'><div className='dot-pulse'></div></div>
-            <Wall
+          <LoadWithVideo video={this.props.video}>
+            <TvWall
               src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
-              className='img-fluid video-thumbnail w-100'
               alt={(this.props.video) ? this.props.video.title : ''}
+              ref={ (tv_wall) => { this.tv_wall = tv_wall } }
             />
-            
-            <img
-              src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
-              style={{display:'none'}}
-              onLoad={this.props.setImageLoaded}
-            />
-
-            {(this.props.video) &&
-              <span className='duration badge badge-dark position-absolute mr-1 mb-1'>{this.props.video.duration}</span>
-            }
-          </div>
+          </LoadWithVideo>
 
           <div className='text-large text-center py-2'>
             {(this.props.video)
@@ -66,7 +40,6 @@ class CurrentlyPlayingVideo extends React.Component {
               : <span>&lt;Nothing&gt;</span>
             }
           </div>
-        </div>
 
         <div className='row'>
           <div className='col-1 p-0 text-right'><span className='glyphicon glyphicon-volume-down bg-light-text vol-icon' aria-hidden='true' /></div>
@@ -106,10 +79,6 @@ class CurrentlyPlayingVideo extends React.Component {
 
         <div className='container pt-2 px-0 mt-2'>
           <div className='row mr-0'>
-            {display_mode_tile_links}
-            {display_mode_repeat_links}
-          </div>
-          <div className='row mr-0'>
             <div className='col-8 px-2 pl-3 small-vertical-center'>
                 Up Next
             </div>
@@ -132,17 +101,10 @@ class CurrentlyPlayingVideo extends React.Component {
   handleSkip(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.props.setLoading();
+    if (this.tv_wall) {
+      this.tv_wall.props.setLoading();
+    }
     this.props.nextVideo();
-  }
-
-  handleSetDisplayMode(e, receiver_hostname, tv_id, display_mode) {
-    e.preventDefault();
-    const tvs = [{hostname: receiver_hostname, tv_id: tv_id}];
-    this.apiClient.setReceiversDisplayMode(tvs, display_mode)
-      .then((data) => {
-        // TODO: return the new display modes and update UI
-      });
   }
 
   onVolChange = (vol_pct) => {

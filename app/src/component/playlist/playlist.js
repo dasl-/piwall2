@@ -48,14 +48,13 @@ class Playlist extends React.Component {
           <div className="playlist">
             <div className="p-2 px-4">
               <div className="pt-3">
-                <LoadWithVideo video={this.props.current_video}>
-                  <CurrentlyPlayingVideo
-                    nextVideo={this.props.nextVideo}
-                    setVolPct={this.props.setVolPct}
-                    vol_pct={this.props.vol_pct}
-                    clearQueue={this.props.clearQueue}
-                  />
-                </LoadWithVideo>
+                <CurrentlyPlayingVideo
+                  nextVideo={this.props.nextVideo}
+                  setVolPct={this.props.setVolPct}
+                  vol_pct={this.props.vol_pct}
+                  clearQueue={this.props.clearQueue}
+                  video={this.props.current_video}
+                />
               </div>
 
               <div className="play-queue">

@@ -1,29 +1,23 @@
-.wallContainer {
-  position: relative;
-  top:0;
-  left:0;
-}
-.wall {
-  position: absolute;
-  top:0;
-  left:0;
+.tv-wall-container img.video-thumbnail {
   filter: brightness(50%);
 
   /* Add the blur effect */
   filter: blur(2px);
   -webkit-filter: blur(2px);
-  
+
 }
-.loading .wall {
+.loading .tv-wall-container {
   opacity: .3;
 }
-.tvs {
+.tv-wall {
   position: absolute;
+  top:0;
+  left:0;
+  height:100%;
+  width:100%;
 }
 .tv {
   position: absolute;
-  filter: blur(0);
-  -webkit-filter: blur(0);
   border: 1px solid #AAA;
 }
 .loading .tv {

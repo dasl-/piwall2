@@ -1,9 +1,9 @@
 import React from 'react';
 
 /**
- * This class is used to detect went to go out of a loading state given a video being passed into a component
+ * This class is used to detect when to go out of a loading state given a video being passed into a component
  * Loading will be set to false any time the video in the child component is altered
- * The child is expected to have a video thumbnail that calls back to setImageLoaded when its done loading
+ * The child is expected to have a video thumbnail that calls back to setImageLoaded when it's done loading
  */
 class LoadWithVideo extends React.Component {
   constructor(props) {

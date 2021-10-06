@@ -248,7 +248,7 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
 class Server:
 
-    __RECEIVERS_APP_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/receivers_config.json"
+    __RECEIVERS_APP_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/tv_config.json"
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -256,6 +256,7 @@ class Server:
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
         self.__write_receivers_config_for_app()
 
+    # TODO: move this to the app build process, because it will require an app rebuild anyway.
     def __write_receivers_config_for_app(self):
         receivers_config_json = json.dumps(config_loader.get_receivers_app_config())
         file = open(self.__RECEIVERS_APP_CONFIG_FILE, "w")
