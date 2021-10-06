@@ -105,7 +105,7 @@ class Piwall2Api():
 
         kv_pairs = {}
         for tv in post_data['tvs']:
-            key = SettingsDb.DISPLAY_MODE_TEMPLATE.format(hostname = tvs['hostname'], tv_id = tvs['tv_id'])
+            key = SettingsDb.DISPLAY_MODE_TEMPLATE.format(hostname = tv['hostname'], tv_id = tv['tv_id'])
             kv_pairs[key] = display_mode
         success = self.__settings_db.set_multi(kv_pairs)
         return {

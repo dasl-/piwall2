@@ -1,10 +1,12 @@
 import React from 'react';
+import api from 'api';
 import './tv_wall.css';
 
 class Tv extends React.Component {
 
   constructor(props) {
     super(props);
+    this.apiClient = new api();
     this.state = {
       display_mode: this.props.display_mode,
     };
