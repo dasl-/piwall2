@@ -25,8 +25,8 @@ class ConfigLoader:
     def get_receivers_list(self):
         return self.__receivers
 
-    # returns list of TVs and their configuration. A single receiver may be present in the list twice if it has
-    # two TVs.
+    # returns a dict that has a key 'tvs'. This key maps to a  list of TVs and their configuration.
+    # A single receiver may be present in the list twice if it has two TVs.
     def get_tv_config(self):
         return self.__tv_config
 
