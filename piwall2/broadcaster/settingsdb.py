@@ -71,7 +71,7 @@ class SettingsDb:
         placeholders += ')'
 
         self.__cursor.execute(
-            f"SELECT key, value FROM settings WHERE keys IN {placeholders}", keys
+            f"SELECT key, value FROM settings WHERE key IN {placeholders}", keys
         )
         res = self.__cursor.fetchall()
 
