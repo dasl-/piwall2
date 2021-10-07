@@ -100,7 +100,7 @@ class SettingsDb:
         tv_config = self.__config_loader.get_tv_config()
         display_mode_settings_keys = []
         for tv in tv_config:
-            display_mode_settings_key = self.make_tv_key_for_setting.format(
+            display_mode_settings_key = self.make_tv_key_for_setting(
                 self.SETTING_DISPLAY_MODE, tv_config['hostname'], tv_config['tv_id']
             )
             display_mode_settings_keys.append(display_mode_settings_key)
