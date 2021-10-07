@@ -8,6 +8,7 @@ import traceback
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
+from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
 from piwall2.receiver.omxplayercontroller import OmxplayerController
 from piwall2.receiver.receivercommandbuilder import ReceiverCommandBuilder
@@ -17,14 +18,9 @@ class Receiver:
 
     VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES = 1024 * 1024 * 400 # 400 MB
 
-    # Tile mode is like this: https://i.imgur.com/BBrA1Cr.png
-    # Repeat mode is like this: https://i.imgur.com/cpS61s8.png
-    DISPLAY_MODE_TILE = 'DISPLAY_MODE_TILE'
-    DISPLAY_MODE_REPEAT = 'DISPLAY_MODE_REPEAT'
-
     __DEFAULT_CROP_ARGS = {
-        DISPLAY_MODE_TILE: None,
-        DISPLAY_MODE_REPEAT: None,
+        DisplayMode.DISPLAY_MODE_TILE: None,
+        DisplayMode.DISPLAY_MODE_REPEAT: None,
     }
 
     def __init__(self):
@@ -35,8 +31,8 @@ class Receiver:
         self.__local_ip_address = self.__get_local_ip()
 
         # The current crop modes for up to two TVs that may be hooked up to this receiver
-        self.__display_mode = self.DISPLAY_MODE_TILE
-        self.__display_mode2 = self.DISPLAY_MODE_TILE
+        self.__display_mode = DisplayMode.DISPLAY_MODE_TILE
+        self.__display_mode2 = DisplayMode.DISPLAY_MODE_TILE
 
         # Crop arguments to send to omxplayer for the currently playing video if the display mode changes.
         # These change per video, thus we just initialize them to dummy values in the constructor.
@@ -111,10 +107,10 @@ class Receiver:
                     elif tv['tv_id'] == 2:
                         self.__display_mode2 = display_mode
             if self.__is_video_playback_in_progress and should_set_display_mode_on_this_receiver:
-                if display_mode == self.DISPLAY_MODE_REPEAT:
-                    self.__omxplayer_controller.set_crop(self.__crop_args[self.DISPLAY_MODE_REPEAT])
+                if display_mode == DisplayMode.DISPLAY_MODE_REPEAT:
+                    self.__omxplayer_controller.set_crop(self.__crop_args[DisplayMode.DISPLAY_MODE_REPEAT])
                 else:
-                    self.__omxplayer_controller.set_crop(self.__crop_args[self.DISPLAY_MODE_TILE])
+                    self.__omxplayer_controller.set_crop(self.__crop_args[DisplayMode.DISPLAY_MODE_TILE])
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]

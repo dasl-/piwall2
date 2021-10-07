@@ -11,21 +11,24 @@ class ConfigLoader:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__receivers_config = None
         self.__receivers = []
-        self.__tv_config_for_app = None # Config read by the react app
+        self.__tv_config = None # Config read by the react app
         self.__wall_width = None
         self.__wall_height = None
         self.__youtube_dl_video_format = None
         self.__is_loaded = False
         self.__load_config_if_not_loaded()
 
+    # returns dict keyed by receiver hostname, one item per receiver, even if the receiver has two TVs.
     def get_receivers_config(self):
         return self.__receivers_config
 
     def get_receivers_list(self):
         return self.__receivers
 
-    def get_tv_config_for_app(self):
-        return self.__tv_config_for_app
+    # returns list of TVs and their configuration. A single receiver may be present in the list twice if it has
+    # two TVs.
+    def get_tv_config(self):
+        return self.__tv_config
 
     def get_wall_width(self):
         return self.__wall_width
@@ -89,7 +92,7 @@ class ConfigLoader:
             self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
         self.__logger.info(f"Using youtube-dl video format: {self.__youtube_dl_video_format}")
 
-        self.__generate_tv_config_for_app()
+        self.__generate_tv_config()
 
         self.__is_loaded = True
 
@@ -122,7 +125,7 @@ class ConfigLoader:
                 raise Exception(f"Config missing field 'video2' for receiver: {receiver}.")
 
     # Config read by the react app
-    def __generate_tv_config_for_app(self):
+    def __generate_tv_config(self):
         tvs = []
         for receiver, cfg in self.__receivers_config.items():
             data = {
@@ -145,7 +148,7 @@ class ConfigLoader:
                 }
                 tvs.append(data)
 
-        self.__tv_config_for_app = {
+        self.__tv_config = {
             'tvs': tvs,
             'wall_width': self.get_wall_width(),
             'wall_height': self.get_wall_height(),

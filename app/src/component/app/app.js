@@ -40,7 +40,8 @@ class App extends React.Component {
       last_queued_videos: [],
       last_queued_video_color_modes: [],
       vol_pct: undefined,
-      is_screensaver_enabled: true
+      is_screensaver_enabled: true,
+      tv_settings: {}
     };
 
     /* intro transition */
@@ -113,6 +114,7 @@ class App extends React.Component {
               setVolPct={this.setVolPct}
               vol_pct={this.state.vol_pct}
               is_screensaver_enabled={this.state.is_screensaver_enabled}
+              tv_settings={this.state.tv_settings}
             />
           </div>
         </CSSTransition>
@@ -258,7 +260,8 @@ class App extends React.Component {
             playlist_current_video: playlist_current_video,
             playlist_videos: playlist_videos,
             vol_pct: vol_pct,
-            is_screensaver_enabled: data.is_screensaver_enabled
+            is_screensaver_enabled: data.is_screensaver_enabled,
+            tv_settings: data.tv_settings,
           });
         }
 

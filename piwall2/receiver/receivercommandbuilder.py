@@ -1,10 +1,9 @@
 import math
 import shlex
-import socket
-import subprocess
 
 from piwall2.configloader import ConfigLoader
 from piwall2.directoryutils import DirectoryUtils
+from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
 import piwall2.receiver.receiver
 from piwall2.volumecontroller import VolumeController
@@ -230,12 +229,12 @@ class ReceiverCommandBuilder:
             repeat_mode_crop2 = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {x_offset + displayable_video_height}"
 
         crop_args = {
-            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_TILE: tile_mode_crop,
-            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_REPEAT: repeat_mode_crop,
+            DisplayMode.DISPLAY_MODE_TILE: tile_mode_crop,
+            DisplayMode.DISPLAY_MODE_REPEAT: repeat_mode_crop,
         }
         crop_args2 = {
-            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_TILE: tile_mode_crop2,
-            piwall2.receiver.receiver.Receiver.DISPLAY_MODE_REPEAT: repeat_mode_crop2,
+            DisplayMode.DISPLAY_MODE_TILE: tile_mode_crop2,
+            DisplayMode.DISPLAY_MODE_REPEAT: repeat_mode_crop2,
         }
         return (crop_args, crop_args2)
 

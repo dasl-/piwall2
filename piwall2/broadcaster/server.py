@@ -9,8 +9,8 @@ from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
+from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
-from piwall2.receiver.receiver import Receiver
 from piwall2.volumecontroller import VolumeController
 
 # TODO: something like this https://stackoverflow.com/questions/21631799/how-can-i-pass-parameters-to-a-requesthandler
@@ -20,7 +20,7 @@ class Piwall2Api():
 
     def __init__(self):
         self.__playlist = Playlist()
-        self.__settings_db = SettingsDb()
+        self.__settings_db = SettingsDb(config_loader)
         self.__vol_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -29,9 +29,11 @@ class Piwall2Api():
     def get_queue(self):
         response_details = {}
         queue = self.__playlist.get_queue()
+        tv_settings = self.__settings_db.get_tv_settings()
         response_details = {
             'queue': queue,
             'vol_pct': self.__vol_controller.get_vol_pct(),
+            'tv_settings': tv_settings,
             'success': True,
         }
         return response_details
@@ -81,7 +83,7 @@ class Piwall2Api():
 
     def set_receivers_display_mode(self, post_data):
         display_mode = post_data['display_mode']
-        if display_mode not in [Receiver.DISPLAY_MODE_TILE, Receiver.DISPLAY_MODE_REPEAT]:
+        if display_mode not in [DisplayMode.DISPLAY_MODE_TILE, DisplayMode.DISPLAY_MODE_REPEAT]:
             return {
                 'success': False
             }
@@ -105,7 +107,7 @@ class Piwall2Api():
 
         kv_pairs = {}
         for tv in post_data['tvs']:
-            key = SettingsDb.DISPLAY_MODE_TEMPLATE.format(hostname = tv['hostname'], tv_id = tv['tv_id'])
+            key = self.__settings_db.make_tv_key_for_setting(SettingsDb.SETTING_DISPLAY_MODE, tv['hostname'], tv['tv_id'])
             kv_pairs[key] = display_mode
         success = self.__settings_db.set_multi(kv_pairs)
         return {
@@ -120,10 +122,10 @@ class Piwall2Api():
                 tvs.append({'hostname': receiver, 'tv_id': 2})
         msg_content = {'tvs': tvs}
         if is_tiled:
-            msg_content['display_mode'] = Receiver.DISPLAY_MODE_TILE
+            msg_content['display_mode'] = DisplayMode.DISPLAY_MODE_TILE
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
         else:
-            msg_content['display_mode'] = Receiver.DISPLAY_MODE_REPEAT
+            msg_content['display_mode'] = DisplayMode.DISPLAY_MODE_REPEAT
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
 
 
@@ -273,11 +275,11 @@ class Server:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
-        self.__write_tv_config_for_app()
+        self.__write_tv_config()
 
     # TODO: move this to the app build process, because it will require an app rebuild anyway.
-    def __write_tv_config_for_app(self):
-        tv_config_json = json.dumps(config_loader.get_tv_config_for_app())
+    def __write_tv_config(self):
+        tv_config_json = json.dumps(config_loader.get_tv_config())
         file = open(self.__APP_TV_CONFIG_FILE, "w")
         file.write(tv_config_json)
         file.close()

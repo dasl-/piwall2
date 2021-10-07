@@ -33,6 +33,11 @@ class TvWall extends React.Component {
         <div className="tv-wall">
           {
             this.scaled_tv_config.map((tv, index) => {
+              const display_mode_key = 'display_mode_' + tv.hostname + '_' + tv.tv_id;
+              let display_mode = 'DISPLAY_MODE_TILE';
+              if (display_mode_key in this.props.tv_config) {
+                display_mode = this.props.tv_config[display_mode_key];
+              }
               return (
                 <Tv
                   key={index}
@@ -45,7 +50,7 @@ class TvWall extends React.Component {
                   src={this.props.src}
                   hostname={tv.hostname}
                   id={tv.tv_id}
-                  display_mode='DISPLAY_MODE_TILE'
+                  display_mode={display_mode}
                 />
               );
             })

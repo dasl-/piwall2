@@ -14,6 +14,15 @@ class Tv extends React.Component {
   }
 
   render() {
+    let background_size, background_position;
+    if (this.state.display_mode === 'DISPLAY_MODE_TILE') {
+      background_size = this.props.bgImgWidth + 'px ' + this.props.bgImgHeight + 'px';
+      background_position = '-' + this.props.x + 'px -' + this.props.y + 'px';
+    } else {
+      background_size = 'auto';
+      background_position = 'top left';
+    }
+
     return (
       <div className='tv' style={{
           top: this.props.y,
@@ -21,8 +30,8 @@ class Tv extends React.Component {
           width: this.props.width,
           height: this.props.height,
           backgroundImage: `url(${this.props.src})`,
-          backgroundPosition: `-${this.props.x}px -${this.props.y}px`,
-          backgroundSize: `${this.props.bgImgWidth}px ${this.props.bgImgHeight}px`,
+          backgroundPosition: background_position,
+          backgroundSize: background_size,
         }}
         onClick={this.handleSetDisplayMode}
       >
