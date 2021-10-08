@@ -32,9 +32,10 @@ class TvWall extends React.Component {
         />
         <div className="tv-wall">
           {
-            this.scaled_tv_config.values().map((tv, index) => {
+            Object.values(this.scaled_tv_config).map((tv, index) => {
               const tv_id = tv['tv_id'];
-              const this_tv_data = this.props.tv_data[tv_id];
+              console.log("yoo", tv_id, this.props.tv_data);
+              const this_tv_data = this.props.tv_data[tv_id] ? this.props.tv_data[tv_id] : {};
               const display_mode = 'display_mode' in this_tv_data ? this_tv_data['display_mode'] : 'DISPLAY_MODE_TILE';
               const loading = 'loading' in this_tv_data ? this_tv_data['loading'] : false;
               return (
@@ -95,7 +96,7 @@ class TvWall extends React.Component {
 
     const x_offset = (video_width - displayable_video_width) / 2
     const y_offset = (video_height - displayable_video_height) / 2
-
+    console.log("tvs", tv_config.tvs);
     for (var tv_id in tv_config.tvs) {
       const this_tv_config = tv_config.tvs[tv_id];
       const x0 = x_offset + ((this_tv_config.x / wall_width) * displayable_video_width);

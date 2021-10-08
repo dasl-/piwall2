@@ -85,7 +85,7 @@ class Piwall2Api():
     def set_display_mode(self, post_data):
         # validate data and make DB keys
         db_data = {}
-        for tv_id, display_mode in post_data:
+        for tv_id, display_mode in post_data.items():
             if display_mode not in [DisplayMode.DISPLAY_MODE_TILE, DisplayMode.DISPLAY_MODE_REPEAT]:
                 return {
                     'success': False
@@ -101,21 +101,6 @@ class Piwall2Api():
         return {
             'success': success
         }
-
-    def toggle_tile(self, is_tiled):
-        tvs = []
-        for receiver, cfg in config_loader.get_receivers_config().items():
-            tvs.append({'hostname': receiver, 'tv_id': 1})
-            if cfg['is_dual_video_output']:
-                tvs.append({'hostname': receiver, 'tv_id': 2})
-        msg_content = {'tvs': tvs}
-        if is_tiled:
-            msg_content['display_mode'] = DisplayMode.DISPLAY_MODE_TILE
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
-        else:
-            msg_content['display_mode'] = DisplayMode.DISPLAY_MODE_REPEAT
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
-
 
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
@@ -164,10 +149,6 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.get_queue()
         elif parsed_path.path == 'vol_pct':
             response = self.__api.get_volume()
-        elif parsed_path.path == 'tile':
-            response = self.__api.toggle_tile(True)
-        elif parsed_path.path == 'tile2':
-            response = self.__api.toggle_tile(False)
         else:
             self.__do_404()
             return

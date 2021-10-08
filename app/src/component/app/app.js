@@ -317,7 +317,7 @@ class App extends React.Component {
             playlist_videos: playlist_videos,
             vol_pct: vol_pct,
             is_screensaver_enabled: data.is_screensaver_enabled,
-            tv_data: tv_data,
+            tv_data: new_tv_data,
           });
         }
 
