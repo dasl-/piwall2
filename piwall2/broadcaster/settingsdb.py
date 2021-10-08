@@ -77,7 +77,7 @@ class SettingsDb:
 
         for row in res:
             return_value[row['key']] = row['value']
-        return res
+        return return_value
 
     # This may return None if the row doesn't exist.
     def get_row(self, key):
