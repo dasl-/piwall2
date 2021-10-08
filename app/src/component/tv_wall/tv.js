@@ -17,19 +17,26 @@ class Tv extends React.Component {
       background_size = 'contain';
       background_position = 'top left';
     }
-
+    const maybe_loading_class = this.props.loading ? 'loading' : '';
     return (
-      <div className='tv' style={{
-          top: this.props.y,
-          left: this.props.x,
-          width: this.props.width,
-          height: this.props.height,
-          backgroundImage: `url(${this.props.src})`,
-          backgroundPosition: background_position,
-          backgroundSize: background_size,
-        }}
-        onClick={this.toggleDisplayMode}
-      >
+
+      <div className={'tv-wrapper bg-dark ' + maybe_loading_class} style={{
+        top: this.props.y,
+        left: this.props.x,
+        width: this.props.width,
+        height: this.props.height,
+      }}>
+        <div className='loading-cover'><div className='dot-pulse'></div></div>
+        <div className='tv' style={{
+            width: this.props.width,
+            height: this.props.height,
+            backgroundImage: `url(${this.props.src})`,
+            backgroundPosition: background_position,
+            backgroundSize: background_size,
+          }}
+          onClick={this.toggleDisplayMode}
+        >
+        </div>
       </div>
     );
   }

@@ -16,10 +16,26 @@
   height:100%;
   width:100%;
 }
+.tv-wrapper {
+  position: absolute;
+}
 .tv {
   position: absolute;
+  top: 0;
+  left: 0;
   border: 1px solid #AAA;
 }
 .loading .tv {
   opacity: .3;
+}
+
+/* We have a loading container inside another loading container (the TV inside the TV wall).
+   When we click "next", the TV wall goes into loading animation, but we don't want the
+   TV inside to go into loading animation.
+ */
+.tv-wall-container.loading .tv-wrapper .loading-cover {
+  display: none;
+}
+.tv-wall-container.loading .tv-wrapper.loading .loading-cover {
+  display: block;
 }
