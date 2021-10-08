@@ -81,7 +81,7 @@ class Piwall2Api():
             'success': True
         }
 
-    def set_receivers_display_mode(self, post_data):
+    def set_display_mode(self, post_data):
         display_mode = post_data['display_mode']
         if display_mode not in [DisplayMode.DISPLAY_MODE_TILE, DisplayMode.DISPLAY_MODE_REPEAT]:
             return {
@@ -210,8 +210,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.clear()
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
-        elif path == 'receivers_display_mode':
-            response = self.__api.set_receivers_display_mode(post_data)
+        elif path == 'display_mode':
+            response = self.__api.set_display_mode(post_data)
         else:
             self.__do_404()
             return
