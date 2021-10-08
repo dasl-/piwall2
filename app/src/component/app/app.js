@@ -242,14 +242,22 @@ class App extends React.Component {
       }
     this.setState({tv_data: new_tv_data});
 
+    new_tv_data = null;
     this.apiClient.setDisplayMode(display_mode_by_tv_id)
-      .finally((data) => {
-        let new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
+      .then((data) => {
+        new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
         for (var tv_id in display_mode_by_tv_id){
-          new_tv_data[tv_id]['loading'] = false;
           if (data.success) {
             new_tv_data[tv_id]['display_mode'] = display_mode_by_tv_id[tv_id];
           }
+        }
+      })
+      .finally(() => {
+        if (!new_tv_data) { // The then() handler must not have run because the ajax request failed
+          new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
+        }
+        for (var tv_id in display_mode_by_tv_id){
+          new_tv_data[tv_id]['loading'] = false;
         }
         this.setState({tv_data: new_tv_data});
         this.getPlaylistQueue()
@@ -323,7 +331,7 @@ class App extends React.Component {
 
         this.setState({ playlist_loading: false });
       })
-      .finally((data) => {
+      .finally(() => {
         this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), App.QUEUE_POLL_INTERVAL_MS);
       });
   }

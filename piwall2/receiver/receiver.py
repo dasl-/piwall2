@@ -98,7 +98,7 @@ class Receiver:
             if self.__is_video_playback_in_progress:
                 self.__omxplayer_controller.set_vol_pct(self.__video_player_volume_pct)
         elif msg_type == ControlMessageHelper.TYPE_DISPLAY_MODE:
-            display_mode_by_tv_id = ctrl_msg[ControlMessageHelper.CONTENT_KEY]['display_mode']
+            display_mode_by_tv_id = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
             old_display_mode = self.__display_mode
             old_display_mode2 = self.__display_mode2
             for tv_num, tv_id in self.__tv_ids.items():
