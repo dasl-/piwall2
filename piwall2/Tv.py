@@ -6,7 +6,7 @@ A "tv_id" uniquely identifies a TV. Its format is: <receiver_hostname>_<tv_num>
 where tv_num is either "1" or "2". For example: "piwall2.local_1"
 """
 class Tv:
-    
+
     __DELIM = '_'
 
     def __init__(self, receiver_hostname, tv_number):
