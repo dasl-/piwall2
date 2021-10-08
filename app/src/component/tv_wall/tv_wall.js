@@ -11,7 +11,7 @@ class TvWall extends React.Component {
       currently_playing_video_img_width: 0,
       currently_playing_video_img_height: 0,
     };
-    this.scaled_tv_config = [];
+    this.scaled_tv_config = {};
   }
 
 
@@ -32,12 +32,11 @@ class TvWall extends React.Component {
         />
         <div className="tv-wall">
           {
-            this.scaled_tv_config.map((tv, index) => {
-              const display_mode_key = 'display_mode_' + tv.hostname + '_' + tv.tv_id;
-              let display_mode = 'DISPLAY_MODE_TILE';
-              if (display_mode_key in this.props.tv_config) {
-                display_mode = this.props.tv_config[display_mode_key];
-              }
+            this.scaled_tv_config.values().map((tv, index) => {
+              const tv_id = tv['tv_id'];
+              const this_tv_data = this.props.tv_data[tv_id];
+              const display_mode = 'display_mode' in this_tv_data ? this_tv_data['display_mode'] : 'DISPLAY_MODE_TILE';
+              const loading = 'loading' in this_tv_data ? this_tv_data['loading'] : false;
               return (
                 <Tv
                   key={index}
@@ -49,8 +48,10 @@ class TvWall extends React.Component {
                   bgImgHeight={this.state.currently_playing_video_img_height}
                   src={this.props.src}
                   hostname={tv.hostname}
-                  id={tv.tv_id}
+                  tv_id={tv_id}
                   display_mode={display_mode}
+                  loading={loading}
+                  setDisplayMode={this.props.setDisplayMode}
                 />
               );
             })
@@ -95,13 +96,14 @@ class TvWall extends React.Component {
     const x_offset = (video_width - displayable_video_width) / 2
     const y_offset = (video_height - displayable_video_height) / 2
 
-    this.scaled_tv_config = tv_config.tvs.map(tv_config => {
-      const x0 = x_offset + ((tv_config.x / wall_width) * displayable_video_width);
-      const y0 = y_offset + ((tv_config.y / wall_height) * displayable_video_height);
-      const width = (tv_config.width / wall_width) * displayable_video_width;
-      const height = (tv_config.height / wall_height) * displayable_video_height;
-      return {
-        ...tv_config,
+    for (var tv_id in tv_config.tvs) {
+      const this_tv_config = tv_config.tvs[tv_id];
+      const x0 = x_offset + ((this_tv_config.x / wall_width) * displayable_video_width);
+      const y0 = y_offset + ((this_tv_config.y / wall_height) * displayable_video_height);
+      const width = (this_tv_config.width / wall_width) * displayable_video_width;
+      const height = (this_tv_config.height / wall_height) * displayable_video_height;
+      this.scaled_tv_config[tv_id] = {
+        ...this_tv_config,
         ...{
           x: x0,
           y: y0,
@@ -109,7 +111,7 @@ class TvWall extends React.Component {
           height: height,
         }
       }
-    });
+    }
   }
 
   /**

@@ -54,6 +54,8 @@ class Playlist extends React.Component {
                   vol_pct={this.props.vol_pct}
                   clearQueue={this.props.clearQueue}
                   video={this.props.current_video}
+                  tv_data={this.props.tv_data}
+                  setDisplayMode={this.props.setDisplayMode}
                 />
               </div>
 

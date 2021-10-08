@@ -1,6 +1,7 @@
 import toml
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
+from piwall2.tv import Tv
 
 class ConfigLoader:
 
@@ -25,10 +26,13 @@ class ConfigLoader:
     def get_receivers_list(self):
         return self.__receivers
 
-    # returns a dict that has a key 'tvs'. This key maps to a  list of TVs and their configuration.
-    # A single receiver may be present in the list twice if it has two TVs.
+    # returns a dict that has a key 'tvs'. This key maps to a dict of TVs and their configuration, and is
+    # keyed by tv_id. A single receiver may be present in the 'tvs' dict twice if it has two TVs.
     def get_tv_config(self):
         return self.__tv_config
+
+    def get_tv_ids_list(self):
+        return list(self.__tv_config['tvs'])
 
     def get_wall_width(self):
         return self.__wall_width
@@ -126,27 +130,25 @@ class ConfigLoader:
 
     # Config read by the react app
     def __generate_tv_config(self):
-        tvs = []
+        tvs = {}
         for receiver, cfg in self.__receivers_config.items():
-            data = {
+            tv_id = Tv(receiver, 1).tv_id
+            tvs[tv_id] = {
                 'x': cfg['x'],
                 'y': cfg['y'],
                 'width': cfg['width'],
                 'height': cfg['height'],
-                'hostname': receiver,
-                'tv_id': 1,
+                'tv_id': tv_id,
             }
-            tvs.append(data)
             if cfg['is_dual_video_output']:
-                data = {
+                tv_id = Tv(receiver, 2).tv_id
+                tvs[tv_id] = {
                     'x': cfg['x2'],
                     'y': cfg['y2'],
                     'width': cfg['width2'],
                     'height': cfg['height2'],
-                    'hostname': receiver,
-                    'tv_id': 2,
+                    'tv_id': tv_id,
                 }
-                tvs.append(data)
 
         self.__tv_config = {
             'tvs': tvs,

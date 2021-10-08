@@ -105,11 +105,8 @@ class APIClient {
     function(err) { console.error("Execute error", err); });
   }
 
-  setReceiversDisplayMode(tvs, display_mode) {
-    return this.perform('post', '/receivers_display_mode', {
-        tvs: tvs,
-        display_mode: display_mode,
-    });
+  setDisplayMode(display_mode_by_tv_id) {
+    return this.perform('post', '/display_mode', display_mode_by_tv_id);
   }
 
   async perform (method, resource, data) {

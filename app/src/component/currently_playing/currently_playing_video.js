@@ -31,6 +31,8 @@ class CurrentlyPlayingVideo extends React.Component {
               src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
               alt={(this.props.video) ? this.props.video.title : ''}
               ref={ (tv_wall) => { this.tv_wall = tv_wall } }
+              tv_data={this.props.tv_data}
+              setDisplayMode={this.props.setDisplayMode}
             />
           </LoadWithVideo>
 

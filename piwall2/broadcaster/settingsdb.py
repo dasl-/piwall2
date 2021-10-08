@@ -11,6 +11,8 @@ class SettingsDb:
     # This is a per-TV setting.
     SETTING_DISPLAY_MODE = 'display_mode'
 
+    __SETTING_TV_ID_DELIM = '__'
+
     def __init__(self, config_loader):
         self.__cursor = piwall2.broadcaster.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -93,17 +95,33 @@ class SettingsDb:
         else:
             return False
 
-    def make_tv_key_for_setting(self, setting, hostname, tv_id):
-        return f'{setting}_{hostname}_{tv_id}'
-
+    # Returns a dict: {
+    #   tv_id => {
+    #       setting1: value,
+    #       ...,
+    #   },
+    #   ...
+    # }
+    #
+    # All TVs are guaranteed to be present in the dict.
     def get_tv_settings(self):
         tv_config = self.__config_loader.get_tv_config()
         display_mode_settings_keys = []
-        for tv in tv_config['tvs']:
-            display_mode_settings_key = self.make_tv_key_for_setting(
-                self.SETTING_DISPLAY_MODE, tv['hostname'], tv['tv_id']
-            )
+        tv_settings = {}
+        for tv_id in tv_config['tvs']:
+            display_mode_settings_key = self.make_tv_key_for_setting(self.SETTING_DISPLAY_MODE, tv_id)
             display_mode_settings_keys.append(display_mode_settings_key)
+            tv_settings[tv_id] = {}
 
         display_mode_settings = self.get_multi(display_mode_settings_keys, DisplayMode.DISPLAY_MODE_TILE)
-        return display_mode_settings
+        for key, display_mode in display_mode_settings.items():
+            tv_id = self.get_tv_id_from_settings_key(key)
+            tv_settings[tv_id][self.SETTING_DISPLAY_MODE] = display_mode
+
+        return tv_settings
+
+    def make_tv_key_for_setting(self, setting, tv_id):
+        return f'{setting}{self.__SETTING_TV_ID_DELIM}{tv_id}'
+
+    def get_tv_id_from_settings_key(self, key):
+        return key.split(self.__SETTING_TV_ID_DELIM)[1]

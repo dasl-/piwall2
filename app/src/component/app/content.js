@@ -14,7 +14,6 @@ import './content.css';
 class Content extends React.Component {
   constructor(props) {
     super(props);
-
     this.state = {
       playlist_expanded: false,
       playlist_fully_expanded: false,
@@ -87,6 +86,8 @@ class Content extends React.Component {
                   removeVideo={this.props.removeVideo}
                   setVolPct={this.props.setVolPct}
                   vol_pct={this.props.vol_pct}
+                  tv_data={this.props.tv_data}
+                  setDisplayMode={this.props.setDisplayMode}
                 />
               </div>
             </div>
@@ -114,6 +115,8 @@ class Content extends React.Component {
                 contractFooterPlaylist={this.contractFooterPlaylist}
                 setVolPct={this.props.setVolPct}
                 vol_pct={this.props.vol_pct}
+                tv_data={this.props.tv_data}
+                setDisplayMode={this.props.setDisplayMode}
               />
             </div>
           </div>

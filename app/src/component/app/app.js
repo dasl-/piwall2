@@ -41,7 +41,17 @@ class App extends React.Component {
       last_queued_video_color_modes: [],
       vol_pct: undefined,
       is_screensaver_enabled: true,
-      tv_settings: {}
+
+      // tv_data contains a mix of state from the backend and the frontend per TV. Keyed by tv_id.
+      // Ex: {
+      //   tv_id1: {
+      //     key1: value,
+      //     key2: value,
+      //     ...
+      //   },
+      //   ...
+      // }
+      tv_data: {},
     };
 
     /* intro transition */
@@ -60,6 +70,9 @@ class App extends React.Component {
     this.clearQueue = this.clearQueue.bind(this);
     this.removeVideo = this.removeVideo.bind(this);
     this.setVolPct = this.setVolPct.bind(this);
+
+    /* Tv callbacks */
+    this.setDisplayMode = this.setDisplayMode.bind(this);
 
     // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
     if (window.__firefox__) {
@@ -114,7 +127,8 @@ class App extends React.Component {
               setVolPct={this.setVolPct}
               vol_pct={this.state.vol_pct}
               is_screensaver_enabled={this.state.is_screensaver_enabled}
-              tv_settings={this.state.tv_settings}
+              tv_data={this.state.tv_data}
+              setDisplayMode={this.setDisplayMode}
             />
           </div>
         </CSSTransition>
@@ -218,6 +232,31 @@ class App extends React.Component {
   cancelQueuePoll() {
     clearTimeout(this.queue_timeout);
   }
+
+  /* Tv callbacks */
+  setDisplayMode(display_mode_by_tv_id) {
+    // Clone the state so we don't modify it in place. React frowns upon modifying state outside of setState.
+    let new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data));
+      for (var tv_id in display_mode_by_tv_id) {
+        new_tv_data[tv_id]['loading'] = true;
+      }
+    this.setState({tv_data: new_tv_data});
+
+    this.apiClient.setDisplayMode(display_mode_by_tv_id)
+      .finally((data) => {
+        let new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
+        for (var tv_id in display_mode_by_tv_id){
+          new_tv_data[tv_id]['loading'] = false;
+          if (data.success) {
+            new_tv_data[tv_id]['display_mode'] = display_mode_by_tv_id[tv_id];
+          }
+        }
+        this.setState({tv_data: new_tv_data});
+        this.getPlaylistQueue()
+      });
+  }
+
+  /* queue polling */
   getPlaylistQueue() {
     if (this.state.playlist_loading) {
       this.cancelQueuePoll();
@@ -256,12 +295,29 @@ class App extends React.Component {
             });
           }
 
+          // Clone the state so we don't modify it in place. React frowns upon modifying state outside of setState.
+          const old_tv_data = this.state.tv_data;
+          let new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data));
+          const backend_tv_data = data.tv_settings;
+          for (var tv_id in backend_tv_data) {
+            if (tv_id in old_tv_data) {
+              // Merge the frontend tv state with the backend tv state info, letting the new backend state
+              // override frontend state (frontend may contain extra keys).
+              new_tv_data[tv_id] = {
+                ...old_tv_data[tv_id],
+                ...backend_tv_data[tv_id],
+              }
+            } else {
+              new_tv_data[tv_id] = backend_tv_data[tv_id];
+            }
+          }
+
           this.setState({
             playlist_current_video: playlist_current_video,
             playlist_videos: playlist_videos,
             vol_pct: vol_pct,
             is_screensaver_enabled: data.is_screensaver_enabled,
-            tv_settings: data.tv_settings,
+            tv_data: tv_data,
           });
         }
 

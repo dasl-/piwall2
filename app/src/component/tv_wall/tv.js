@@ -1,16 +1,11 @@
 import React from 'react';
-import api from 'api';
 import './tv_wall.css';
 
 class Tv extends React.Component {
 
   constructor(props) {
     super(props);
-    this.apiClient = new api();
-    this.state = {
-      display_mode: this.props.display_mode,
-    };
-    this.handleSetDisplayMode = this.handleSetDisplayMode.bind(this);
+    this.toggleDisplayMode = this.toggleDisplayMode.bind(this);
   }
 
   render() {
@@ -19,7 +14,7 @@ class Tv extends React.Component {
       background_size = this.props.bgImgWidth + 'px ' + this.props.bgImgHeight + 'px';
       background_position = '-' + this.props.x + 'px -' + this.props.y + 'px';
     } else {
-      background_size = 'auto';
+      background_size = 'contain';
       background_position = 'top left';
     }
 
@@ -33,23 +28,20 @@ class Tv extends React.Component {
           backgroundPosition: background_position,
           backgroundSize: background_size,
         }}
-        onClick={this.handleSetDisplayMode}
+        onClick={this.toggleDisplayMode}
       >
       </div>
     );
   }
 
-  handleSetDisplayMode(e) {
+  toggleDisplayMode(e) {
     e.preventDefault();
     let new_display_mode = 'DISPLAY_MODE_TILE';
-    if (this.state.display_mode == 'DISPLAY_MODE_TILE') {
+    if (this.props.display_mode === 'DISPLAY_MODE_TILE') {
       new_display_mode = 'DISPLAY_MODE_REPEAT';
     }
-    const tvs = [{hostname: this.props.hostname, tv_id: this.props.id}];
-    this.apiClient.setReceiversDisplayMode(tvs, new_display_mode)
-      .then((data) => {
-        this.setState({display_mode: new_display_mode})
-      });
+    const display_mode_by_tv_id = {this.props.tv_id: new_display_mode};
+    this.props.setDisplayMode(display_mode_by_tv_id);
   }
 
 }

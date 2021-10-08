@@ -1,7 +1,6 @@
 import math
 import shlex
 
-from piwall2.configloader import ConfigLoader
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
@@ -11,18 +10,10 @@ from piwall2.volumecontroller import VolumeController
 # Helper to build the "receive and play video" command
 class ReceiverCommandBuilder:
 
-    def __init__(self, config_loader, hostname, local_ip_address):
+    def __init__(self, config_loader, receiver_config_stanza):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__config_loader = config_loader
-        receivers_config = self.__config_loader.get_receivers_config()
-        if hostname in receivers_config:
-            self.__receiver_config_stanza = receivers_config[hostname]
-        elif local_ip_address in receivers_config:
-            self.__receiver_config_stanza = receivers_config[local_ip_address]
-        else:
-            raise Exception("Unable to find config stanza for this receiver's " +
-                f"hostname ({hostname}) or local ip address ({local_ip_address}) " +
-                f"in receivers config file ({ConfigLoader.RECEIVERS_CONFIG_PATH}).")
+        self.__receiver_config_stanza = receiver_config_stanza
 
     def build_receive_and_play_video_command_and_get_crop_args(
         self, log_uuid, video_width, video_height, volume_pct, display_mode, display_mode2

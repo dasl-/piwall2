@@ -1,6 +1,5 @@
 import React from 'react';
 
-import LoadWithVideo from 'component/util/load_with_video';
 import SwipeableList from 'component/lib/SwipeableList/SwipeableList';
 import SwipeableListItem from 'component/lib/SwipeableList/SwipeableListItem';
 import CurrentlyPlayingVideo from 'component/currently_playing/currently_playing_video';
@@ -28,6 +27,8 @@ class PlaylistExpanded extends React.Component {
               vol_pct={this.props.vol_pct}
               clearQueue={this.props.clearQueue}
               video={this.props.current_video}
+              tv_data={this.props.tv_data}
+              setDisplayMode={this.props.setDisplayMode}
             />
 
             <div className="play-queue">

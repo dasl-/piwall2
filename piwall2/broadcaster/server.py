@@ -81,35 +81,23 @@ class Piwall2Api():
             'success': True
         }
 
+    # post_data is key value pairs where the key is a tv_id and the value is a display_mode for that TV.
     def set_display_mode(self, post_data):
-        display_mode = post_data['display_mode']
-        if display_mode not in [DisplayMode.DISPLAY_MODE_TILE, DisplayMode.DISPLAY_MODE_REPEAT]:
-            return {
-                'success': False
-            }
-
-        tvs = post_data['tvs']
-        if not isinstance(tvs, list):
-            return {
-                'success': False
-            }
-        for tv in tvs:
-            if 'hostname' not in tv or 'tv_id' not in tv:
+        # validate data and make DB keys
+        db_data = {}
+        for tv_id, display_mode in post_data:
+            if display_mode not in [DisplayMode.DISPLAY_MODE_TILE, DisplayMode.DISPLAY_MODE_REPEAT]:
                 return {
                     'success': False
                 }
+            db_key = self.__settings_db.make_tv_key_for_setting(SettingsDb.SETTING_DISPLAY_MODE, tv_id)
+            db_data[db_key] = display_mode
 
-        msg_content = {
-            'tvs': post_data['tvs'],
-            'display_mode': display_mode,
-        }
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, msg_content)
+        # send display_mode control message to receivers
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, post_data)
 
-        kv_pairs = {}
-        for tv in post_data['tvs']:
-            key = self.__settings_db.make_tv_key_for_setting(SettingsDb.SETTING_DISPLAY_MODE, tv['hostname'], tv['tv_id'])
-            kv_pairs[key] = display_mode
-        success = self.__settings_db.set_multi(kv_pairs)
+        # store display_mode settings in DB
+        success = self.__settings_db.set_multi(db_data)
         return {
             'success': success
         }
