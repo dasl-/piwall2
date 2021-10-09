@@ -145,3 +145,5 @@ And omxplayer.log may look like this (note `ERROR: COMXPlayer::interrupt_cb - Ti
 I believe the cause is that sometimes youtube-dl is slow to start the download, causing https://github.com/popcornmix/omxplayer/issues/426#issuecomment-182092009[omxplayer's timeout] to be exhausted. At the time of the issue described in these logs, we were using `--timeout 20` with omxplayer. I will try increasing to `--timeout 30`.
 
 See also: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#timeout
+
+For reference, I was testing with this video: https://www.youtube.com/watch?v=rSLQ--jza5U . Maybe one out of every five attempts it would take ~20 - 22 seconds to start the youtube-dl download.

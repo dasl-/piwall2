@@ -31,7 +31,7 @@ have a nice day ;)
 
 In the omxplayer log, we will see https://gist.github.com/dasl-/0caa95c6c438685bf4c12f280784c223[something like this].
 
-Raising the timeout should make these types of errors less likely.
+Raising the timeout should make these types of errors less likely. See also https://github.com/dasl-/piwall2/blob/main/docs/issues_weve_seen_before.adoc#receivers-sometimes-fail-to-play-video
 
 ### threshold
 Raising the `threshold` was necessary to prevent random occasional video drop outs. See: https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc . Hopefully setting it to 5 seconds is enough to accomodate playing of all videos without pauses / drop outs.
