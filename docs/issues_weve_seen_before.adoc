@@ -146,4 +146,4 @@ I believe the cause is that sometimes youtube-dl is slow to start the download, 
 
 See also: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#timeout
 
-For reference, I was testing with https://www.youtube.com/watch?v=rSLQ--jza5U[this video]. Maybe one out of every five attempts it would take ~20 - 22 seconds to start the youtube-dl download.
+For reference, I was testing with https://www.youtube.com/watch?v=rSLQ\-\-jza5U[this video]. Maybe one out of every five attempts it would take ~20 - 22 seconds to start the youtube-dl download.
