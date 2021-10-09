@@ -134,3 +134,14 @@ net.core.rmem_max = 67108864
 ....
 
 I am not sure what was wrong with using 64MB. This would be the default for all sockets on the system, so perhaps this created memory pressure? Or perhaps something else was going on. If 4MB is too small for some use cases, this may be worth investigating again.
+
+## Receivers sometimes fail to play video
+Receiver logs may look like this: https://gist.github.com/dasl-/f7b8326cf4735103b37f0cfa0ae4fb3f
+
+Broadcaster logs may look like this: https://gist.github.com/dasl-/8247ccaf4953442fe2132e8792bf8d64
+
+And omxplayer.log may look like this (note `ERROR: COMXPlayer::interrupt_cb - Timed out`): https://gist.github.com/dasl-/50037e84b837e3c6543fdc1839405b82
+
+I believe the cause is that sometimes youtube-dl is slow to start the download, causing https://github.com/popcornmix/omxplayer/issues/426#issuecomment-182092009[omxplayer's timeout] to be exhausted. At the time of the issue described in these logs, we were using `--timeout 20` with omxplayer. I will try increasing to `--timeout 30`.
+
+See also: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#timeout
