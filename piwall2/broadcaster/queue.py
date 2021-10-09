@@ -85,11 +85,8 @@ class Queue:
                 was_killed = False
             exit_status = self.__broadcast_proc.wait()
             if exit_status != 0:
-                if was_killed and (exit_status == -signal.SIGTERM or exit_status == signal.SIGTERM):
-                    # We expect a specific non-zero exit code if the broadcast was killed.
-                    # Although documentation says the exit status should be negative if kill by a signal,
-                    # I am seeing it be positive sometimes.
-                    pass
+                if was_killed and exit_status == signal.SIGTERM:
+                    pass # We expect a specific non-zero exit code if the broadcast was killed.
                 else:
                     self.__logger.error(f'Got non-zero exit_status for broadcast proc: {exit_status}')
 
