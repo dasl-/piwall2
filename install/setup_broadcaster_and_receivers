@@ -137,7 +137,7 @@ def install_bootstrap_dependencies():
     print("Determining which bootstrap apt dependencies to install...")
 
     # install dependencies from apt package manager
-    deps = ['parallel', 'dsh', 'sshpass']
+    deps = ['parallel', 'dsh', 'sshpass', 'pip3']
     deps_to_install = []
     for dep in deps:
         if not is_program_installed(dep):
