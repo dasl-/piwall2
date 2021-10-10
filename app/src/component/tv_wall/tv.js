@@ -1,4 +1,5 @@
 import React from 'react';
+import TvWall from './tv_wall.js';
 import './tv_wall.css';
 
 class Tv extends React.Component {
@@ -9,17 +10,13 @@ class Tv extends React.Component {
   }
 
   render() {
-    let background_size, background_position;
-    if (this.props.display_mode === 'DISPLAY_MODE_TILE') {
-      background_size = this.props.bgImgWidth + 'px ' + this.props.bgImgHeight + 'px';
-      background_position = '-' + this.props.x + 'px -' + this.props.y + 'px';
-    } else {
-      background_size = 'contain';
-      background_position = 'top left';
-    }
+    const backgroundPosition = this.props.display_mode === 'DISPLAY_MODE_TILE' ?
+      this.props.displayModeTileBgPos : this.props.displayModeRepeatBgPos;
+    const backgroundSize = this.props.display_mode === 'DISPLAY_MODE_TILE' ?
+      this.props.displayModeTileBgSize : this.props.displayModeRepeatBgSize;
     const maybe_loading_class = this.props.loading ? 'loading' : '';
-    return (
 
+    return (
       <div className={'tv-wrapper bg-dark ' + maybe_loading_class} style={{
         top: this.props.y,
         left: this.props.x,
@@ -31,8 +28,8 @@ class Tv extends React.Component {
             width: this.props.width,
             height: this.props.height,
             backgroundImage: `url(${this.props.src})`,
-            backgroundPosition: background_position,
-            backgroundSize: background_size,
+            backgroundPosition: backgroundPosition,
+            backgroundSize: backgroundSize,
           }}
           onClick={this.toggleDisplayMode}
         >

@@ -245,7 +245,7 @@ class ReceiverCommandBuilder:
     (probably pixels), and as long as screen_width and screen_height are in the same units
     (probably inches or centimeters), everything will work.
 
-    The returned dimensions will be in the units of the inputed video_width and video_height
+    The returned dimensions will be in the units of the inputted video_width and video_height
     (probably pixels).
     """
     def __get_displayable_video_dimensions_for_screen(self, video_width, video_height, screen_width, screen_height):

@@ -8,10 +8,8 @@ class TvWall extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      currently_playing_video_img_width: 0,
-      currently_playing_video_img_height: 0,
+      scaledTvConfig: {},
     };
-    this.scaled_tv_config = {};
     this.currently_playing_video_img = null;
   }
 
@@ -33,7 +31,7 @@ class TvWall extends React.Component {
         />
         <div className="tv-wall">
           {
-            Object.values(this.scaled_tv_config).map((tv, index) => {
+            Object.values(this.state.scaledTvConfig).map((tv, index) => {
               const tv_id = tv['tv_id'];
               const this_tv_data = this.props.tv_data[tv_id] ? this.props.tv_data[tv_id] : {};
               const display_mode = 'display_mode' in this_tv_data ? this_tv_data['display_mode'] : 'DISPLAY_MODE_TILE';
@@ -45,14 +43,16 @@ class TvWall extends React.Component {
                   y={tv.y}
                   width={tv.width}
                   height={tv.height}
-                  bgImgWidth={this.state.currently_playing_video_img_width}
-                  bgImgHeight={this.state.currently_playing_video_img_height}
                   src={this.props.src}
                   hostname={tv.hostname}
                   tv_id={tv_id}
                   display_mode={display_mode}
                   loading={loading}
                   setDisplayMode={this.props.setDisplayMode}
+                  displayModeTileBgSize={tv.displayModeTileBgSize}
+                  displayModeTileBgPos={tv.displayModeTileBgPos}
+                  displayModeRepeatBgSize={tv.displayModeRepeatBgSize}
+                  displayModeRepeatBgPos={tv.displayModeRepeatBgPos}
                 />
               );
             })
@@ -76,18 +76,14 @@ class TvWall extends React.Component {
     if (currently_playing_video_img_width <= 0 || currently_playing_video_img_height <= 0) {
       return;
     }
-    this.setState({
-      currently_playing_video_img_width: currently_playing_video_img_width,
-      currently_playing_video_img_height: currently_playing_video_img_height,
-    });
-    this.setScaledReceiversConfig(currently_playing_video_img_width, currently_playing_video_img_height);
+    this.setScaledTvConfig(currently_playing_video_img_width, currently_playing_video_img_height);
   }
 
   /**
    * Duplication of logic also implemented in python.
    * See: ReceiverCommandBuilder::__get_video_command_crop_args
    */
-  setScaledReceiversConfig(video_width, video_height) {
+  setScaledTvConfig(video_width, video_height) {
     const wall_width = tv_config.wall_width;
     const wall_height = tv_config.wall_height;
     const [displayable_video_width, displayable_video_height] = this.getDisplayableVideoDimensionsForScreen(
@@ -96,22 +92,52 @@ class TvWall extends React.Component {
 
     const x_offset = (video_width - displayable_video_width) / 2
     const y_offset = (video_height - displayable_video_height) / 2
+    let new_scaled_tv_config = {};
     for (var tv_id in tv_config.tvs) {
       const this_tv_config = tv_config.tvs[tv_id];
       const x0 = x_offset + ((this_tv_config.x / wall_width) * displayable_video_width);
       const y0 = y_offset + ((this_tv_config.y / wall_height) * displayable_video_height);
       const width = (this_tv_config.width / wall_width) * displayable_video_width;
       const height = (this_tv_config.height / wall_height) * displayable_video_height;
-      this.scaled_tv_config[tv_id] = {
+
+      // Background image positioning params for DISPLAY_MODE_TILE
+      const displayModeTileBgSize = video_width + 'px ' + video_height + 'px';
+      const displayModeTileBgPos = '-' + x0 + 'px -' + y0 + 'px';
+
+      // Background image positioning params for DISPLAY_MODE_REPEAT
+      const displayModeRepeatBgSize = 'cover';
+      const [displayableBgWidth, displayableBgHeight] = this.getDisplayableVideoDimensionsForScreen(
+        video_width, video_height, width, height
+      );
+      const scale = width / displayableBgWidth;
+      const tv_aspect_ratio = width / height;
+      const video_aspect_ratio = video_width / video_height;
+      let displayModeRepeatBgPos = null;
+      if (video_aspect_ratio >= tv_aspect_ratio) {
+        const x_offset = scale * ((video_width - displayableBgWidth) / 2);
+        displayModeRepeatBgPos = '-' + x_offset + 'px ' + '0px';
+      } else {
+        const y_offset = scale * ((video_height - displayableBgHeight) / 2);
+        displayModeRepeatBgPos = '0px -' + y_offset + 'px';
+      }
+
+      // Populate the new config...
+      new_scaled_tv_config[tv_id] = {
         ...this_tv_config,
         ...{
           x: x0,
           y: y0,
           width: width,
           height: height,
+          displayModeTileBgSize: displayModeTileBgSize,
+          displayModeTileBgPos: displayModeTileBgPos,
+          displayModeRepeatBgSize: displayModeRepeatBgSize,
+          displayModeRepeatBgPos: displayModeRepeatBgPos,
         }
       }
     }
+
+    this.setState({scaledTvConfig: new_scaled_tv_config});
   }
 
   /**

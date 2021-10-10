@@ -37,7 +37,7 @@ function initGoogleClient() {
 
 class APIClient {
   getQueue() {
-   return this.perform('get', '/queue');
+    return this.perform('get', '/queue');
   }
 
   // Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the
