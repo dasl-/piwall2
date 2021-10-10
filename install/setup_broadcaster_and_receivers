@@ -175,7 +175,7 @@ def is_program_installed(program):
 
 # Reimplimentation of CmdRunner::run_cmd_with_realtime_output. We need to run this method with no
 # dependencies in this setup script, because this script is the thing that installs those dependencies.
-def run_cmd_with_realtime_output(self, cmd, raise_on_failure = True):
+def run_cmd_with_realtime_output(cmd, raise_on_failure = True):
     print(f"Running command: {cmd}")
     proc = subprocess.Popen(
         cmd, shell = True, executable = '/usr/bin/bash'
