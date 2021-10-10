@@ -1,4 +1,10 @@
-import toml
+# Wrap in try / catch so that the setup script help message can work even before dependencies
+# have been installed. The setup script is the thing that install dependencies.
+try:
+    import toml
+except ModuleNotFoundError:
+    pass
+
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.tv import Tv
