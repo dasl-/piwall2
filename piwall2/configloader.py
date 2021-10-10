@@ -1,4 +1,4 @@
-# Wrap in try / catch so that the setup script help message can work even before dependencies
+# Wrap in try / catch so that the setup script can run even before dependencies
 # have been installed. The setup script is the thing that install dependencies.
 try:
     import toml
