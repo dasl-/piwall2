@@ -150,7 +150,7 @@ def install_bootstrap_dependencies():
         print("No bootstrap apt dependencies needed installing.")
 
     print("Installing bootstrap python dependencies...")
-    run_cmd_with_realtime_output(root_dir + '/install/install_dependencies.sh -p')
+    run_cmd_with_realtime_output(root_dir + '/install/install_dependencies.sh -p -t broadcaster')
 
 
 def is_program_installed(program):
