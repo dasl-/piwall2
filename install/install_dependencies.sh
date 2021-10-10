@@ -6,11 +6,18 @@ BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 &&
 RESTART_REQUIRED_FILE='/tmp/piwall2_install_restart_required'
 is_restart_required=false
 installation_type=false
+only_install_python_deps=false
 
 main(){
     parseOpts "$@"
 
-    updateAndInstallPackages
+    if [ "$only_install_python_deps" = true ] ; then
+        updateAndInstallPythonPackages
+        exit
+    fi
+
+    updateAndInstallAptPackages
+    updateAndInstallPythonPackages
     clearYoutubedlCache
 
     if [[ "$installation_type" != "receiver" ]]; then
@@ -28,11 +35,12 @@ usage() {
     echo "usage: $0 -t INSTALLATION_TYPE"
     echo "    -h  display this help message"
     echo "    -t  Installation type: either 'broadcaster', 'receiver', or 'all'"
+    echo "    -p  only install python dependencies"
     exit "$exit_code"
 }
 
 parseOpts(){
-    while getopts ":ht:" opt; do
+    while getopts ":ht:p" opt; do
         case $opt in
             h) usage 0 ;;
             t)
@@ -43,6 +51,7 @@ parseOpts(){
                     installation_type=${OPTARG}
                 fi
                 ;;
+            p) only_install_python_deps=true ;;
             \?)
                 echo "Invalid option: -$OPTARG" >&2
                 usage 1
@@ -61,8 +70,8 @@ parseOpts(){
     fi
 }
 
-updateAndInstallPackages(){
-    echo -e "\\nUpdating and installing packages..."
+updateAndInstallAptPackages(){
+    echo -e "\\nUpdating and installing apt packages..."
 
     # installing and upgrading npm from scratch required a restart / re-login for the shell to recognize the new version
     # when the version changed between `apt install npm` and `npm install npm@latest -g`
@@ -73,6 +82,11 @@ updateAndInstallPackages(){
     sudo apt update
     sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi parallel dsh sshpass mbuffer npm sqlite3
     sudo apt -y full-upgrade
+    sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
+}
+
+updateAndInstallPythonPackages(){
+    echo -e "\\nUpdating and installing python packages..."
     sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
 }
 

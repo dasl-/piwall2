@@ -1,9 +1,4 @@
-# Wrap in try / catch so that the setup script can run even before dependencies
-# have been installed. The setup script is the thing that install dependencies.
-try:
-    import toml
-except ModuleNotFoundError:
-    pass
+import toml
 
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
@@ -11,8 +6,9 @@ from piwall2.tv import Tv
 
 class ConfigLoader:
 
-    __RECEIVERS_CONFIG_FILE_NAME = 'receivers.toml'
-    RECEIVERS_CONFIG_PATH = DirectoryUtils().root_dir + '/' + __RECEIVERS_CONFIG_FILE_NAME
+    # Keep this in sync with the RECEIVERS_CONFIG_PATH variable in the
+    # install/setup_broadcaster_and_receivers script.
+    RECEIVERS_CONFIG_PATH = DirectoryUtils().root_dir + '/receivers.toml'
 
     __is_loaded = False
     __receivers_config = None

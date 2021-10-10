@@ -1,12 +1,5 @@
 import datetime
-
-# Wrap in try / catch so that the setup script can run even before dependencies
-# have been installed. The setup script is the thing that install dependencies.
-try:
-    import pytz
-except ModuleNotFoundError:
-    pass
-
+import pytz
 import sys
 import random
 import string
