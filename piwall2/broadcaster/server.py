@@ -13,14 +13,11 @@ from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
 from piwall2.volumecontroller import VolumeController
 
-# TODO: something like this https://stackoverflow.com/questions/21631799/how-can-i-pass-parameters-to-a-requesthandler
-config_loader = ConfigLoader()
-
 class Piwall2Api():
 
     def __init__(self):
         self.__playlist = Playlist()
-        self.__settings_db = SettingsDb(config_loader)
+        self.__settings_db = SettingsDb()
         self.__vol_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -244,11 +241,12 @@ class Server:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
+        self.__config_loader = ConfigLoader()
         self.__write_tv_config()
 
     # TODO: move this to the app build process, because it will require an app rebuild anyway.
     def __write_tv_config(self):
-        tv_config_json = json.dumps(config_loader.get_tv_config())
+        tv_config_json = json.dumps(self.__config_loader.get_tv_config())
         file = open(self.__APP_TV_CONFIG_FILE, "w")
         file.write(tv_config_json)
         file.close()

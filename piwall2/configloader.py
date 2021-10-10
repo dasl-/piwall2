@@ -8,45 +8,47 @@ class ConfigLoader:
     __RECEIVERS_CONFIG_FILE_NAME = 'receivers.toml'
     RECEIVERS_CONFIG_PATH = DirectoryUtils().root_dir + '/' + __RECEIVERS_CONFIG_FILE_NAME
 
+    __is_loaded = False
+    __receivers_config = None
+    __receivers = None
+    __tv_config = None
+    __wall_width = None
+    __wall_height = None
+    __youtube_dl_video_format = None
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__receivers_config = None
-        self.__receivers = []
-        self.__tv_config = None # Config read by the react app
-        self.__wall_width = None
-        self.__wall_height = None
-        self.__youtube_dl_video_format = None
-        self.__is_loaded = False
         self.__load_config_if_not_loaded()
 
     # returns dict keyed by receiver hostname, one item per receiver, even if the receiver has two TVs.
     def get_receivers_config(self):
-        return self.__receivers_config
+        return ConfigLoader.__receivers_config
 
+    # returns a list of all the receiver hostnames
     def get_receivers_list(self):
-        return self.__receivers
+        return ConfigLoader.__receivers
 
     # returns a dict that has a key 'tvs'. This key maps to a dict of TVs and their configuration, and is
     # keyed by tv_id. A single receiver may be present in the 'tvs' dict twice if it has two TVs.
     def get_tv_config(self):
-        return self.__tv_config
+        return ConfigLoader.__tv_config
 
     def get_tv_ids_list(self):
-        return list(self.__tv_config['tvs'])
+        return list(ConfigLoader.__tv_config['tvs'])
 
     def get_wall_width(self):
-        return self.__wall_width
+        return ConfigLoader.__wall_width
 
     def get_wall_height(self):
-        return self.__wall_height
+        return ConfigLoader.__wall_height
 
     # youtube-dl video format depends on whether any receiver has dual video output
     # see: https://github.zm/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#one-vs-two-tvs-per-receiver-raspberry-pi
     def get_youtube_dl_video_format(self):
-        return self.__youtube_dl_video_format
+        return ConfigLoader.__youtube_dl_video_format
 
     def __load_config_if_not_loaded(self):
-        if self.__is_loaded:
+        if ConfigLoader.__is_loaded:
             return
 
         self.__logger.info(f"Loading piwall2 config from: {self.RECEIVERS_CONFIG_PATH}.")
@@ -82,23 +84,23 @@ class ConfigLoader:
             receivers.append(receiver)
             receivers_config[receiver] = receiver_config
 
-        self.__receivers_config = receivers_config
-        self.__receivers = receivers
-        self.__logger.info(f"Found receivers: {self.__receivers} and config: {self.__receivers_config}")
+        ConfigLoader.__receivers_config = receivers_config
+        ConfigLoader.__receivers = receivers
+        self.__logger.info(f"Found receivers: {ConfigLoader.__receivers} and config: {ConfigLoader.__receivers_config}")
 
-        self.__wall_width = wall_width
-        self.__wall_height = wall_height
-        self.__logger.info(f"Computed wall dimensions: {self.__wall_width}x{self.__wall_height}.")
+        ConfigLoader.__wall_width = wall_width
+        ConfigLoader.__wall_height = wall_height
+        self.__logger.info(f"Computed wall dimensions: {ConfigLoader.__wall_width}x{ConfigLoader.__wall_height}.")
 
         if is_any_receiver_dual_video_out:
-            self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=720]'
+            ConfigLoader.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=720]'
         else:
-            self.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
-        self.__logger.info(f"Using youtube-dl video format: {self.__youtube_dl_video_format}")
+            ConfigLoader.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
+        self.__logger.info(f"Using youtube-dl video format: {ConfigLoader.__youtube_dl_video_format}")
 
         self.__generate_tv_config()
 
-        self.__is_loaded = True
+        ConfigLoader.__is_loaded = True
 
     def __assert_receiver_config_valid(self, receiver, receiver_config, is_this_receiver_dual_video_out):
         if 'x' not in receiver_config:
@@ -131,7 +133,7 @@ class ConfigLoader:
     # Config read by the react app
     def __generate_tv_config(self):
         tvs = {}
-        for receiver, cfg in self.__receivers_config.items():
+        for receiver, cfg in ConfigLoader.__receivers_config.items():
             tv_id = Tv(receiver, 1).tv_id
             tvs[tv_id] = {
                 'x': cfg['x'],
@@ -150,7 +152,7 @@ class ConfigLoader:
                     'tv_id': tv_id,
                 }
 
-        self.__tv_config = {
+        ConfigLoader.__tv_config = {
             'tvs': tvs,
             'wall_width': self.get_wall_width(),
             'wall_height': self.get_wall_height(),

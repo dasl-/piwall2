@@ -1,6 +1,7 @@
-from piwall2.logger import Logger
 import piwall2.broadcaster.database
+from piwall2.configloader import ConfigLoader
 from piwall2.displaymode import DisplayMode
+from piwall2.logger import Logger
 
 """
 Stores settings that are modifiable at runtime. They are stored in a DB
@@ -13,10 +14,10 @@ class SettingsDb:
 
     __SETTING_TV_ID_DELIM = '__'
 
-    def __init__(self, config_loader):
+    def __init__(self):
         self.__cursor = piwall2.broadcaster.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__config_loader = config_loader
+        self.__config_loader = ConfigLoader()
 
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS settings")
