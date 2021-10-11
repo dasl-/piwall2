@@ -35,7 +35,9 @@ def main():
         install_dependencies(cmd_runner)
     if args.install_app:
         install_app(cmd_runner, args.enable_receivers_composite_video_out, args.dont_disable_wifi)
-    print("Success!")
+
+    # The step install_app require a restart
+    restart_hosts_if_required(cmd_runner, is_last_step = True)
 
 def parse_args():
 
@@ -117,7 +119,6 @@ def install_dependencies(cmd_runner):
     install_deps_cmd = (f"{root_dir}/install/install_dependencies.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     cmd_runner.run_dsh(install_deps_cmd)
-    restart_hosts_if_required(cmd_runner)
 
 def install_app(cmd_runner, enable_receivers_composite_video_out, dont_disable_wifi):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
@@ -130,7 +131,6 @@ def install_app(cmd_runner, enable_receivers_composite_video_out, dont_disable_w
     if dont_disable_wifi:
         install_app_cmd += " -w"
     cmd_runner.run_dsh(install_app_cmd)
-    restart_hosts_if_required(cmd_runner)
 
 # install dependencies necessary to run this script
 def install_bootstrap_dependencies():
@@ -152,7 +152,6 @@ def install_bootstrap_dependencies():
     print("Installing bootstrap python dependencies...")
     run_cmd_with_realtime_output(root_dir + '/install/install_dependencies.sh -p -t broadcaster')
 
-
 def is_program_installed(program):
     try:
         output = (subprocess
@@ -172,7 +171,6 @@ def is_program_installed(program):
         raise e
     return True
 
-
 # Reimplimentation of CmdRunner::run_cmd_with_realtime_output. We need to run this method with no
 # dependencies in this setup script, because this script is the thing that installs those dependencies.
 def run_cmd_with_realtime_output(cmd, raise_on_failure = True):
@@ -187,20 +185,22 @@ def run_cmd_with_realtime_output(cmd, raise_on_failure = True):
             f"{proc.returncode}.")
     return proc.returncode
 
+# The install scripts will create a special file in /tmp if a restart is required after they run.
+# After the install scripts run, we let this coordinator script determine if a restart is required to avoid
+# restarting the broadcaster while it is still in the middle of running a dsh command
 
-"""
-The install scripts will create a special file in /tmp if a restart is required after they run.
-After the install scripts run, we let this coordinator script determine if a restart is required to avoid
-restarting the broadcaster while it is still in the middle of running a dsh command
+# The raspberry pi appears to delete the whole /tmp directory upon restart, so we don't need to do anything
+# special to delete the file once we've restarted.
+def restart_hosts_if_required(cmd_runner, is_last_step = False):
+    print("Restarting hosts if necessary...")
 
-The raspberry pi appears to delete the whole /tmp directory upon restart, so we don't need to do anything
-special to delete the file once we've restarted.
-"""
-def restart_hosts_if_required(cmd_runner):
     # restart receivers, if necessary
     cmd = ('{ [ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && ' +
         'sudo shutdown -r now ; } || echo "Restart not needed."')
     cmd_runner.run_dsh(cmd, include_broadcaster = False)
+
+    if is_last_step:
+        print("Setup completed successfully! The last step is a restart which may or may not be required...")
 
     # restart broadcaster, if necessary
     cmd_runner.run_cmd_with_realtime_output(cmd.strip("'"))
