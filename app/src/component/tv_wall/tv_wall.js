@@ -11,6 +11,7 @@ class TvWall extends React.Component {
       scaledTvConfig: {},
     };
     this.currently_playing_video_img = null;
+    this.currentlyPlayingVideoImgSizeChanged = this.currentlyPlayingVideoImgSizeChanged.bind(this);
   }
 
 
@@ -67,7 +68,20 @@ class TvWall extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener("resize", this.currentlyPlayingVideoImgSizeChanged.bind(this));
+    window.addEventListener('resize', this.currentlyPlayingVideoImgSizeChanged);
+
+    // Handle mobile screen orientation modes changing -- this might not trigger a resize event, depending
+    // on the browser.
+    //
+    // See: https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Testing_media_queries
+    //
+    // Can also use this, but it's deprecated:
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/orientationchange_event
+    //
+    // In the future, we can probably use this, but mobile safari doesn't support it for now:
+    // https://developer.mozilla.org/en-US/docs/Web/API/ScreenOrientation/onchange
+    const mediaQueryList = window.matchMedia("(orientation: portrait)");
+    mediaQueryList.addEventListener('change', this.currentlyPlayingVideoImgSizeChanged);
   }
 
   currentlyPlayingVideoImgSizeChanged() {
