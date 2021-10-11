@@ -70,18 +70,21 @@ class TvWall extends React.Component {
   componentDidMount() {
     window.addEventListener('resize', this.currentlyPlayingVideoImgSizeChanged);
 
-    // Handle mobile screen orientation modes changing -- this might not trigger a resize event, depending
-    // on the browser.
+    // Handle mobile screen orientation modes changing -- the orientation changing might not
+    // trigger a resize event, depending on the browser.
     //
-    // See: https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Testing_media_queries
+    // Note that the 'orientationchange' event is deprecated, but for now it's the thing that
+    // seems to work best across browsers etc...
     //
-    // Can also use this, but it's deprecated:
-    // https://developer.mozilla.org/en-US/docs/Web/API/Window/orientationchange_event
+    // See: https://developer.mozilla.org/en-US/docs/Web/API/Window/orientationchange_event
+    //
+    // I also tried using media queries to detect the orientation change, but those events
+    // seemed to fire before the image resized, at least on iOS firefox. See:
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Testing_media_queries
     //
     // In the future, we can probably use this, but mobile safari doesn't support it for now:
     // https://developer.mozilla.org/en-US/docs/Web/API/ScreenOrientation/onchange
-    const mediaQueryList = window.matchMedia("(orientation: portrait)");
-    mediaQueryList.addEventListener('change', this.currentlyPlayingVideoImgSizeChanged);
+    window.addEventListener('orientationchange', this.currentlyPlayingVideoImgSizeChanged);
   }
 
   currentlyPlayingVideoImgSizeChanged() {
