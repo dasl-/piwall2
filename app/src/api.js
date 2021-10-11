@@ -90,7 +90,12 @@ class APIClient {
       var videos = response.result.items;
       var video_ids = '';
       for (var i in videos) {
-        video_ids += videos[i].id.videoId + ",";
+        var video = videos[i];
+        if (video.snippet.liveBroadcastContent === 'none') {
+          // Exclude live videos, which we cannot play via youtube-dl
+          // See: https://stackoverflow.com/a/66070785/627663
+          video_ids += video.id.videoId + ",";
+        }
       }
 
       return gapi.client.youtube.videos.list({
