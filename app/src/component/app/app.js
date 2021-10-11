@@ -30,7 +30,8 @@ class App extends React.Component {
 
     this.state = {
       show_intro: props.is_new_session,
-      show_search: !props.is_new_session,
+      show_search_results: !props.is_new_session,
+
       search_loading: false,
       search_term: props.is_new_session ? '' : (localStorage.getItem("last_search") || ""),
       search_results: SearchResultVideo.fromArray(stored_results),
@@ -56,7 +57,6 @@ class App extends React.Component {
 
     /* intro transition */
     this.setShowIntro = this.setShowIntro.bind(this);
-    this.setShowSearch = this.setShowSearch.bind(this);
 
     /* search callbacks */
     this.setSearchTerm = this.setSearchTerm.bind(this);
@@ -84,6 +84,21 @@ class App extends React.Component {
     this.getPlaylistQueue();
   }
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    /*
+      Trigger a resize event after we've transitioned from the app's splash screen to the actual
+      app. This is necessary because in TvWall::currentlyPlayingVideoImgSizeChanged, we do a bunch
+      of calculation based on the size of the currently playing video thumbnail image. When the splash
+      screen is showing, the image's size is apparently 0 x 0 pixels! It's only once the splash screen
+      goes away that the size changes. Fire a resize event as a hack to force the calculations to be
+      re-run now that the image's dimensions are no longer 0 x 0 pixels.
+     */
+    if (!prevState.show_search_results && this.state.show_search_results) {
+      console.log("app componentDidUpdate resize");
+      window.dispatchEvent(new Event('resize'));
+    }
+  }
+
   render() {
     return (
       <div className='h-100 bg-primary bg-background'>
@@ -103,12 +118,12 @@ class App extends React.Component {
         }
 
         <CSSTransition
-          in={this.state.show_search}
+          in={this.state.show_search_results}
           timeout={300}
           classNames="intro"
           onEnter={() => this.setShowIntro(false)}
           >
-          <div className={"container-fluid p-0 app-body h-100 " + ((this.state.show_search) ? '' : 'd-none')}>
+          <div className={"container-fluid p-0 app-body h-100 " + ((this.state.show_search_results) ? '' : 'd-none')}>
             <Content
               playlist_loading={this.state.playlist_loading}
               search_loading={this.state.search_loading}
@@ -148,9 +163,6 @@ class App extends React.Component {
   setShowIntro(val) {
     this.setState({'show_intro':val});
   }
-  setShowSearch(val) {
-    this.setState({'show_search':val});
-  }
 
   /* search callbacks */
   setSearchTerm(val) {
@@ -170,7 +182,7 @@ class App extends React.Component {
         this.setState({
           search_results: SearchResultVideo.fromArray(data),
           search_loading: false,
-          show_search: true
+          show_search_results: true
         });
       });
   }
@@ -238,7 +250,9 @@ class App extends React.Component {
     // Clone the state so we don't modify it in place. React frowns upon modifying state outside of setState.
     let new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data));
       for (var tv_id in display_mode_by_tv_id) {
-        new_tv_data[tv_id]['loading'] = true;
+        if (tv_id in new_tv_data) {
+          new_tv_data[tv_id]['loading'] = true;
+        }
       }
     this.setState({tv_data: new_tv_data});
 
@@ -257,7 +271,9 @@ class App extends React.Component {
           new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
         }
         for (var tv_id in display_mode_by_tv_id){
-          new_tv_data[tv_id]['loading'] = false;
+          if (tv_id in new_tv_data) {
+            new_tv_data[tv_id]['loading'] = false;
+          }
         }
         this.setState({tv_data: new_tv_data});
         this.getPlaylistQueue()
