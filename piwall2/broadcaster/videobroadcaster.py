@@ -242,8 +242,8 @@ class VideoBroadcaster:
             throttling youtube-dl’s download speed:
             https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
-            youtube_dl_cmd_template = ("yt-dlp --extractor-args youtube:player_client=android {0} " +
-                "--retries infinite --format {1} --output - {2} | HOME=/home/pi mbuffer -q -Q -m {3}b")
+            youtube_dl_cmd_template = ("yt-dlp {0} --retries infinite --format {1} --output - {2} | " + 
+                "HOME=/home/pi mbuffer -q -Q -m {3}b")
 
             log_opts = '--no-progress'
             if Logger.get_level() <= Logger.DEBUG:
