@@ -30,7 +30,7 @@ def main():
             raise Exception("When setting up SSH, '--receiver-ssh-password' must be specified.")
         generate_ssh_key(CmdRunner.SSH_KEY_PATH)
         authorize_ssh_key(CmdRunner.SSH_KEY_PATH, args.ssh_password, cmd_runner, CmdRunner.STANDARD_SSH_OPTS)
-    clone_and_pull_repo(cmd_runner)
+    clone_and_pull_repo(cmd_runner, CmdRunner.STANDARD_SSH_OPTS)
     copy_config_to_receivers(cmd_runner)
     if args.install_dependencies:
         install_dependencies(cmd_runner)
@@ -102,7 +102,7 @@ def authorize_ssh_key(file, password, cmd_runner, ssh_opts):
     )
     cmd_runner.run_parallel(authorize_ssh_key_cmd)
 
-def clone_and_pull_repo(cmd_runner):
+def clone_and_pull_repo(cmd_runner, ssh_opts):
     git_url = (subprocess
         .check_output(
             f"git config --file {ROOT_DIR}/.git/config --get remote.origin.url",
@@ -120,8 +120,12 @@ def clone_and_pull_repo(cmd_runner):
 
     print(f"Cloning or pulling repo {git_url} into {ROOT_DIR} on receivers and checking out branch " +
         f"{current_branch}...")
+
+    ssh_opts = 'ssh ' + ' '.join(ssh_opts)
     clone_or_pull_repo_and_checkout_branch = (
-        f'if [ ! -d "$REPO_PATH" ]; then echo "Cloning repo..." && git clone "{git_url}" "{ROOT_DIR}"; '
+        'if [ ! -d "$REPO_PATH" ]; then echo "Cloning repo..." && ' +
+        # Prevent 'Host key verification failed.' errors with ssh opts
+        f'GIT_SSH_COMMAND={ssh_opts} git clone "{git_url}" "{ROOT_DIR}"; '
         f'else echo "Pulling repo..." && git -C "{ROOT_DIR}" pull; fi && ' +
         f'git -C {ROOT_DIR} checkout {current_branch} && '
         # pull a second time after checking out the right branch. AFAIK, pull only updates the branch you are
