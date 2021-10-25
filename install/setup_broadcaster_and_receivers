@@ -30,6 +30,7 @@ def main():
             raise Exception("When setting up SSH, '--receiver-ssh-password' must be specified.")
         generate_ssh_key(CmdRunner.SSH_KEY_PATH)
         authorize_ssh_key(CmdRunner.SSH_KEY_PATH, args.ssh_password, cmd_runner, CmdRunner.STANDARD_SSH_OPTS)
+    make_root_dir_on_receivers(cmd_runner)
     copy_config_to_receivers(cmd_runner)
     clone_and_pull_repo(cmd_runner)
     if args.install_dependencies:
@@ -101,6 +102,10 @@ def authorize_ssh_key(file, password, cmd_runner, ssh_opts):
         f"-i {shlex.quote(file)} " + "pi@{}"
     )
     cmd_runner.run_parallel(authorize_ssh_key_cmd)
+
+def make_root_dir_on_receivers(cmd_runner):
+    print(f"Creating directory {ROOT_DIR} on receivers if it doesn't already exist...")
+    cmd_runner.run_dsh(f'mkdir --parents {ROOT_DIR}')
 
 def copy_config_to_receivers(cmd_runner):
     print("Copying config (if it exists) from broadcaster to receivers...")
