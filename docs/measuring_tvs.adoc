@@ -1,0 +1,10 @@
+# Measuring TVs
+:toc:
+:toclevels: 5
+
+## Calculating width and height for a given diagonal
+Assuming a 4:3 TV aspect ratio, a TV with a diagonal `d` measurement will have a height and width equal to:
+....
+h = (d^2 * 9 / 25)^0.5
+w = (d^2 - h^2)^0.5
+....
