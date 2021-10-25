@@ -38,7 +38,7 @@ def main():
         install_app(cmd_runner, args.enable_receivers_composite_video_out, args.dont_disable_wifi)
 
     # The step install_app require a restart
-    restart_hosts_if_required(cmd_runner, is_last_step = True)
+    restart_hosts_if_necessary(cmd_runner, is_last_step = True)
 
 def parse_args():
 
@@ -223,13 +223,17 @@ def run_cmd_with_realtime_output(cmd, raise_on_failure = True):
 
 # The raspberry pi appears to delete the whole /tmp directory upon restart, so we don't need to do anything
 # special to delete the file once we've restarted.
-def restart_hosts_if_required(cmd_runner, is_last_step = False):
+def restart_hosts_if_necessary(cmd_runner, is_last_step = False):
     print("Restarting hosts if necessary...")
 
     # restart receivers, if necessary
     cmd = ('{ [ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && ' +
         'sudo shutdown -r now ; } || echo "Restart not needed."')
-    cmd_runner.run_dsh(cmd, include_broadcaster = False)
+    exit_status = cmd_runner.run_dsh(cmd, include_broadcaster = False, raise_on_failure = False)
+    if exit_status == 255:
+        pass # This is expected if a host restarts: `Connection to <hostname> closed by remote host.`
+    else:
+        raise Exception(f"The process for cmd: [{cmd}] exited non-zero: {exit_status}.")
 
     if is_last_step:
         print("Setup completed successfully! The last step is a restart which may or may not be required...")

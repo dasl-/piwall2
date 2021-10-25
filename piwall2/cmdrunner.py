@@ -36,7 +36,7 @@ class CmdRunner:
         ):
             self.__broadcaster_and_receivers_list.insert(0, broadcaster_hostname)
 
-    def run_dsh(self, cmd, include_broadcaster = True):
+    def run_dsh(self, cmd, include_broadcaster = True, raise_on_failure = True):
         machines_list = self.__receivers_list
         if include_broadcaster:
             machines_list = self.__broadcaster_and_receivers_list
@@ -51,7 +51,12 @@ class CmdRunner:
         dsh_cmd = (f"dsh -r ssh --forklimit {self.__CONCURRENCY_LIMIT} {ssh_opts}" +
             f'--remoteshellopt "{self.SSH_KEY_PATH_FLAG}" ' +
             f"--show-machine-names --machine {machines_string} {shlex.quote(cmd)}")
-        self.run_cmd_with_realtime_output(dsh_cmd)
+
+        cmd_return_code = self.run_cmd_with_realtime_output(dsh_cmd, raise_on_failure)
+        if cmd_return_code != 0 and raise_on_failure:
+            raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
+                f"{cmd_return_code}.")
+        return cmd_return_code
 
     def run_parallel(self, cmd, include_broadcaster = True):
         machines_list = self.__receivers_list
