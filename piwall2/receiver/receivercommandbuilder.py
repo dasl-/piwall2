@@ -82,7 +82,7 @@ class ReceiverCommandBuilder:
             )
             cmd += f'{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null'
         else:
-            cmd += f'{mbuffer_cmd} | {ffmpeg_rotate_cmd} {omx_cmd}'
+            cmd += f'{mbuffer_cmd} | {ffmpeg_rotate_cmd} {mbuffer_cmd} | {omx_cmd}'
 
         receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
             f'--log-uuid {shlex.quote(log_uuid)}')
