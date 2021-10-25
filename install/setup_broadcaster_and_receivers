@@ -108,7 +108,7 @@ def clone_and_pull_repo(cmd_runner):
             f"git config --file {ROOT_DIR}/.git/config --get remote.origin.url",
             shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
         )
-    )
+    ).decode('utf-8').strip()
 
     # https://stackoverflow.com/a/12142066/627663
     current_branch = (subprocess
@@ -116,7 +116,7 @@ def clone_and_pull_repo(cmd_runner):
             f"GIT_DIR={ROOT_DIR}/.git git rev-parse --abbrev-ref HEAD",
             shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
         )
-    )
+    ).decode('utf-8').strip()
 
     print(f"Cloning or pulling repo {git_url} into {ROOT_DIR} on receivers and checking out branch " +
         f"{current_branch}...")
