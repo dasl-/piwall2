@@ -25,6 +25,8 @@ class ReceiverCommandBuilder:
         crop2 = crop_args2[display_mode2]
         orientation = self.__receiver_config_stanza.get('orientation', 0)
         orientation2 = self.__receiver_config_stanza.get('orientation2', 0)
+        live = ' --live ' if orientation else ''
+        live2 = ' --live ' if orientation2 else ''
 
         volume_pct = VolumeController.normalize_vol_pct(volume_pct)
 
@@ -67,18 +69,18 @@ class ReceiverCommandBuilder:
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --orientation {4} --live ' +
+        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --orientation {4} {5} ' +
             '--no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0')
 
         omx_cmd = omx_cmd_template.format(
             shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels)),
-            shlex.quote(str(orientation))
+            shlex.quote(str(orientation)), live
         )
         cmd = 'set -o pipefail && '
         if self.__receiver_config_stanza['is_dual_video_output']:
             omx_cmd2 = omx_cmd_template.format(
                 shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels)),
-                shlex.quote(str(orientation2))
+                shlex.quote(str(orientation2)), live2
             )
             cmd += f'{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null'
         else:
