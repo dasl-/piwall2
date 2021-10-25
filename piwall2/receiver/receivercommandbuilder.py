@@ -23,12 +23,12 @@ class ReceiverCommandBuilder:
         crop_args, crop_args2 = self.__get_video_command_crop_args(video_width, video_height)
         crop = crop_args[display_mode]
         crop2 = crop_args2[display_mode2]
-        orientation = self.__receiver_config_stanza.get('orientation', 0)
-        orientation2 = self.__receiver_config_stanza.get('orientation2', 0)
-        live = ' --live ' #if orientation else ''
-        live2 = ' --live ' #if orientation2 else ''
 
         volume_pct = VolumeController.normalize_vol_pct(volume_pct)
+
+        ffmpeg_rotate_cmd = ''
+        if 'orientation' in self.__receiver_config_stanza:
+            ffmpeg_rotate_cmd = 'ffmpeg -i pipe:0 -vf "transpose=2" -c:a copy -c:v h264_v4l2m2m -f mpegts - | '
 
         # See: https://github.com/popcornmix/omxplayer/#volume-rw
         if volume_pct == 0:
@@ -69,22 +69,20 @@ class ReceiverCommandBuilder:
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --orientation {4} {5} ' +
-            '--no-keys --timeout 30 --threshold 0.7 --video_fifo 35 --genlog pipe:0')
+        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} ' +
+            '--no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0')
 
         omx_cmd = omx_cmd_template.format(
-            shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels)),
-            shlex.quote(str(orientation)), live
+            shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels))
         )
         cmd = 'set -o pipefail && '
         if self.__receiver_config_stanza['is_dual_video_output']:
             omx_cmd2 = omx_cmd_template.format(
-                shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels)),
-                shlex.quote(str(orientation2)), live2
+                shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels))
             )
             cmd += f'{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null'
         else:
-            cmd += f'{mbuffer_cmd} | {omx_cmd}'
+            cmd += f'{mbuffer_cmd} | {ffmpeg_rotate_cmd} {omx_cmd}'
 
         receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
             f'--log-uuid {shlex.quote(log_uuid)}')
