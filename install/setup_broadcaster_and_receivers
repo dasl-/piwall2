@@ -129,7 +129,7 @@ def clone_and_pull_repo(cmd_runner, ssh_opts):
         f'git -C {ROOT_DIR} checkout {current_branch} && '
         # pull a second time after checking out the right branch. AFAIK, pull only updates the branch you are
         # currently on?
-        f'GIT_SSH_COMMAND="{ssh_opts} git -C "{ROOT_DIR}" pull'
+        f'GIT_SSH_COMMAND="{ssh_opts}" git -C "{ROOT_DIR}" pull'
     )
     cmd_runner.run_dsh(clone_or_pull_repo_and_checkout_branch, include_broadcaster = False)
 
