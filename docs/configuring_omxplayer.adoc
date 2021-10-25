@@ -5,7 +5,7 @@
 ## Usage of omxplayer
 At time of writing, https://github.com/dasl-/piwall2/blob/5625b8887f528f671b7944a6cc43de54f375800c/piwall2/broadcaster.py#L126[we run omxplayer like so]:
 ....
-omxplayer --adev {0} --display {1} --crop {2} --no-keys --threshold 5 --video_fifo 35 --genlog pipe:0
+omxplayer --crop {0} --adev {1} --display {2} --vol {3} --orientation {4} --no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0
 ....
 
 Of particular note are the `threshold` and `video_fifo` options:
@@ -69,3 +69,6 @@ But in practice, I found this setting not to be good. When using `--live`, the a
 Regarding the staticky audio when using `--live` -- I wonder if that would still happen if we used hdmi output to drive the TVs and output audio? In the tests I have been running, I've been using the 3.5mm jack output for RCA video and audio. I think the hdmi output might use a different hardware "clock" on the raspberry pi?
 
 When watching very long videos, it is possible that the receivers will get out of sync, due to clock drift. Or they may eventually drain their buffers which we set to 5s initially via the `--threshold` option. Or the receiver's buffers may fill up if they are not processing the video fast enough (we could always set a very large mbuffer size on the receiver to make this take a longer time to happen). See https://github.com/popcornmix/omxplayer/issues/482#issuecomment-253218683[this comment for a great explanation] of why these scenarios are possible. Theoretically, the `--live` option could help here, but in practice, I've not seen it work well, nor have I seen these theoretical problems meaningfully surface yet. See also https://github.com/popcornmix/omxplayer/issues/445[these] https://github.com/popcornmix/omxplayer/issues/55[issue] threads for more info.
+
+### orientation
+See here for possible values: https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/OMXVideo.cpp#L636
