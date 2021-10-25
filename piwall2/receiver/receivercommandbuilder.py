@@ -69,7 +69,7 @@ class ReceiverCommandBuilder:
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} ' +
+        omx_cmd_template = ('sleep 10; omxplayer --crop {0} --adev {1} --display {2} --vol {3} ' +
             '--no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0')
 
         omx_cmd = omx_cmd_template.format(
