@@ -9,14 +9,13 @@ usage(){
 }
 
 doGitStuff(){
-    local base_dir="/home/pi"
+    local base_dir="/home/pi/development"
     local clone_dir="$base_dir/omxplayer"
     if [ -d "$clone_dir" ]; then
         cd "$clone_dir"
         git pull
     else
-        cd "$base_dir"
-        git clone https://github.com/dasl-/omxplayer.git
+        git clone https://github.com/dasl-/omxplayer.git $clone_dir
         cd $clone_dir
     fi
 
