@@ -129,11 +129,15 @@ def clone_and_pull_repo(cmd_runner):
         )
     )
 
-    print(f"Cloning or pulling repo {git_url} into {ROOT_DIR} on receivers and checking out branch {current_branch}...")
+    print(f"Cloning or pulling repo {git_url} into {ROOT_DIR} on receivers and checking out branch " +
+        f"{current_branch}...")
     clone_or_pull_repo_and_checkout_branch = (
         f'if [ ! -d "$REPO_PATH" ]; then echo "Cloning repo..." && git clone "{git_url}" "{ROOT_DIR}"; '
         f'else echo "Pulling repo..." && git -C "{ROOT_DIR}" pull; fi && ' +
-        f'git -C {ROOT_DIR} checkout tile'
+        f'git -C {ROOT_DIR} checkout {current_branch} && '
+        # pull a second time after checking out the right branch. AFAIK, pull only updates the branch you are
+        # currently on?
+        f'git -C "{ROOT_DIR}" pull'
     )
     cmd_runner.run_dsh(clone_or_pull_repo_and_checkout_branch, include_broadcaster = False)
 
