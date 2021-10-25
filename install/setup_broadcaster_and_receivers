@@ -230,8 +230,8 @@ def restart_hosts_if_necessary(cmd_runner, is_last_step = False):
     cmd = ('{ [ -f /tmp/piwall2_install_restart_required ] && echo "Restarting..." && ' +
         'sudo shutdown -r now ; } || echo "Restart not needed."')
     exit_status = cmd_runner.run_dsh(cmd, include_broadcaster = False, raise_on_failure = False)
-    if exit_status == 255:
-        pass # This is expected if a host restarts: `Connection to <hostname> closed by remote host.`
+    if exit_status == 255 or exit_status == 0:
+        pass # Exit code 255 is expected if a host restarts: `Connection to <hostname> closed by remote host.`
     else:
         raise Exception(f"The process for cmd: [{cmd}] exited non-zero: {exit_status}.")
 
