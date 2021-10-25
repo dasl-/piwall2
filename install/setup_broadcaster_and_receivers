@@ -123,7 +123,7 @@ def clone_and_pull_repo(cmd_runner, ssh_opts):
 
     ssh_opts = 'ssh ' + ' '.join(ssh_opts) # Prevent 'Host key verification failed.' errors with ssh opts
     clone_or_pull_repo_and_checkout_branch = (
-        'if [ ! -d "$REPO_PATH" ]; then echo "Cloning repo..." && ' +
+        f'if [ ! -d "{ROOT_DIR}" ]; then echo "Cloning repo..." && ' +
         f'GIT_SSH_COMMAND="{ssh_opts}" git clone "{git_url}" "{ROOT_DIR}"; '
         f'else echo "Pulling repo..." && git -C "{ROOT_DIR}" pull; fi && ' +
         f'git -C {ROOT_DIR} checkout {current_branch} && '
