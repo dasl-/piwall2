@@ -30,9 +30,8 @@ def main():
             raise Exception("When setting up SSH, '--receiver-ssh-password' must be specified.")
         generate_ssh_key(CmdRunner.SSH_KEY_PATH)
         authorize_ssh_key(CmdRunner.SSH_KEY_PATH, args.ssh_password, cmd_runner, CmdRunner.STANDARD_SSH_OPTS)
-    make_root_dir_on_receivers(cmd_runner)
-    copy_config_to_receivers(cmd_runner)
     clone_and_pull_repo(cmd_runner)
+    copy_config_to_receivers(cmd_runner)
     if args.install_dependencies:
         install_dependencies(cmd_runner)
     if args.install_app:
@@ -103,21 +102,6 @@ def authorize_ssh_key(file, password, cmd_runner, ssh_opts):
     )
     cmd_runner.run_parallel(authorize_ssh_key_cmd)
 
-def make_root_dir_on_receivers(cmd_runner):
-    print(f"Creating directory {ROOT_DIR} on receivers if it doesn't already exist...")
-    cmd_runner.run_dsh(f'mkdir --parents {ROOT_DIR}')
-
-def copy_config_to_receivers(cmd_runner):
-    print("Copying config (if it exists) from broadcaster to receivers...")
-    cmd = ROOT_DIR + "/utils/copy_config_to_receivers"
-    exit_code = cmd_runner.run_cmd_with_realtime_output(cmd, raise_on_failure = False)
-    if exit_code == 99:
-        # This indicates the config file could not be found. That's ok, let people be able to define it later
-        # and finish the setup.
-        pass
-    elif exit_code != 0:
-        raise Exception(f"Unable to run {cmd}!")
-
 def clone_and_pull_repo(cmd_runner):
     git_url = (subprocess
         .check_output(
@@ -145,6 +129,17 @@ def clone_and_pull_repo(cmd_runner):
         f'git -C "{ROOT_DIR}" pull'
     )
     cmd_runner.run_dsh(clone_or_pull_repo_and_checkout_branch, include_broadcaster = False)
+
+def copy_config_to_receivers(cmd_runner):
+    print("Copying config (if it exists) from broadcaster to receivers...")
+    cmd = ROOT_DIR + "/utils/copy_config_to_receivers"
+    exit_code = cmd_runner.run_cmd_with_realtime_output(cmd, raise_on_failure = False)
+    if exit_code == 99:
+        # This indicates the config file could not be found. That's ok, let people be able to define it later
+        # and finish the setup.
+        pass
+    elif exit_code != 0:
+        raise Exception(f"Unable to run {cmd}!")
 
 def install_dependencies(cmd_runner):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
