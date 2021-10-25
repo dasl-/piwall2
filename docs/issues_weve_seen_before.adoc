@@ -147,3 +147,13 @@ I believe the cause is that sometimes youtube-dl is slow to start the download, 
 See also: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#timeout
 
 For reference, I was testing with https://www.youtube.com/watch?v=rSLQ\--jza5U[this video]. Maybe one out of every five attempts it would take ~20 - 22 seconds to start the youtube-dl download.
+
+## The setup_broadcaster_and_receivers script fails
+
+### Failure due to raspbian package repositories being down
+You may see errors earlier in the script output like:
+....
+pi@piwall6.local: Err:115 http://raspbian.raspberrypi.org/raspbian buster/main armhf libtevent0 armhf 0.9.37-1
+pi@piwall6.local:   Cannot initiate the connection to raspbian.raspberrypi.org:80 (2a00:1098:0:80:1000:75:0:3). - connect (101: Network is unreachable) Could not connect to raspbian.raspberrypi.org:80 (93.93.128.193), connection timed out [IP: 93.93.128.193 80]
+....
+This is likely a transient failure for the raspbian package servers. Try again.
