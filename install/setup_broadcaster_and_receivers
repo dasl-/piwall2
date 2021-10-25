@@ -9,13 +9,13 @@ import shlex
 import time
 
 # This is necessary for the piwall2 imports that come later to work
-root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
-sys.path.append(root_dir)
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(ROOT_DIR)
 
 # Keep this in-sync with ConfigLoader::RECEIVERS_CONFIG_PATH. We cannot reference that constant here
 # because using the ConfigLoader class imports a bunch of modules that we may not have installed
 # yet. This script is the thing that installs those modules.
-RECEIVERS_CONFIG_PATH = root_dir + '/receivers.toml'
+RECEIVERS_CONFIG_PATH = ROOT_DIR + '/receivers.toml'
 
 def main():
     args = parse_args()
@@ -31,6 +31,7 @@ def main():
         generate_ssh_key(CmdRunner.SSH_KEY_PATH)
         authorize_ssh_key(CmdRunner.SSH_KEY_PATH, args.ssh_password, cmd_runner, CmdRunner.STANDARD_SSH_OPTS)
     copy_config_to_receivers(cmd_runner)
+    clone_and_pull_repo(cmd_runner)
     if args.install_dependencies:
         install_dependencies(cmd_runner)
     if args.install_app:
@@ -103,7 +104,7 @@ def authorize_ssh_key(file, password, cmd_runner, ssh_opts):
 
 def copy_config_to_receivers(cmd_runner):
     print("Copying config (if it exists) from broadcaster to receivers...")
-    cmd = root_dir + "/utils/copy_config_to_receivers"
+    cmd = ROOT_DIR + "/utils/copy_config_to_receivers"
     exit_code = cmd_runner.run_cmd_with_realtime_output(cmd, raise_on_failure = False)
     if exit_code == 99:
         # This indicates the config file could not be found. That's ok, let people be able to define it later
@@ -112,11 +113,35 @@ def copy_config_to_receivers(cmd_runner):
     elif exit_code != 0:
         raise Exception(f"Unable to run {cmd}!")
 
+def clone_and_pull_repo(cmd_runner):
+    git_url = (subprocess
+        .check_output(
+            f"git config --file {ROOT_DIR}/.git/config --get remote.origin.url",
+            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+        )
+    )
+
+    # https://stackoverflow.com/a/12142066/627663
+    current_branch = (subprocess
+        .check_output(
+            f"GIT_DIR={ROOT_DIR}/.git git rev-parse --abbrev-ref HEAD",
+            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+        )
+    )
+
+    print(f"Cloning or pulling repo {git_url} into {ROOT_DIR} on receivers and checking out branch {current_branch}...")
+    clone_or_pull_repo_and_checkout_branch = (
+        f'if [ ! -d "$REPO_PATH" ]; then echo "Cloning repo..." && git clone "{git_url}" "{ROOT_DIR}"; '
+        f'else echo "Pulling repo..." && git -C "{ROOT_DIR}" pull; fi && ' +
+        f'git -C {ROOT_DIR} checkout tile'
+    )
+    cmd_runner.run_dsh(clone_or_pull_repo_and_checkout_branch, include_broadcaster = False)
+
 def install_dependencies(cmd_runner):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
     print(f"Installing dependencies on: {broadcaster_and_receivers}...")
-    install_deps_cmd = (f"{root_dir}/install/install_dependencies.sh -t " +
+    install_deps_cmd = (f"{ROOT_DIR}/install/install_dependencies.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     cmd_runner.run_dsh(install_deps_cmd)
 
@@ -124,7 +149,7 @@ def install_app(cmd_runner, enable_receivers_composite_video_out, dont_disable_w
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
     print(f"Installing app on: {broadcaster_and_receivers}...")
-    install_app_cmd = (f"{root_dir}/install/install.sh -t " +
+    install_app_cmd = (f"{ROOT_DIR}/install/install.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     if enable_receivers_composite_video_out:
         install_app_cmd += " -c"
@@ -150,7 +175,7 @@ def install_bootstrap_dependencies():
         print("No bootstrap apt dependencies needed installing.")
 
     print("Installing bootstrap python dependencies...")
-    run_cmd_with_realtime_output(root_dir + '/install/install_dependencies.sh -p -t broadcaster')
+    run_cmd_with_realtime_output(ROOT_DIR + '/install/install_dependencies.sh -p -t broadcaster')
 
 def is_program_installed(program):
     try:
