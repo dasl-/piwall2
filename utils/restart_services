@@ -46,7 +46,9 @@ def git_pull(cmd_runner, git_branch):
     print(f"Pulling git and checking out branch {git_branch} ...")
     root_dir = DirectoryUtils().root_dir
     ssh_opts = 'ssh ' + ' '.join(CmdRunner.STANDARD_SSH_OPTS) # Prevent 'Host key verification failed.' errors with ssh opts
-    cmd = f"cd {root_dir} && GIT_SSH_COMMAND='{ssh_opts}' git pull && git checkout {git_branch}"
+
+    # pull a second time after checking out the right branch. AFAIK, pull only updates the branch you are currently on?
+    cmd = f"cd {root_dir} && GIT_SSH_COMMAND='{ssh_opts}' git pull && git checkout {git_branch} && GIT_SSH_COMMAND='{ssh_opts}' git pull"
     cmd_runner.run_dsh(cmd)
 
 def restart_services(cmd_runner):
