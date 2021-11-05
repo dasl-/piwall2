@@ -34,3 +34,6 @@ def main():
     receiver_config_stanza = ConfigLoader().get_own_receiver_config_stanza()
     for key in config_keys_to_print:
         print(receiver_config_stanza.get(key, ''))
+
+
+main()
