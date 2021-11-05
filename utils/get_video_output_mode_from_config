@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+# This is called in the ./install/install.sh script
+# This script prints out the video output mode(s) of this receiver as it is set in the
+# config file receivers.toml. Intended to run from a receiver host.
+import os
+import sys
+
+# This is necessary for the import below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
+
+from piwall2.configloader import ConfigLoader
+
+if not os.path.isfile(ConfigLoader.RECEIVERS_CONFIG_PATH):
+    print(f"Receivers config file does not exist at path {ConfigLoader.RECEIVERS_CONFIG_PATH}.")
+    sys.exit(0)
+
+receiver_config_stanza = ConfigLoader().get_own_receiver_config_stanza()
+video_output = receiver_config_stanza.get('video', '')
+video_output2 = receiver_config_stanza.get('video2', '')
+
+print(f"{video_output}\n{video_output2}")

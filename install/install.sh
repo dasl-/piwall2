@@ -7,7 +7,7 @@ RESTART_REQUIRED_FILE='/tmp/piwall2_install_restart_required'
 CONFIG=/boot/config.txt
 is_restart_required=false
 installation_type=false
-enable_composite_video_output=false
+force_enable_composite_video_output=false
 disable_wifi=true
 
 main(){
@@ -26,7 +26,7 @@ main(){
 
     # Do receiver stuff
     if [[ "$installation_type" != 'broadcaster' ]]; then
-        if [ $enable_composite_video_output = true ]; then
+        if [ $force_enable_composite_video_output = true ] || [ "$fname" = "c.txt" ]; then
             enableCompositeVideoOutput
         fi
     fi
@@ -48,7 +48,8 @@ usage() {
     echo "usage: $0 -t INSTALLATION_TYPE [-c] [-w]"
     echo "    -h  display this help message"
     echo "    -t  Installation type: either 'broadcaster', 'receiver', or 'all'"
-    echo "    -c  enable composite video output. This will detrimentally affect performance to a small degree."
+    echo "    -c  force enable composite video output. This will detrimentally affect performance to a small degree."
+    echo "        By default, we enable composite video output if it is specified in the receivers.toml configuration."
     echo "    -w  Don't disable wifi. Only specify this option if you know what you're doing."
     exit "$exit_code"
 }
@@ -65,7 +66,7 @@ parseOpts(){
                     installation_type=${OPTARG}
                 fi
                 ;;
-            c) enable_composite_video_output=true ;;
+            c) force_enable_composite_video_output=true ;;
             w) disable_wifi=false ;;
             \?)
                 echo "Invalid option: -$OPTARG" >&2
@@ -188,6 +189,7 @@ disableWifi(){
 }
 
 # see: https://www.raspberrypi.org/documentation/computers/config_txt.html#enable_tvout-raspberry-pi-4-model-b-only
+# Enabling composite video output will detrimentally affect performance to a small degree
 enableCompositeVideoOutput(){
     if ! grep -q '^enable_tvout=1' $CONFIG ; then
         echo 'enabling composite video output...'

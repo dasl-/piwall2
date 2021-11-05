@@ -29,7 +29,6 @@ class Receiver:
         self.__logger.info("Started receiver!")
 
         self.__hostname = socket.gethostname() + ".local"
-        self.__local_ip_address = self.__get_local_ip()
 
         # The current crop modes for up to two TVs that may be hooked up to this receiver
         self.__display_mode = DisplayMode.DISPLAY_MODE_TILE
@@ -41,7 +40,7 @@ class Receiver:
         self.__crop_args2 = self.__DEFAULT_CROP_ARGS
 
         config_loader = ConfigLoader()
-        self.__receiver_config_stanza = self.__get_receiver_config_stanza(config_loader)
+        self.__receiver_config_stanza = config_loader.get_own_receiver_config_stanza()
         self.__receiver_command_builder = ReceiverCommandBuilder(config_loader, self.__receiver_config_stanza)
         self.__tv_ids = self.__get_tv_ids_by_tv_num()
 
@@ -172,17 +171,6 @@ class Receiver:
             raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
 
-    def __get_receiver_config_stanza(self, config_loader):
-        receivers_config = config_loader.get_receivers_config()
-        if self.__hostname in receivers_config:
-            return receivers_config[self.__hostname]
-        elif self.__local_ip_address in receivers_config:
-            return receivers_config[self.__local_ip_address]
-        else:
-            raise Exception("Unable to find config stanza for this receiver's " +
-                f"hostname ({self.__hostname}) or local ip address ({self.__local_ip_address}) " +
-                f"in receivers config file ({ConfigLoader.RECEIVERS_CONFIG_PATH}).")
-
     # Get the tv_ids for this receiver
     def __get_tv_ids_by_tv_num(self):
         tv_ids = {
@@ -191,19 +179,3 @@ class Receiver:
         if self.__receiver_config_stanza['is_dual_video_output']:
             tv_ids[2] = Tv(self.__hostname, 2).tv_id
         return tv_ids
-
-    def __is_hostname_this_receiver(self, hostname):
-        if self.__hostname == hostname or self.__local_ip_address == hostname:
-            return True
-        return False
-
-    def __get_local_ip(self):
-        return (subprocess
-            .check_output(
-                'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
-                'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
-                stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
-            )
-            .decode("utf-8")
-            .strip()
-        )

@@ -24,7 +24,10 @@ def main():
 
     # import must come after the bootstrap dependencies have been installed
     from piwall2.cmdrunner import CmdRunner
+    from piwall2.configloader import ConfigLoader
+
     cmd_runner = CmdRunner()
+    config_loader = ConfigLoader()
     if args.setup_ssh:
         if args.ssh_password is None:
             raise Exception("When setting up SSH, '--receiver-ssh-password' must be specified.")
@@ -35,7 +38,7 @@ def main():
     if args.install_dependencies:
         install_dependencies(cmd_runner)
     if args.install_app:
-        install_app(cmd_runner, args.enable_receivers_composite_video_out, args.dont_disable_wifi)
+        install_app(cmd_runner, config_loader, args.dont_disable_wifi)
 
     # The step install_app require a restart
     restart_hosts_if_necessary(cmd_runner, is_last_step = True)
@@ -152,7 +155,7 @@ def install_dependencies(cmd_runner):
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     cmd_runner.run_dsh(install_deps_cmd)
 
-def install_app(cmd_runner, enable_receivers_composite_video_out, dont_disable_wifi):
+def install_app(cmd_runner, config_loader, dont_disable_wifi):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
     print(f"Installing app on: {broadcaster_and_receivers}...")

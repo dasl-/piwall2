@@ -1,3 +1,5 @@
+import socket
+import subprocess
 import toml
 
 from piwall2.directoryutils import DirectoryUtils
@@ -17,6 +19,8 @@ class ConfigLoader:
     __wall_width = None
     __wall_height = None
     __youtube_dl_video_format = None
+    __hostname = None
+    __local_ip_address = None
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -25,6 +29,18 @@ class ConfigLoader:
     # returns dict keyed by receiver hostname, one item per receiver, even if the receiver has two TVs.
     def get_receivers_config(self):
         return ConfigLoader.__receivers_config
+
+    # returns the portion of the receivers config stanza for this host's config, i.e. the portion
+    # keyed by this hostname. Returns None if no matching stanza is found. This generally only makes
+    # sense to run on a receiver host.
+    def get_own_receiver_config_stanza(self):
+        receivers_config = self.get_receivers_config()
+        if ConfigLoader.__hostname in receivers_config:
+            return receivers_config[ConfigLoader.__hostname]
+        elif ConfigLoader.__local_ip_address in receivers_config:
+            return receivers_config[ConfigLoader.__local_ip_address]
+        else:
+            return None
 
     # returns a list of all the receiver hostnames
     def get_receivers_list(self):
@@ -102,6 +118,9 @@ class ConfigLoader:
 
         self.__generate_tv_config()
 
+        ConfigLoader.__hostname = socket.gethostname() + ".local"
+        ConfigLoader.__local_ip_address = self.__get_local_ip()
+
         ConfigLoader.__is_loaded = True
 
     def __assert_receiver_config_valid(self, receiver, receiver_config, is_this_receiver_dual_video_out):
@@ -159,3 +178,14 @@ class ConfigLoader:
             'wall_width': self.get_wall_width(),
             'wall_height': self.get_wall_height(),
         }
+
+    def __get_local_ip(self):
+        return (subprocess
+            .check_output(
+                'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
+                'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
+                stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
+            )
+            .decode("utf-8")
+            .strip()
+        )
