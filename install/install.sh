@@ -26,7 +26,7 @@ main(){
 
     # Do receiver stuff
     if [[ "$installation_type" != 'broadcaster' ]]; then
-        if [ $force_enable_composite_video_output = true ] || [ "$fname" = "c.txt" ]; then
+        if [ $force_enable_composite_video_output = true ] || "$BASE_DIR"/utils/get_video_output_mode_from_config | grep --quiet composite; then
             enableCompositeVideoOutput
         fi
     fi
@@ -49,7 +49,8 @@ usage() {
     echo "    -h  display this help message"
     echo "    -t  Installation type: either 'broadcaster', 'receiver', or 'all'"
     echo "    -c  force enable composite video output. This will detrimentally affect performance to a small degree."
-    echo "        By default, we enable composite video output if it is specified in the receivers.toml configuration."
+    echo "        By default, we enable composite video output automatically if it is specified in the receivers.toml"
+    echo "        configuration."
     echo "    -w  Don't disable wifi. Only specify this option if you know what you're doing."
     exit "$exit_code"
 }

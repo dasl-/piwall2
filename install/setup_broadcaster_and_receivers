@@ -24,10 +24,8 @@ def main():
 
     # import must come after the bootstrap dependencies have been installed
     from piwall2.cmdrunner import CmdRunner
-    from piwall2.configloader import ConfigLoader
 
     cmd_runner = CmdRunner()
-    config_loader = ConfigLoader()
     if args.setup_ssh:
         if args.ssh_password is None:
             raise Exception("When setting up SSH, '--receiver-ssh-password' must be specified.")
@@ -38,7 +36,7 @@ def main():
     if args.install_dependencies:
         install_dependencies(cmd_runner)
     if args.install_app:
-        install_app(cmd_runner, config_loader, args.dont_disable_wifi)
+        install_app(cmd_runner, args.dont_disable_wifi)
 
     # The step install_app require a restart
     restart_hosts_if_necessary(cmd_runner, is_last_step = True)
@@ -62,10 +60,6 @@ This script should be run on the broadcaster. This script does several things:
         default=True, help="Skip installing dependencies.")
     parser.add_argument('--dont-install-app', dest='install_app', action='store_false',
         default=True, help="Skip installing app.")
-    parser.add_argument('--enable-receivers-composite-video-out',
-        dest='enable_receivers_composite_video_out', action='store_true', default=False,
-        help="Enable composite video output on the receivers. This will detrimentally affect their " +
-        "performance to a small degree.")
     parser.add_argument('--dont-disable-wifi', dest='dont_disable_wifi', action='store_true', default=False,
         help="Don't disable wifi. Only specify this option if you know what you're doing.")
     args = parser.parse_args()
@@ -155,14 +149,12 @@ def install_dependencies(cmd_runner):
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     cmd_runner.run_dsh(install_deps_cmd)
 
-def install_app(cmd_runner, config_loader, dont_disable_wifi):
+def install_app(cmd_runner, dont_disable_wifi):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
     print(f"Installing app on: {broadcaster_and_receivers}...")
     install_app_cmd = (f"{ROOT_DIR}/install/install.sh -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
-    if enable_receivers_composite_video_out:
-        install_app_cmd += " -c"
     if dont_disable_wifi:
         install_app_cmd += " -w"
     cmd_runner.run_dsh(install_app_cmd)
