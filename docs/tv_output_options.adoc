@@ -195,7 +195,7 @@ Somewhat anecdotally, sometimes this method would result in the two vlc players 
 Potentially gstreamer could be an option. See https://www.raspberrypi.org/forums/viewtopic.php?f=67&t=309723[my forum post]. And link:cropping_videos_for_streaming_playback.adoc#alternatives[more info in our docs].
 
 ## Video rotation
-The piwall2 project supports rotating TVs in multiples of 90 degrees. Thus, you can have a TV that is physically sideways or upside down, but still displaying a "right-side-up" video image. At first, I tried to accomplish this via `omxplayer`'s `--orientation` flag:
+The piwall2 project supports rotating TVs in multiples of 90 degrees. Thus, you can have a TV that is physically sideways or upside down, but still displaying a "right-side-up" video image. At first, I tried to accomplish this via `omxplayer` 's `--orientation` flag:
 
 ....
 % omxplayer --help
