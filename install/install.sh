@@ -38,8 +38,11 @@ main(){
     setGpuMem
 
     new_config=$(cat $CONFIG)
-    if [[ $is_restart_required = true || ! $(diff <(echo "$old_config") <(echo "$new_config")) ]] ; then
+    config_diff=$(diff <(echo "$old_config") <(echo "$new_config"))
+    config_diff_exit_code=$?
+    if [[ $is_restart_required = true || ! $config_diff_exit_code ]] ; then
         echo "Please restart to complete installation!"
+        echo -e "Config diff:\n$config_diff"
         touch "$RESTART_REQUIRED_FILE"
     fi
 }
