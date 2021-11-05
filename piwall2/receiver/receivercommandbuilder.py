@@ -26,10 +26,6 @@ class ReceiverCommandBuilder:
 
         volume_pct = VolumeController.normalize_vol_pct(volume_pct)
 
-        ffmpeg_rotate_cmd = ''
-        if 'orientation' in self.__receiver_config_stanza:
-            ffmpeg_rotate_cmd = 'ffmpeg -i pipe:0 -vf "transpose=2" -c:a copy -c:v h264_v4l2m2m -f mpegts - | '
-
         # See: https://github.com/popcornmix/omxplayer/#volume-rw
         if volume_pct == 0:
             volume_millibels = VolumeController.GLOBAL_MIN_VOL_VAL
@@ -82,7 +78,7 @@ class ReceiverCommandBuilder:
             )
             cmd += f'{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null'
         else:
-            cmd += f'{mbuffer_cmd} | {ffmpeg_rotate_cmd} {omx_cmd}'
+            cmd += f'{mbuffer_cmd} | {omx_cmd}'
 
         receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
             f'--log-uuid {shlex.quote(log_uuid)}')
@@ -210,7 +206,7 @@ class ReceiverCommandBuilder:
         x_offset = (video_width - displayable_video_width) / 2
         y_offset = (video_height - displayable_video_height) / 2
 
-        repeat_mode_crop = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {x_offset + displayable_video_height}"
+        repeat_mode_crop = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {y_offset + displayable_video_height}"
 
         repeat_mode_crop2 = None
         if receiver_config['is_dual_video_output']:
@@ -222,7 +218,7 @@ class ReceiverCommandBuilder:
             x_offset = (video_width - displayable_video_width) / 2
             y_offset = (video_height - displayable_video_height) / 2
 
-            repeat_mode_crop2 = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {x_offset + displayable_video_height}"
+            repeat_mode_crop2 = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {y_offset + displayable_video_height}"
 
         crop_args = {
             DisplayMode.DISPLAY_MODE_TILE: tile_mode_crop,
