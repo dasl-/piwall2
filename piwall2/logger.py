@@ -7,6 +7,7 @@ import string
 class Logger:
 
     # Log levels
+    QUIET = 100
     ERROR = 40
     WARNING = 30
     INFO = 20
@@ -29,8 +30,8 @@ class Logger:
     @staticmethod
     def set_level(level):
         if (
-            level != Logger.ERROR and level != Logger.WARNING and level != Logger.INFO and
-            level != Logger.DEBUG and level is not Logger.ALL
+            level != Logger.QUIET and level != Logger.ERROR and level != Logger.WARNING and
+            level != Logger.INFO and level != Logger.DEBUG and level != Logger.ALL
         ):
             raise Exception("Invalid level specified")
         Logger.__level = level

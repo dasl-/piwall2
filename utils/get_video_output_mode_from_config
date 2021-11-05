@@ -10,6 +10,9 @@ root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
 from piwall2.configloader import ConfigLoader
+from piwall2.logger import Logger
+
+Logger.set_level(Logger.QUIET) # silence any other output to stdout, because we parse this script's stdout output.
 
 if not os.path.isfile(ConfigLoader.RECEIVERS_CONFIG_PATH):
     print(f"Receivers config file does not exist at path {ConfigLoader.RECEIVERS_CONFIG_PATH}.")
