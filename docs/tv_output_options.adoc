@@ -40,7 +40,7 @@ Furthermore, be careful of using both composite output and HDMI output on differ
 ## General video options
 These video options apply to both HDMI and composite video output.
 
-When displaying video, you may notice https://www.raspberrypi.org/documentation/configuration/raspi-config.md#underscan[overscan / underscan] issues. Overscan settings may be adjusted via the `overscan_{left,right,top,bottom}` options in `/boot/config.txt`. Note that these settings do not appear to apply to video players like omxplayer or vlc https://github.com/huceke/omxplayer/issues/103[unless you also set `overscan_scale=1`]. But enabling `overscan_scale` comes with a warning: "it can reduce image quality". Indeed, we see increased screen flicker when enabling `overscan_scale`. Thus it is debatable whether it is worth it to enable -- you trade a misaligned picture for a flickering picture.
+When displaying video, you may notice https://www.raspberrypi.org/documentation/configuration/raspi-config.md#underscan[overscan / underscan] issues. Overscan settings may be adjusted via the https://www.raspberrypi.com/documentation/computers/config_txt.html#disable_overscan[`overscan_{left,right,top,bottom}` options] in `/boot/config.txt`. Note that these settings do not appear to apply to video players like omxplayer or vlc https://github.com/huceke/omxplayer/issues/103[unless you also set `overscan_scale=1`]. But enabling `overscan_scale` comes with a warning: "it can reduce image quality". Indeed, we see increased screen flicker when enabling `overscan_scale`. Thus it is debatable whether it is worth it to enable -- you trade a misaligned picture for a flickering picture.
 
 In anecdotal testing, I have found that when using CRT TVs, I have slightly better aligned pictures when using the raspberry pi's HDMI output via an HDMI to RCA converter than when using the raspberry pi's composite video output.
 
@@ -159,7 +159,7 @@ Omxplayer does have options to use alsa sound output as discussed in the section
 % omxplayer -o alsa:hw:0,0 sync_test_1080p.mkv
 ....
 
-Most of the time, the alsa sound works fine. But in some videos, I have noticed occasional playback issues when using alsa sound -- sometimes one or more TVs would freeze when attempting to play the video, resulting in a frozen image of one of the first few frames of the video. Meanwhile, the rest of the TVs would continue playing the video. Thus, I do not recommend using alsa sound output. I noticed these alsa playback glitches when testing on https://www.youtube.com/watch?v=4S5KBlieT0I[this video] while using component TV output. I noticed playback glitches in 3 out of 9 tests that I ran in this manner.
+Most of the time, the alsa sound works fine. But in some videos, I have noticed occasional playback issues when using alsa sound -- sometimes one or more TVs would freeze when attempting to play the video, resulting in a frozen image of one of the first few frames of the video. Meanwhile, the rest of the TVs would continue playing the video. Thus, I do not recommend using alsa sound output. I noticed these alsa playback glitches when testing on https://www.youtube.com/watch?v=4S5KBlieT0I[this video] while using composite TV output. I noticed playback glitches in 3 out of 9 tests that I ran in this manner.
 
 ### vlc
 Due to our cropping needs, link:cropping_videos_for_streaming_playback.adoc[vlc is not the preferred software to use for videoplayback in this project].
@@ -193,3 +193,30 @@ Somewhat anecdotally, sometimes this method would result in the two vlc players 
 
 ### gstreamer
 Potentially gstreamer could be an option. See https://www.raspberrypi.org/forums/viewtopic.php?f=67&t=309723[my forum post]. And link:cropping_videos_for_streaming_playback.adoc#alternatives[more info in our docs].
+
+## Video rotation
+The piwall2 project supports rotating TVs in multiples of 90 degrees. Thus, you can have a TV that is physically sideways or upside down, but still displaying a "right-side-up" video image. At first, I tried to accomplish this via `omxplayer`'s `--orientation` flag:
+
+....
+% omxplayer --help
+...
+--orientation n         Set orientation of video (0, 90, 180 or 270)
+....
+
+Using this almost worked, but over time, the video playback would get out of sync for any TV that was rotated. Playback on rotated TVs was slower than on non-rotated TVs. In particular, I found my videos would get approximately one second out of sync for every minute of playback or so. How quickly things got out of sync might also depend on the video resolution -- higher resolution videos would get out of sync more quickly. Perhaps this is because the raspberry pi has to actually do a non-insignificant amount of work to rotate a video (see https://forums.raspberrypi.com/viewtopic.php?t=248353[this forum thread]).
+
+To get around this playback speed sync issue, I tried adjusting playback speed via `omxplayer`'s https://github.com/popcornmix/omxplayer/#rate-rw[DBUS API], but this proved to be a losing battle. As the amount of lag seemed to vary with video resolution, I'd need to calculate lag compensation amounts for an endless number of video resolutions. I tried investigating `omxplayer`'s https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#live[`--live` option again]. This actually sort of worked, but the jankiness we've seen in the past when using this option continued. Sound was full of static, and occasionally there would be video glitch artifacts (green screens, slight sync issues, etc).
+
+The next thing I tried was setting the rotation via `/boot/cmdline.txt` as https://www.raspberrypi.com/documentation/computers/configuration.html#command-line-options[documented here]. In particular, I tried using this:
+
+....
+console=serial0,115200 console=tty1 root=PARTUUID=5a99a147-02 rootfstype=ext4 elevator=deadline fsck.repair=yes video=Composite-1:720x480@60i,margin_left=32,margin_right=32,margin_top=32,margin_bottom=32,rotate=90 rootwait
+....
+
+This had the same playback sync issues, losing about a second of synchronization per minute of playback.
+
+Finally, I tried something suggested on a https://forums.raspberrypi.com/viewtopic.php?t=247619#p1691517[forum post]. I commented out the line `dtoverlay=vc4-fkms-v3d` in conjunction with adding a line `display_hdmi_rotate=3` in `/boot/config.txt`. More https://forums.raspberrypi.com/viewtopic.php?p=1507622#p1507247[details] about what this might do. I believe that this means I will be using the https://www.raspberrypi.com/documentation/computers/configuration.html#legacy-graphics-driver["legacy" graphics driver]. Note also that I am using https://www.raspberrypi.com/documentation/computers/config_txt.html#display_hdmi_rotate[`display_hdmi_rotate`], despite using composite TV output. It works (shrug)! Note that using the deprecated https://www.raspberrypi.com/documentation/computers/config_txt.html#display_rotate[`display_rotate`] also worked. This setup actually worked -- playback did not suffer from lag / sync issues over time when the display was rotated in this manner.
+
+As a final test, I tried another option: using the legacy graphics driver by commenting out `dtoverlay=vc4-fkms-v3d` in `/boot/config.txt`, but performing the rotation via `omxplayer`'s `--rotate` flag. This suffered from the same playback lag issues as before.
+
+So the only method of rotation that worked without lag was doing the rotation at the OS level, by setting options in `/boot/config.txt`. I believe that this means if you wanted to use two TVs per raspberry pi, both TVs would need to share the same rotation settings. You could not have one TV rotated and one TV not rotated.
