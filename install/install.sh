@@ -5,6 +5,7 @@ set -eou pipefail
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 RESTART_REQUIRED_FILE='/tmp/piwall2_install_restart_required'
 CONFIG=/boot/config.txt
+old_config=$(cat $CONFIG)
 is_restart_required=false
 installation_type=false
 force_enable_composite_video_output=false
@@ -36,7 +37,8 @@ main(){
 
     setGpuMem
 
-    if [ $is_restart_required = true ] ; then
+    new_config=$(cat $CONFIG)
+    if [[ $is_restart_required = true || ! $(diff <(echo "$old_config") <(echo "$new_config")) ]] ; then
         echo "Please restart to complete installation!"
         touch "$RESTART_REQUIRED_FILE"
     fi
@@ -182,7 +184,6 @@ disableWifi(){
         if ! grep -q '^dtoverlay=disable-wifi' $CONFIG ; then
             echo 'dtoverlay=disable-wifi' | sudo tee -a $CONFIG >/dev/null
         fi
-        is_restart_required=true
     else
         echo 'wifi already disabled...'
     fi
@@ -202,7 +203,6 @@ maybeAdjustCompositeVideoOutput(){
             if ! grep -q '^enable_tvout=1' $CONFIG ; then
                 echo 'enable_tvout=1' | sudo tee -a $CONFIG >/dev/null
             fi
-            is_restart_required=true
         else
             echo 'composite video output already enabled...'
         fi
@@ -267,8 +267,6 @@ setGpuMem(){
 
         # create the new stanza
         echo 'gpu_mem=128' | sudo tee -a $CONFIG >/dev/null
-
-        is_restart_required=true
     else
         echo "gpu_mem was large enough already: $gpu_mem megabytes..."
     fi
