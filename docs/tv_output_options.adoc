@@ -200,7 +200,7 @@ The piwall2 project supports rotating TVs in multiples of 90 degrees. Thus, you 
 ....
 % omxplayer --help
 ...
---orientation n         Set orientation of video (0, 90, 180 or 270)
+    --orientation n         Set orientation of video (0, 90, 180 or 270)
 ....
 
 Using this almost worked, but over time, the video playback would get out of sync for any TV that was rotated. Playback on rotated TVs was slower than on non-rotated TVs. In particular, I found my videos would get approximately one second out of sync for every minute of playback or so. How quickly things got out of sync might also depend on the video resolution -- higher resolution videos would get out of sync more quickly. Perhaps this is because the raspberry pi has to actually do a non-insignificant amount of work to rotate a video (see https://forums.raspberrypi.com/viewtopic.php?t=248353[this forum thread]).
@@ -220,3 +220,26 @@ Finally, I tried something suggested on a https://forums.raspberrypi.com/viewtop
 As a final test, I tried another option: using the legacy graphics driver by commenting out `dtoverlay=vc4-fkms-v3d` in `/boot/config.txt`, but performing the rotation via `omxplayer` 's `--rotate` flag. This suffered from the same playback lag issues as before.
 
 So the only method of rotation that worked without lag was doing the rotation at the OS level, by setting options in `/boot/config.txt`. I believe that this means if you wanted to use two TVs per raspberry pi, both TVs would need to share the same rotation settings. You could not have one TV rotated and one TV not rotated.
+
+One interesting thing to note: using my successful method of rotation (commenting out the line `dtoverlay=vc4-fkms-v3d` in conjunction with adding a line `display_hdmi_rotate=3` in `/boot/config.txt`), I found that omxplayer added black letterbox bars on the top and bottom of the screen when playing a video. For some reason, omxplayer didn't seem to realize how big the screen was? My only hypothesis here is a difference in obscure kernel settings. When rotating the screen in this manner, here is the output of https://www.raspberrypi.com/documentation/computers/configuration.html#the-kernel-command-line[`/proc/cmdline`]:
+
+....
+% cat /proc/cmdline
+coherent_pool=1M 8250.nr_uarts=0 snd_bcm2835.enable_compat_alsa=0 snd_bcm2835.enable_hdmi=1 bcm2708_fb.fbwidth=416 bcm2708_fb.fbheight=656 bcm2708_fb.fbswap=1 smsc95xx.macaddr=DC:A6:32:C0:A5:BC vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  console=ttyS0,115200 console=tty1 root=PARTUUID=5a99a147-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait
+....
+
+Whereas on a receiver without any rotation settings applied, here is the output:
+....
+% cat /proc/cmdline
+coherent_pool=1M 8250.nr_uarts=0 snd_bcm2835.enable_compat_alsa=0 snd_bcm2835.enable_hdmi=1 video=Composite-1:720x480@60i,margin_left=32,margin_right=32,margin_top=32,margin_bottom=32 smsc95xx.macaddr=DC:A6:32:B6:A3:34 vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  console=ttyS0,115200 console=tty1 root=PARTUUID=2586a590-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait
+....
+
+Note that `656 + 32 + 32 = 720`, and `416 + 32 + 32 = 480`. I'm not sure if this is relevant though. Regardless, making use of `omxplayer` 's `--aspect-mode` option solved the problem:
+
+....
+% omxplayer --help
+...
+    --aspect-mode type      Letterbox, fill, stretch. Default: stretch if win is specified, letterbox otherwise
+....
+
+In particular, I set `--aspect-mode stretch`, whereas before I was not making use of the `--aspect-mode` option at all, thus defaulting to `letterbox`. This should be fine, because in all cases we are setting an explicit crop window for the video via the `--crop` flag. We always ensure that the passed crop window matches the TVs aspect ratio exactly, thus stretching should have no effect, except in this weird edge case where it actually solves a problem. I confirmed that a video of a circle is correctly proportioned when using this `--aspect-mode stretch` flag, both on rotated displays and unrotated displays. Without the `--aspect-mode stretch` flag, a circle was distorted on the rotated display.

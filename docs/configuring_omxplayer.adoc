@@ -72,3 +72,8 @@ When watching very long videos, it is possible that the receivers will get out o
 
 ### orientation
 See here for possible values: https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/OMXVideo.cpp#L636
+
+See the docs on https://github.com/dasl-/piwall2/blob/rotate/docs/tv_output_options.adoc#video-rotation[video rotation] for why we don't use this flag.
+
+### aspect-mode
+See the docs on https://github.com/dasl-/piwall2/blob/rotate/docs/tv_output_options.adoc#video-rotation[video rotation] for why we use this flag.
