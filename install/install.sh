@@ -215,7 +215,7 @@ maybeAdjustCompositeVideoOutput(){
 
 maybeAdjustScreenRotateMode(){
     local rotate_mode;
-    rotate_mode=$("$BASE_DIR"/utils/get_receiver_config_value --config-keys-to-print rotate)
+    rotate_mode=$("$BASE_DIR"/utils/get_receiver_config_value --keys rotate)
     if [[ "$rotate_mode" == "90" || "$rotate_mode" == "180" || "$rotate_mode" == "270" ]]; then
         echo "Setting screen rotation to $rotate_mode degrees..."
 
