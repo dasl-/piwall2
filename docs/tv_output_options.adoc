@@ -27,7 +27,7 @@ The raspberry pi also supports link:img/composite_video.jpg[composite video] (a.
 
 To enable composite video output on a raspberry pi 4B, be sure to add `enable_tvout=1` to your `/boot/config.txt`. Note: the https://www.raspberrypi.org/documentation/configuration/config-txt/video.md[docs] say that enabling composite video output "slightly slows down the entire system".
 
-There are a couple of additional composite https://www.raspberrypi.org/documentation/configuration/config-txt/video.md[video output options] you may want to adjust.
+There are a couple of additional composite https://www.raspberrypi.com/documentation/computers/config_txt.html#composite-video-mode[video output options] you may want to adjust.
 
 1. If you're not using NTSC TVs, you'll want to adjust `sdtv_mode` (most North American TVs use NTSC)
 1. If you have a CRT with a non-standard aspect ratio, you'll want to adjust `sdtv_aspect`
