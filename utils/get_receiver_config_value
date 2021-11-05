@@ -17,7 +17,7 @@ This script should be run on a receiver. This script prints out the specified co
 for this receiver as it is set in the config file {ConfigLoader.RECEIVERS_CONFIG_PATH}.
 """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--config-keys-to-print', dest='config_keys_to_print', action='store', default='',
+    parser.add_argument('--keys', dest='keys', action='store', default='',
         help="Comma separated list of keys. We will print the corresponding values of these keys, or a " +
         "blank line if the key is not set.")
     args = parser.parse_args()
@@ -30,7 +30,7 @@ def main():
         sys.exit(0)
 
     args = parse_args()
-    config_keys_to_print = args.config_keys_to_print.split(',')
+    config_keys_to_print = args.keys.split(',')
     receiver_config_stanza = ConfigLoader().get_own_receiver_config_stanza()
     for key in config_keys_to_print:
         print(receiver_config_stanza.get(key, ''))

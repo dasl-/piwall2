@@ -26,9 +26,8 @@ main(){
 
     # Do receiver stuff
     if [[ "$installation_type" != 'broadcaster' ]]; then
-        if [ $force_enable_composite_video_output = true ] || "$BASE_DIR"/utils/get_video_output_mode_from_config | grep --quiet composite; then
-            enableCompositeVideoOutput
-        fi
+        maybeAdjustCompositeVideoOutput
+        maybeAdjustScreenRotateMode
     fi
 
     if [ $disable_wifi = true ]; then
@@ -191,20 +190,68 @@ disableWifi(){
 
 # see: https://www.raspberrypi.org/documentation/computers/config_txt.html#enable_tvout-raspberry-pi-4-model-b-only
 # Enabling composite video output will detrimentally affect performance to a small degree
-enableCompositeVideoOutput(){
-    if ! grep -q '^enable_tvout=1' $CONFIG ; then
-        echo 'enabling composite video output...'
+maybeAdjustCompositeVideoOutput(){
+    if [ $force_enable_composite_video_output = true ] || "$BASE_DIR"/utils/get_receiver_config_value --keys video,video2 | grep --quiet composite; then
+        if ! grep -q '^enable_tvout=1' $CONFIG ; then
+            echo 'enabling composite video output...'
+
+            # uncomment it and enable it if the stanza is commented out
+            sudo sed $CONFIG -i -e "s/^#\?enable_tvout=.*/enable_tvout=1/"
+
+            # create the stanza if it doesn't yet exist
+            if ! grep -q '^enable_tvout=1' $CONFIG ; then
+                echo 'enable_tvout=1' | sudo tee -a $CONFIG >/dev/null
+            fi
+            is_restart_required=true
+        else
+            echo 'composite video output already enabled...'
+        fi
+    else
+        echo 'disabling composite video output if it was enabled...'
+        # comment out existing enable_tvout lines in config
+        sudo sed $CONFIG -i -e "s/^\(enable_tvout=1.*\)/#\1/"
+    fi
+}
+
+maybeAdjustScreenRotateMode(){
+    local rotate_mode;
+    rotate_mode=$("$BASE_DIR"/utils/get_receiver_config_value --config-keys-to-print rotate)
+    if [[ "$rotate_mode" == "90" || "$rotate_mode" == "180" || "$rotate_mode" == "270" ]]; then
+        echo "Setting screen rotation to $rotate_mode degrees..."
+
+        # comment out existing `dtoverlay=vc4-fkms-v3d` lines in config
+        sudo sed $CONFIG -i -e "s/^\(dtoverlay=vc4-fkms-v3d.*\)/#\1/"
+
+        # comment out existing `display_hdmi_rotate` lines in config
+        sudo sed $CONFIG -i -e "s/^\(display_hdmi_rotate=.*\)/#\1/"
+
+        local rotate_mode_value;
+        if [[ "$rotate_mode" == "90" ]]; then
+            rotate_mode_value=1
+        elif [[ "$rotate_mode" == "180" ]]; then
+            rotate_mode_value=2
+        elif [[ "$rotate_mode" == "270" ]]; then
+            rotate_mode_value=3
+        else
+            echo "Unexpected rotate_mode: $rotate_mode"
+            exit 99
+        fi
 
         # uncomment it and enable it if the stanza is commented out
-        sudo sed $CONFIG -i -e "s/^#\?enable_tvout=.*/enable_tvout=1/"
+        sudo sed $CONFIG -i -e "s/^#\?display_hdmi_rotate=$rotate_mode_value/display_hdmi_rotate=$rotate_mode_value/"
 
         # create the stanza if it doesn't yet exist
-        if ! grep -q '^enable_tvout=1' $CONFIG ; then
-            echo 'enable_tvout=1' | sudo tee -a $CONFIG >/dev/null
+        if ! grep -q "^display_hdmi_rotate=$rotate_mode_value" $CONFIG ; then
+            echo "display_hdmi_rotate=$rotate_mode_value" | sudo tee -a $CONFIG >/dev/null
         fi
-        is_restart_required=true
     else
-        echo 'composite video output already enabled...'
+        echo "Resetting screen rotation options if present..."
+
+        # uncomment existing `#dtoverlay=vc4-fkms-v3d` lines in config
+        sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-fkms-v3d.*/dtoverlay=vc4-fkms-v3d.*/"
+
+        # comment out existing `display_hdmi_rotate` lines in config
+        sudo sed $CONFIG -i -e "s/^\(display_hdmi_rotate=.*\)/#\1/"
     fi
 }
 
