@@ -8,7 +8,7 @@ As noted in link:tv_output_options.adoc#general-video-options[the tv output opti
 ## calibration
 Ensure the calibration test image is properly centered:
 ....
-% sudo fbi -T 1 -noverbose docs/img/crt_calibration_test_480p.jpg
+% sudo fbi -T 1 -noverbose docs/img/calibration/crt_calibration_test_480p.jpg
 %
 % # fbi keyboard controls don't work over ssh, so you may exit the image viewer program via:
 % sudo kill $(pgrep fbi)

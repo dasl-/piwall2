@@ -5,7 +5,7 @@
 ## Usage of omxplayer
 At time of writing, https://github.com/dasl-/piwall2/blob/5625b8887f528f671b7944a6cc43de54f375800c/piwall2/broadcaster.py#L126[we run omxplayer like so]:
 ....
-omxplayer --crop {0} --adev {1} --display {2} --vol {3} --orientation {4} --no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0
+omxplayer --crop {0} --adev {1} --display {2} --vol {3} --aspect-mode stretch --no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0
 ....
 
 Of particular note are the `threshold` and `video_fifo` options:
