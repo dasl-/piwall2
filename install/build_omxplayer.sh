@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
+BRANCH="master"
+
 usage(){
     echo "Usage: $(basename "${0}") [-b <BRANCH>]"
     echo "Builds omxplayer"
-    echo "  -b BRANCH : branch to build"
+    echo "  -b BRANCH : branch to build. Default: $BRANCH"
     exit 1
 }
 
