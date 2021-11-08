@@ -68,7 +68,12 @@ class MulticastHelper:
             self.__logger.debug(f"Sending control message: {msg}")
 
         address_tuple = (self.ADDRESS, port)
-        bytes_sent = self.__send_socket.sendto(msg, address_tuple)
+        msg_remainder = msg
+        bytes_sent = 0
+        while msg_remainder: # Don't send more than __MAX_MSG_SIZE at a time
+            msg_part = msg_remainder[:self.__MAX_MSG_SIZE]
+            msg_remainder = msg_remainder[self.__MAX_MSG_SIZE:]
+            bytes_sent += self.__send_socket.sendto(msg_part, address_tuple)
         if bytes_sent == 0:
             self.__logger.warn(f"Unable to send message. Address: {address_tuple}. Message: {msg}")
         elif bytes_sent < len(msg):

@@ -14,6 +14,8 @@ def parseArgs():
     parser = argparse.ArgumentParser(description='piwall2 video sender')
     parser.add_argument('--log-uuid', dest='log_uuid', action='store',
         help='Logger UUID')
+    parser.add_argument('--end-of-video-magic-bytes', dest='end_of_video_magic_bytes', action='store',
+        help='Bytes to send after sending the video data is done.')
     args = parser.parse_args()
     return args
 
@@ -22,7 +24,7 @@ args = parseArgs()
 log_level = Logger.get_level()
 if log_level is None or log_level <= Logger.DEBUG:
     # Prevent MulticastHelper.__send_video_stream_msg debug logs from being too spammy
-    Logger.set_level(Logger.INFO)    
+    Logger.set_level(Logger.INFO)
 if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 
@@ -36,5 +38,8 @@ while True:
     if not data:
         break
     bytes_sent += m.send(data, MulticastHelper.VIDEO_PORT)
+
+if args.end_of_video_magic_bytes:
+    bytes_sent += m.send(args.end_of_video_magic_bytes.encode(), MulticastHelper.VIDEO_PORT)
 
 logger.info(f"Finished sending video. Sent {bytes_sent} bytes.")

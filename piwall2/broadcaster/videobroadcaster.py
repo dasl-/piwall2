@@ -99,7 +99,12 @@ class VideoBroadcaster:
         by the `time.sleep(2)` we had to add below.
 
         This requires that we break up the original single pipeline into two halves. Originally, a single
-        pipeline was responsible for downloading, converting, and broadcasting the video. Receivers were
+        pipeline was responsible for downloading, converting, and broadcasting the video. Now we have two
+        pipelines that we start separately:
+        1) download_and_convert_video_proc, which downloads and converts the video and
+        2) video_broadcast_proc, which broadcasts the converted video
+
+        We connect the stdout of (1) to the stdin of (2).
         """
         download_and_convert_video_proc = self.__start_download_and_convert_video_proc()
         self.__get_video_info(assert_data_not_yet_loaded = True)
@@ -121,22 +126,28 @@ class VideoBroadcaster:
 
         video_broadcast_proc = self.__start_video_broadcast_proc(download_and_convert_video_proc)
 
-        self.__logger.info("Waiting for download_and_convert_video proc to end...")
-        while download_and_convert_video_proc.poll() is None:
-            time.sleep(0.1)
-        if download_and_convert_video_proc.returncode != 0:
-            raise YoutubeDlException("The download_and_convert_video process exited non-zero: " +
-                f"{download_and_convert_video_proc.returncode}. This could mean an issue with youtube-dl; " +
-                "it may require updating.")
+        self.__logger.info("Waiting for download_and_convert_video and video_broadcast procs to end...")
+        has_download_and_convert_video_proc_ended = False
+        has_video_broadcast_proc_ended = False
+        while True: # Wait for the download_and_convert_video and video_broadcast procs to end...
+            if not has_download_and_convert_video_proc_ended and download_and_convert_video_proc.poll() is not None:
+                has_download_and_convert_video_proc_ended = True
+                if download_and_convert_video_proc.returncode != 0:
+                    raise YoutubeDlException("The download_and_convert_video process exited non-zero: " +
+                        f"{download_and_convert_video_proc.returncode}. This could mean an issue with youtube-dl; " +
+                        "it may require updating.")
+                self.__logger.info("The download_and_convert_video proc ended.")
 
-        self.__logger.info("The download_and_convert_video proc ended. Waiting for broadcast command to end...")
-        while video_broadcast_proc.poll() is None:
-            time.sleep(0.1)
-        if video_broadcast_proc.returncode != 0:
-            raise Exception(f"The video broadcast process exited non-zero: {video_broadcast_proc.returncode}")
+            if not has_video_broadcast_proc_ended and video_broadcast_proc.poll() is not None:
+                has_video_broadcast_proc_ended = True
+                if video_broadcast_proc.returncode != 0:
+                    raise Exception(f"The video broadcast process exited non-zero: {video_broadcast_proc.returncode}")
+                self.__logger.info("The video_broadcast proc ended.")
 
-        self.__logger.info("Video broadcast command ended. Waiting for video playback to end...")
-        MulticastHelper().setup_broadcaster_socket().send(self.END_OF_VIDEO_MAGIC_BYTES, MulticastHelper.VIDEO_PORT)
+            if has_download_and_convert_video_proc_ended and has_video_broadcast_proc_ended:
+                break
+
+            time.sleep(0.1)
 
         while not os.path.isfile(self.__VIDEO_PLAYBACK_DONE_FILE):
             time.sleep(0.1)
@@ -180,7 +191,9 @@ class VideoBroadcaster:
         burst_throttling_clause = (f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
             f'{self.__get_standard_ffmpeg_cmd()} -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
             f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
-        broadcasting_clause = DirectoryUtils().root_dir + f"/bin/msend_video --log-uuid {shlex.quote(Logger.get_uuid())}"
+        broadcasting_clause = (f"{DirectoryUtils().root_dir}/bin/msend_video " +
+            f'--log-uuid {shlex.quote(Logger.get_uuid())} ' +
+            f'--end-of-video-magic-bytes {self.END_OF_VIDEO_MAGIC_BYTES.decode()}')
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
