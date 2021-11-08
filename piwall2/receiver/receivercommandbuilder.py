@@ -84,7 +84,7 @@ class ReceiverCommandBuilder:
         if interlude_pgid:
             interlude_pgid_stanza = f' --interlude-pgid {shlex.quote(str(interlude_pgid))} '
         if is_interlude:
-            receiver_cmd = f'cat ~/glitch.ts | {omx_cmd}'
+            receiver_cmd = f'cat /home/pi/glitch.ts | {omx_cmd}'
         else:
             receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
                 f'--log-uuid {shlex.quote(log_uuid)} --interlude-pgid {interlude_pgid_stanza}')
