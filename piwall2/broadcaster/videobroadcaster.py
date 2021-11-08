@@ -106,11 +106,11 @@ class VideoBroadcaster:
 
         We connect the stdout of (1) to the stdin of (2).
 
-        In order to run all the ytdl invocations in parallel, we had to break up the original single pipeline,
-        because broadcasting the video requires having started the receivers first. And starting the receivers
-        requires knowing how much to crop, which requires knowing the video dimensions. Thus, we need to know
-        the video dimensions before broadcasting the video. Without breaking up the pipeline, we wouldn't
-        be able to enforce that we don't start broadcasting the video before knowing the dimensions.
+        In order to run all the ytdl invocations in parallel, we had to break up the original single pipeline
+        into these two halves, because broadcasting the video requires having started the receivers first.
+        And starting the receivers requires knowing how much to crop, which requires knowing the video dimensions.
+        Thus, we need to know the video dimensions before broadcasting the video. Without breaking up the pipeline,
+        we wouldn't be able to enforce that we don't start broadcasting the video before knowing the dimensions.
         """
         download_and_convert_video_proc = self.__start_download_and_convert_video_proc()
         self.__get_video_info(assert_data_not_yet_loaded = True)
