@@ -131,6 +131,11 @@ class Receiver:
         )
         self.__logger.info(f"Running receive_and_play_video command: {cmd}")
         self.__is_video_playback_in_progress = True
+        try:
+            os.killpg(interlude_pgid, signal.SIGTERM)
+        except Exception:
+            # might raise: `ProcessLookupError: [Errno 3] No such process`
+            pass
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
