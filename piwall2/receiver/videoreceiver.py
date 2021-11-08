@@ -21,7 +21,7 @@ class VideoReceiver:
 
         self.__logger.info("Killing interlude proc (if it's still running)...")
         try:
-            # pass
+            self.__logger.info(f"interlude_pgid: {interlude_pgid}")
             os.killpg(interlude_pgid, signal.SIGTERM)
         except Exception:
             # might raise: `ProcessLookupError: [Errno 3] No such process`
