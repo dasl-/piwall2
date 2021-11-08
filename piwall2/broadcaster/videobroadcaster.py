@@ -295,16 +295,7 @@ class VideoBroadcaster:
 
             return f"-i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd})"
         elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
-            # Why the process substitution and sleep? Ffmpeg seemed to occasionally stumble playing the video
-            # without the sleep. This would result in:
-            # 1) The first couple seconds of the video getting skipped
-            # 2) Slightly out of sync video across the TVs
-            #
-            # (1) would happen every time, whereas (2) happened 3 out of 8 times during testing.
-            # Perhaps the sleep gives ffmpeg time to start up before starting to play the video.
-            # When using youtube-dl, it takes some time for the download of the video to start, giving
-            # ffmpeg an opportunity to start-up without us having to explicitly sleep.
-            return f"-i <( sleep 2 ; cat {shlex.quote(self.__video_url)} )"
+            return f"-i {shlex.quote(self.__video_url)} "
 
     # Lazily populate video_info from youtube. This takes a couple seconds, as it invokes youtube-dl on the video.
     # Must return a dict containing the keys: width, height
