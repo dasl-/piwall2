@@ -133,7 +133,7 @@ class Receiver:
         self.__is_video_playback_in_progress = True
         try:
             self.__logger.info(f"interlude_pgid: {interlude_pgid}")
-            os.killpg(interlude_pgid, signal.SIGTERM)
+            # os.killpg(interlude_pgid, signal.SIGTERM)
         except Exception:
             # might raise: `ProcessLookupError: [Errno 3] No such process`
             pass
