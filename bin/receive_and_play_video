@@ -17,7 +17,7 @@ def parseArgs():
         help='command to run')
     parser.add_argument('--log-uuid', dest='log_uuid', action='store',
         help='Logger UUID')
-    parser.add_argument('--interlude-pgid', dest='interlude_pgid', action='store', type=str,
+    parser.add_argument('--interlude-pgid', dest='interlude_pgid', action='store', type=int,
         help='interlude pgid')
 
     args = parser.parse_args()
