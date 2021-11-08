@@ -19,6 +19,14 @@ class VideoReceiver:
         multicast_helper = MulticastHelper().setup_receiver_video_socket()
         socket = multicast_helper.get_receive_video_socket()
 
+        self.__logger.info("Killing interlude proc (if it's still running)...")
+        try:
+            # pass
+            os.killpg(interlude_pgid, signal.SIGTERM)
+        except Exception:
+            # might raise: `ProcessLookupError: [Errno 3] No such process`
+            pass
+
         # Use start_new_session = False here so that every process here will get killed when
         # the parent receive_and_play_video session is killed
         proc = subprocess.Popen(
@@ -36,13 +44,6 @@ class VideoReceiver:
                 # Subsequent bytes after the first packet should be received more quickly
                 socket.settimeout(10)
                 self.__logger.info("Received first bytes of video...")
-                self.__logger.info("Killing interlude proc (if it's still running)...")
-                try:
-                    pass
-                    # os.killpg(interlude_pgid, signal.SIGTERM)
-                except Exception:
-                    # might raise: `ProcessLookupError: [Errno 3] No such process`
-                    pass
 
             len_video_bytes = len(video_bytes)
             measurement_window_bytes_count += len_video_bytes
