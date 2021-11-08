@@ -2,6 +2,7 @@ import os
 import signal
 import subprocess
 import time
+import traceback
 
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
@@ -25,7 +26,7 @@ class VideoReceiver:
             os.killpg(interlude_pgid, signal.SIGTERM)
         except Exception:
             # might raise: `ProcessLookupError: [Errno 3] No such process`
-            pass
+            self.__logger.error('Exception: {}'.format(traceback.format_exc()))
 
         # Use start_new_session = False here so that every process here will get killed when
         # the parent receive_and_play_video session is killed
