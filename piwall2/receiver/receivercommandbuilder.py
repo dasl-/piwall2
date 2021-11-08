@@ -82,6 +82,7 @@ class ReceiverCommandBuilder:
 
         interlude_pgid_stanza = ''
         if interlude_pgid:
+            self.__logger.info(f"pgid: {interlude_pgid}")
             interlude_pgid_stanza = f' --interlude-pgid {shlex.quote(interlude_pgid)} '
         if is_interlude:
             receiver_cmd = f'cat ~/glitch.ts | {omx_cmd}'
