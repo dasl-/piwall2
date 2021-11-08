@@ -76,7 +76,7 @@ class MulticastHelper:
             bytes_sent += self.__send_socket.sendto(msg_part, address_tuple)
         if bytes_sent == 0:
             self.__logger.warn(f"Unable to send message. Address: {address_tuple}. Message: {msg}")
-        elif bytes_sent < len(msg):
+        elif bytes_sent != len(msg):
             # Not sure if this can ever happen... This post suggests you cannot have partial sends in UDP:
             # https://www.gamedev.net/forums/topic/504256-partial-sendto/4289205/
             self.__logger.warn(f"Partial send of message. Sent {bytes_sent} of {len(msg)} bytes. " +
