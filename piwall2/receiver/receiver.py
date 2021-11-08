@@ -89,7 +89,7 @@ class Receiver:
             self.__stop_video_playback_if_playing()
             self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg, self.__interlude_pgid)
             self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc.pid)
-        elif msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO_INTERLUDE:
+        elif msg_type == ControlMessageHelper.TYPE_PLAY_INTERLUDE:
             self.__stop_video_playback_if_playing()
             self.__interlude_proc = self.__play_video_interlude(ctrl_msg)
             self.__interlude_pgid = os.getpgid(self.__interlude_proc.pid)
