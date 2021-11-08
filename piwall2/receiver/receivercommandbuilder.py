@@ -87,7 +87,7 @@ class ReceiverCommandBuilder:
             receiver_cmd = f'cat /home/pi/glitch.ts | {omx_cmd}'
         else:
             receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
-                f'--log-uuid {shlex.quote(log_uuid)} --interlude-pgid {interlude_pgid_stanza}')
+                f'--log-uuid {shlex.quote(log_uuid)} {interlude_pgid_stanza}')
         return (receiver_cmd, crop_args, crop_args2)
 
     def __get_video_command_adev_args(self):
