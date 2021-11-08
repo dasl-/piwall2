@@ -87,8 +87,12 @@ class Receiver:
         msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
         if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
             self.__stop_video_playback_if_playing()
-            self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
+            self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg, self.__interlude_pgid)
             self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc.pid)
+        elif msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO_INTERLUDE:
+            self.__stop_video_playback_if_playing()
+            self.__interlude_proc = self.__play_video_interlude(ctrl_msg)
+            self.__interlude_pgid = os.getpgid(self.__interlude_proc.pid)
         elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
             if self.__is_video_playback_in_progress:
                 self.__stop_video_playback_if_playing()
@@ -114,7 +118,7 @@ class Receiver:
             if self.__is_video_playback_in_progress and old_display_mode2 != self.__display_mode2:
                 pass # TODO
 
-    def __receive_and_play_video(self, ctrl_msg):
+    def __receive_and_play_video(self, ctrl_msg, interlude_pgid):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
         self.__orig_log_uuid = Logger.get_uuid()
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
@@ -122,10 +126,28 @@ class Receiver:
             self.__receiver_command_builder.build_receive_and_play_video_command_and_get_crop_args(
                 ctrl_msg_content['log_uuid'], ctrl_msg_content['video_width'],
                 ctrl_msg_content['video_height'], self.__video_player_volume_pct,
-                self.__display_mode, self.__display_mode2
+                self.__display_mode, self.__display_mode2, interlude_pgid
             )
         )
         self.__logger.info(f"Running receive_and_play_video command: {cmd}")
+        self.__is_video_playback_in_progress = True
+        proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
+        )
+        return proc
+
+    def __play_video_interlude(self, ctrl_msg):
+        ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
+        self.__orig_log_uuid = Logger.get_uuid()
+        Logger.set_uuid(ctrl_msg_content['log_uuid'])
+        cmd, self.__crop_args, self.__crop_args2 = (
+            self.__receiver_command_builder.build_receive_and_play_video_command_and_get_crop_args(
+                ctrl_msg_content['log_uuid'], 1920,
+                1080, self.__video_player_volume_pct,
+                self.__display_mode, self.__display_mode2, interlude_pgid = None, is_interlude = True
+            )
+        )
+        self.__logger.info(f"Running play_video_interlude command: {cmd}")
         self.__is_video_playback_in_progress = True
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True

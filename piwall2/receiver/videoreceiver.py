@@ -1,3 +1,5 @@
+import os
+import signal
 import subprocess
 import time
 
@@ -13,7 +15,7 @@ class VideoReceiver:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    def receive_and_play_video(self, cmd):
+    def receive_and_play_video(self, cmd, interlude_pgid):
         multicast_helper = MulticastHelper().setup_receiver_video_socket()
         socket = multicast_helper.get_receive_video_socket()
 
@@ -34,6 +36,12 @@ class VideoReceiver:
                 # Subsequent bytes after the first packet should be received more quickly
                 socket.settimeout(10)
                 self.__logger.info("Received first bytes of video...")
+                self.__logger.info("Killing receive_and_play_video proc (if it's still running)...")
+                try:
+                    os.killpg(interlude_pgid, signal.SIGTERM)
+                except Exception:
+                    # might raise: `ProcessLookupError: [Errno 3] No such process`
+                    pass
 
             len_video_bytes = len(video_bytes)
             measurement_window_bytes_count += len_video_bytes

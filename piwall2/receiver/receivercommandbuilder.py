@@ -16,7 +16,7 @@ class ReceiverCommandBuilder:
         self.__receiver_config_stanza = receiver_config_stanza
 
     def build_receive_and_play_video_command_and_get_crop_args(
-        self, log_uuid, video_width, video_height, volume_pct, display_mode, display_mode2
+        self, log_uuid, video_width, video_height, volume_pct, display_mode, display_mode2, interlude_pgid = None, is_interlude = False
     ):
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
@@ -80,8 +80,14 @@ class ReceiverCommandBuilder:
         else:
             cmd += f'{mbuffer_cmd} | {omx_cmd}'
 
-        receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
-            f'--log-uuid {shlex.quote(log_uuid)}')
+        interlude_pgid_stanza = ''
+        if interlude_pgid:
+            interlude_pgid_stanza = f' --interlude-pgid {shlex.quote(interlude_pgid)} '
+        if is_interlude:
+            receiver_cmd = f'cat ~/glitch.ts | {omx_cmd}'
+        else:
+            receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
+                f'--log-uuid {shlex.quote(log_uuid)} --interlude-pgid {interlude_pgid_stanza}')
         return (receiver_cmd, crop_args, crop_args2)
 
     def __get_video_command_adev_args(self):
