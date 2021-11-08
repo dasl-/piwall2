@@ -101,29 +101,38 @@ class VideoBroadcaster:
         This requires that we break up the original single pipeline into two halves. Originally, a single
         pipeline was responsible for downloading, converting, and broadcasting the video. Now we have two
         pipelines that we start separately:
-        1) download_and_convert_video_proc, which downloads and converts the video and
+        1) download_and_convert_video_proc, which downloads and converts the video
         2) video_broadcast_proc, which broadcasts the converted video
 
         We connect the stdout of (1) to the stdin of (2).
+
+        In order to run all the ytdl invocations in parallel, we had to break up the original single pipeline,
+        because broadcasting the video requires having started the receivers first. And starting the receivers
+        requires knowing how much to crop, which requires knowing the video dimensions. Thus, we need to know
+        the video dimensions before broadcasting the video. Without breaking up the pipeline, we wouldn't
+        be able to enforce that we don't start broadcasting the video before knowing the dimensions.
         """
         download_and_convert_video_proc = self.__start_download_and_convert_video_proc()
         self.__get_video_info(assert_data_not_yet_loaded = True)
         self.__start_receivers()
 
         """
-        I have ~70% confidence that this makes the videos more likely to start in-sync across all the TVs.
-        I'm not exactly sure why this helps. Perhaps this gives ffmpeg / youtube-dl in the
-        download_and_convert_video_proc time to finish initializing before connecting them to
-        video_broadcast_cmd? Still not exactly sure why that would help. Perhaps adding more TVs to my wall
-        will make testing this easier as it gives more opportunity for a single TV to start out of sync.
+        This `sleep` makes the videos more likely to start in-sync across all the TVs, but I'm not totally
+        sure why. My current theory is that this give the receivers enough time to start before the broadcast
+        command starts sending its data.
+
         Another potential solution is making use of delay_buffer in video_broadcast_cmd, although I have
         abandoned that approach for now: https://gist.github.com/dasl-/9ed9d160384a8dd77382ce6a07c43eb6
+
+        Another thing I tried was only sending the data once a few megabytes have been read, in case it was a
+        problem with the first few megabytes of the video being downloaded slowly, but this approach resulted in
+        occasional very brief video artifacts (green screen, etc) within the first 30 seconds or so of playback:
+        https://gist.github.com/dasl-/f3fcc941e276d116320d6fa9e4de25de
 
         See data collected on the effectiveness of this sleep:
         https://gist.github.com/dasl-/e5c05bf89c7a92d43881a2ff978dc889
         """
         time.sleep(2)
-
         video_broadcast_proc = self.__start_video_broadcast_proc(download_and_convert_video_proc)
 
         self.__logger.info("Waiting for download_and_convert_video and video_broadcast procs to end...")
