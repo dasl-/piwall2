@@ -129,7 +129,7 @@ class Receiver:
         self.__crop_args, self.__crop_args2 = self.__receiver_command_builder.get_crop_dimensions(
             ctrl_msg_content['video_width'], ctrl_msg_content['video_height']
         )
-        self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
+        # self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
 
     def __stop_video_playback_if_playing(self):
         if not self.__is_video_playback_in_progress:
