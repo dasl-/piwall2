@@ -19,11 +19,6 @@ class Receiver:
 
     VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES = 1024 * 1024 * 400 # 400 MB
 
-    __DEFAULT_CROP_ARGS = {
-        DisplayMode.DISPLAY_MODE_TILE: None,
-        DisplayMode.DISPLAY_MODE_REPEAT: None,
-    }
-
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Started receiver!")
@@ -34,10 +29,8 @@ class Receiver:
         self.__display_mode = DisplayMode.DISPLAY_MODE_TILE
         self.__display_mode2 = DisplayMode.DISPLAY_MODE_TILE
 
-        # Crop arguments to send to omxplayer for the currently playing video if the display mode changes.
-        # These change per video, thus we just initialize them to dummy values in the constructor.
-        self.__crop_args = self.__DEFAULT_CROP_ARGS
-        self.__crop_args2 = self.__DEFAULT_CROP_ARGS
+        self.__crop_args = None
+        self.__crop_args2 = None
 
         config_loader = ConfigLoader()
         self.__receiver_config_stanza = config_loader.get_own_receiver_config_stanza()
@@ -102,17 +95,17 @@ class Receiver:
             old_display_mode2 = self.__display_mode2
             for tv_num, tv_id in self.__tv_ids.items():
                 if tv_id in display_mode_by_tv_id:
+                    display_mode_to_set = display_mode_by_tv_id[tv_id]
+                    if display_mode_to_set not in DisplayMode.DISPLAY_MODES:
+                        display_mode_to_set = DisplayMode.DISPLAY_MODE_TILE
                     if tv_num == 1:
-                        self.__display_mode = display_mode_by_tv_id[tv_id]
+                        self.__display_mode = display_mode_to_set
                     else:
-                        self.__display_mode2 = display_mode_by_tv_id[tv_id]
-            if self.__is_video_playback_in_progress and old_display_mode != self.__display_mode:
-                if self.__display_mode == DisplayMode.DISPLAY_MODE_REPEAT:
-                    self.__omxplayer_controller.set_crop(self.__crop_args[DisplayMode.DISPLAY_MODE_REPEAT])
-                else:
-                    self.__omxplayer_controller.set_crop(self.__crop_args[DisplayMode.DISPLAY_MODE_TILE])
-            if self.__is_video_playback_in_progress and old_display_mode2 != self.__display_mode2:
-                pass # TODO
+                        self.__display_mode2 = display_mode_to_set
+            if self.__is_video_playback_in_progress and self.__crop_args and old_display_mode != self.__display_mode:
+                self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
+            if self.__is_video_playback_in_progress and self.__crop_args2 and old_display_mode2 != self.__display_mode2:
+                pass # TODO display_mode2 with a second dbus interface name
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
@@ -144,6 +137,8 @@ class Receiver:
                 pass
         Logger.set_uuid(self.__orig_log_uuid)
         self.__is_video_playback_in_progress = False
+        self.__crop_args = None
+        self.__crop_args2 = None
 
     # The first video that is played after a system restart appears to have a lag in starting,
     # which can affect video synchronization across the receivers. Ensure we have played at

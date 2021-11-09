@@ -24,9 +24,8 @@ class ReceiverCommandBuilder:
         crop = crop_args[display_mode]
         crop2 = crop_args2[display_mode2]
 
-        volume_pct = VolumeController.normalize_vol_pct(volume_pct)
-
         # See: https://github.com/popcornmix/omxplayer/#volume-rw
+        volume_pct = VolumeController.normalize_vol_pct(volume_pct)
         if volume_pct == 0:
             volume_millibels = VolumeController.GLOBAL_MIN_VOL_VAL
         else:
