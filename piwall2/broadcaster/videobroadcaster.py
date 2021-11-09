@@ -179,18 +179,16 @@ class VideoBroadcaster:
     download is necessary.
     """
     def __start_download_and_convert_video_proc(self):
-        # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
-        ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
-
-        audio_clause = '-c:a mp2 -b:a 192k' # TODO: is this necessary? Can we use mp3?
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            # Don't transcode audio if we don't need to
-            audio_clause = '-c:a copy'
-
-        # Mix the best audio with the video and send via multicast
-        # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        cmd = (f"set -o pipefail && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
-            f"-c:v copy {audio_clause} -f mpegts -")
+            cmd = f"cat {shlex.quote(self.__video_url)}"
+        else:
+            # Mix the best audio with the video and send via multicast
+            # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
+            # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
+            ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
+            # TODO: can we use mp3 instead of mp2?
+            cmd = (f"set -o pipefail && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
+                "-c:v copy -c:a mp2 -b:a 192k -f mpegts -")
         self.__logger.info(f"Running download_and_convert_video_proc command: {cmd}")
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
@@ -231,7 +229,6 @@ class VideoBroadcaster:
             'log_uuid': Logger.get_uuid(),
             'video_width': self.__get_video_info()['width'],
             'video_height': self.__get_video_info()['height'],
-            'video_url_type': self.__get_video_url_type(),
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
         self.__logger.info("Sent play_video control message.")
