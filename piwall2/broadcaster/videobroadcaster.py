@@ -29,7 +29,7 @@ class VideoBroadcaster:
     __VIDEO_PLAYBACK_DONE_FILE = '/tmp/video_playback_done.file'
 
     # video_url may be a youtube url or a path to a file on disk
-    def __init__(self, video_url, log_uuid):
+    def __init__(self, video_url, log_uuid, show_loading_screen):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         if log_uuid:
             Logger.set_uuid(log_uuid)
@@ -38,6 +38,7 @@ class VideoBroadcaster:
 
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
+        self.__show_loading_screen = show_loading_screen
 
         # Store the PGIDs separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
@@ -82,7 +83,8 @@ class VideoBroadcaster:
 
     def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, {})
+        if self.__show_loading_screen:
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, {})
 
         """
         What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:

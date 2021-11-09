@@ -10,14 +10,20 @@ sys.path.append(root_dir)
 from piwall2.broadcaster.videobroadcaster import VideoBroadcaster
 
 def parseArgs():
-    parser = argparse.ArgumentParser(description='piwall2 video broadcaster')
+    parser = argparse.ArgumentParser(description='piwall2 video broadcaster',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
         help='youtube video url or file path. default: The Smashing Pumpkins - Today.')
     parser.add_argument('--log-uuid', dest='log_uuid', action='store', help='Logger UUID')
+    parser.add_argument('--show-loading-screen', dest='show_loading_screen', action='store_true',
+        help='show loading screen before video playback begins')
+    parser.add_argument('--no-show-loading-screen', dest='show_loading_screen', action='store_false',
+        help="don't show loading screen before video playback begins")
+    parser.set_defaults(show_loading_screen=True)
 
     args = parser.parse_args()
     return args
 
 
 args = parseArgs()
-VideoBroadcaster(args.url, args.log_uuid).broadcast()
+VideoBroadcaster(args.url, args.log_uuid, args.show_loading_screen).broadcast()
