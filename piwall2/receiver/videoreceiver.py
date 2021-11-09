@@ -1,8 +1,5 @@
-import os
-import signal
 import subprocess
 import time
-import traceback
 
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
@@ -16,7 +13,7 @@ class VideoReceiver:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    def receive_and_play_video(self, cmd, interlude_pgid):
+    def receive_and_play_video(self, cmd):
         multicast_helper = MulticastHelper().setup_receiver_video_socket()
         socket = multicast_helper.get_receive_video_socket()
 
@@ -37,13 +34,6 @@ class VideoReceiver:
                 # Subsequent bytes after the first packet should be received more quickly
                 socket.settimeout(10)
                 self.__logger.info("Received first bytes of video...")
-                self.__logger.info("Killing interlude proc (if it's still running)...")
-                try:
-                    self.__logger.info(f"interlude_pgid: {interlude_pgid}")
-                    os.killpg(interlude_pgid, signal.SIGTERM)
-                except Exception:
-                    # might raise: `ProcessLookupError: [Errno 3] No such process`
-                    self.__logger.error('Exception: {}'.format(traceback.format_exc()))
 
             len_video_bytes = len(video_bytes)
             measurement_window_bytes_count += len_video_bytes

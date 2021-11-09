@@ -15,18 +15,12 @@ class ReceiverCommandBuilder:
         self.__config_loader = config_loader
         self.__receiver_config_stanza = receiver_config_stanza
 
-    def build_receive_and_play_video_command_and_get_crop_args(
-        self, log_uuid, video_width, video_height, volume_pct, display_mode, display_mode2, interlude_pgid = None, is_interlude = False
-    ):
+    def build_receive_and_play_video_command(self, log_uuid, volume_pct):
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
-        crop_args, crop_args2 = self.__get_video_command_crop_args(video_width, video_height)
-        crop = crop_args[display_mode]
-        crop2 = crop_args2[display_mode2]
-
-        volume_pct = VolumeController.normalize_vol_pct(volume_pct)
 
         # See: https://github.com/popcornmix/omxplayer/#volume-rw
+        volume_pct = VolumeController.normalize_vol_pct(volume_pct)
         if volume_pct == 0:
             volume_millibels = VolumeController.GLOBAL_MIN_VOL_VAL
         else:
@@ -65,74 +59,24 @@ class ReceiverCommandBuilder:
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --aspect-mode stretch ' +
-            '--no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0')
+        omx_cmd_template = ('omxplayer --adev {0} --display {1} --vol {2} --aspect-mode stretch ' +
+            '--no-keys --timeout 30 --threshold 0.2 --video_fifo 10 --genlog pipe:0')
 
         omx_cmd = omx_cmd_template.format(
-            shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels))
+            shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels))
         )
         cmd = 'set -o pipefail && '
         if self.__receiver_config_stanza['is_dual_video_output']:
             omx_cmd2 = omx_cmd_template.format(
-                shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels))
+                shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels))
             )
             cmd += f'{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null'
         else:
             cmd += f'{mbuffer_cmd} | {omx_cmd}'
 
-        interlude_pgid_stanza = ''
-        if interlude_pgid:
-            interlude_pgid_stanza = f' --interlude-pgid {shlex.quote(str(interlude_pgid))} '
-        if is_interlude:
-            receiver_cmd = f'cat /home/pi/glitch.ts | {omx_cmd}'
-        else:
-            receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
-                f'--log-uuid {shlex.quote(log_uuid)} {interlude_pgid_stanza}')
-        return (receiver_cmd, crop_args, crop_args2)
-
-    def __get_video_command_adev_args(self):
-        receiver_config = self.__receiver_config_stanza
-        adev = None
-        if receiver_config['audio'] == 'hdmi' or receiver_config['audio'] == 'hdmi0':
-            adev = 'hdmi'
-        elif receiver_config['audio'] == 'headphone':
-            adev = 'local'
-        elif receiver_config['audio'] == 'hdmi_alsa' or receiver_config['audio'] == 'hdmi0_alsa':
-            adev = 'alsa:default:CARD=b1'
-        else:
-            raise Exception(f"Unexpected audio config value: {receiver_config['audio']}")
-
-        adev2 = None
-        if receiver_config['is_dual_video_output']:
-            if receiver_config['audio2'] == 'hdmi1':
-                adev2 = 'hdmi1'
-            elif receiver_config['audio2'] == 'headphone':
-                adev2 = 'local'
-            elif receiver_config['audio'] == 'hdmi1_alsa':
-                adev2 = 'alsa:default:CARD=b2'
-            else:
-                raise Exception(f"Unexpected audio2 config value: {receiver_config['audio2']}")
-
-        return (adev, adev2)
-
-    def __get_video_command_display_args(self):
-        receiver_config = self.__receiver_config_stanza
-        display = None
-        if receiver_config['video'] == 'hdmi' or receiver_config['video'] == 'hdmi0':
-            display = '2'
-        elif receiver_config['video'] == 'composite':
-            display = '3'
-        else:
-            raise Exception(f"Unexpected video config value: {receiver_config['video']}")
-
-        display2 = None
-        if receiver_config['is_dual_video_output']:
-            if receiver_config['video2'] == 'hdmi1':
-                display2 = '7'
-            else:
-                raise Exception(f"Unexpected video2 config value: {receiver_config['video2']}")
-
-        return (display, display2)
+        receiver_cmd = (f'{DirectoryUtils().root_dir}/bin/receive_and_play_video --command {shlex.quote(cmd)} ' +
+            f'--log-uuid {shlex.quote(log_uuid)}')
+        return receiver_cmd
 
     """
     Returns a set of crop args supporting two display modes: tile mode and repeat mode.
@@ -142,7 +86,7 @@ class ReceiverCommandBuilder:
     We return four crop settings because for each mode, we calculate the crop arguments
     for each of two TVs (each receiver can have at most two TVs hooked up to it).
     """
-    def __get_video_command_crop_args(self, video_width, video_height):
+    def get_crop_dimensions(self, video_width, video_height):
         receiver_config = self.__receiver_config_stanza
 
         #####################################################################################
@@ -235,6 +179,50 @@ class ReceiverCommandBuilder:
             DisplayMode.DISPLAY_MODE_REPEAT: repeat_mode_crop2,
         }
         return (crop_args, crop_args2)
+
+    def __get_video_command_adev_args(self):
+        receiver_config = self.__receiver_config_stanza
+        adev = None
+        if receiver_config['audio'] == 'hdmi' or receiver_config['audio'] == 'hdmi0':
+            adev = 'hdmi'
+        elif receiver_config['audio'] == 'headphone':
+            adev = 'local'
+        elif receiver_config['audio'] == 'hdmi_alsa' or receiver_config['audio'] == 'hdmi0_alsa':
+            adev = 'alsa:default:CARD=b1'
+        else:
+            raise Exception(f"Unexpected audio config value: {receiver_config['audio']}")
+
+        adev2 = None
+        if receiver_config['is_dual_video_output']:
+            if receiver_config['audio2'] == 'hdmi1':
+                adev2 = 'hdmi1'
+            elif receiver_config['audio2'] == 'headphone':
+                adev2 = 'local'
+            elif receiver_config['audio'] == 'hdmi1_alsa':
+                adev2 = 'alsa:default:CARD=b2'
+            else:
+                raise Exception(f"Unexpected audio2 config value: {receiver_config['audio2']}")
+
+        return (adev, adev2)
+
+    def __get_video_command_display_args(self):
+        receiver_config = self.__receiver_config_stanza
+        display = None
+        if receiver_config['video'] == 'hdmi' or receiver_config['video'] == 'hdmi0':
+            display = '2'
+        elif receiver_config['video'] == 'composite':
+            display = '3'
+        else:
+            raise Exception(f"Unexpected video config value: {receiver_config['video']}")
+
+        display2 = None
+        if receiver_config['is_dual_video_output']:
+            if receiver_config['video2'] == 'hdmi1':
+                display2 = '7'
+            else:
+                raise Exception(f"Unexpected video2 config value: {receiver_config['video2']}")
+
+        return (display, display2)
 
     """
     The displayable width and height represents the section of the video that the wall will be

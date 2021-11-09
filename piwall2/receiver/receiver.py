@@ -19,11 +19,6 @@ class Receiver:
 
     VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES = 1024 * 1024 * 400 # 400 MB
 
-    __DEFAULT_CROP_ARGS = {
-        DisplayMode.DISPLAY_MODE_TILE: None,
-        DisplayMode.DISPLAY_MODE_REPEAT: None,
-    }
-
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Started receiver!")
@@ -34,10 +29,8 @@ class Receiver:
         self.__display_mode = DisplayMode.DISPLAY_MODE_TILE
         self.__display_mode2 = DisplayMode.DISPLAY_MODE_TILE
 
-        # Crop arguments to send to omxplayer for the currently playing video if the display mode changes.
-        # These change per video, thus we just initialize them to dummy values in the constructor.
-        self.__crop_args = self.__DEFAULT_CROP_ARGS
-        self.__crop_args2 = self.__DEFAULT_CROP_ARGS
+        self.__crop_args = None
+        self.__crop_args2 = None
 
         config_loader = ConfigLoader()
         self.__receiver_config_stanza = config_loader.get_own_receiver_config_stanza()
@@ -87,12 +80,11 @@ class Receiver:
         msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
         if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
             self.__stop_video_playback_if_playing()
-            self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg, self.__interlude_pgid)
+            self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
             self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc.pid)
-        elif msg_type == ControlMessageHelper.TYPE_PLAY_INTERLUDE:
-            self.__stop_video_playback_if_playing()
-            self.__interlude_proc = self.__play_video_interlude(ctrl_msg)
-            self.__interlude_pgid = os.getpgid(self.__interlude_proc.pid)
+        elif msg_type == ControlMessageHelper.TYPE_VIDEO_DIMENSIONS:
+            if self.__is_video_playback_in_progress:
+                self.__set_video_crop_args(ctrl_msg)
         elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
             if self.__is_video_playback_in_progress:
                 self.__stop_video_playback_if_playing()
@@ -105,60 +97,38 @@ class Receiver:
             old_display_mode = self.__display_mode
             old_display_mode2 = self.__display_mode2
             for tv_num, tv_id in self.__tv_ids.items():
+                display_mode_to_set = display_mode_by_tv_id[tv_id]
+                if display_mode_to_set not in DisplayMode.DISPLAY_MODES:
+                    display_mode_to_set = DisplayMode.DISPLAY_MODE_TILE
                 if tv_id in display_mode_by_tv_id:
                     if tv_num == 1:
-                        self.__display_mode = display_mode_by_tv_id[tv_id]
+                        self.__display_mode = display_mode_to_set
                     else:
-                        self.__display_mode2 = display_mode_by_tv_id[tv_id]
-            if self.__is_video_playback_in_progress and old_display_mode != self.__display_mode:
-                if self.__display_mode == DisplayMode.DISPLAY_MODE_REPEAT:
-                    self.__omxplayer_controller.set_crop(self.__crop_args[DisplayMode.DISPLAY_MODE_REPEAT])
-                else:
-                    self.__omxplayer_controller.set_crop(self.__crop_args[DisplayMode.DISPLAY_MODE_TILE])
-            if self.__is_video_playback_in_progress and old_display_mode2 != self.__display_mode2:
-                pass # TODO
+                        self.__display_mode2 = display_mode_to_set
+            if self.__is_video_playback_in_progress and self.__crop_args and old_display_mode != self.__display_mode:
+                self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
+            if self.__is_video_playback_in_progress and self.__crop_args2 and old_display_mode2 != self.__display_mode2:
+                pass # TODO display_mode2 with a second dbus interface name
 
-    def __receive_and_play_video(self, ctrl_msg, interlude_pgid):
+    def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
         self.__orig_log_uuid = Logger.get_uuid()
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
-        cmd, self.__crop_args, self.__crop_args2 = (
-            self.__receiver_command_builder.build_receive_and_play_video_command_and_get_crop_args(
-                ctrl_msg_content['log_uuid'], ctrl_msg_content['video_width'],
-                ctrl_msg_content['video_height'], self.__video_player_volume_pct,
-                self.__display_mode, self.__display_mode2, interlude_pgid
-            )
+        cmd = self.__receiver_command_builder.build_receive_and_play_video_command(
+            ctrl_msg_content['log_uuid'], self.__video_player_volume_pct
         )
         self.__logger.info(f"Running receive_and_play_video command: {cmd}")
         self.__is_video_playback_in_progress = True
-        try:
-            self.__logger.info(f"interlude_pgid: {interlude_pgid}")
-            # os.killpg(interlude_pgid, signal.SIGTERM)
-        except Exception:
-            # might raise: `ProcessLookupError: [Errno 3] No such process`
-            pass
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
         return proc
 
-    def __play_video_interlude(self, ctrl_msg):
-        ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-        self.__orig_log_uuid = Logger.get_uuid()
-        Logger.set_uuid(ctrl_msg_content['log_uuid'])
-        cmd, self.__crop_args, self.__crop_args2 = (
-            self.__receiver_command_builder.build_receive_and_play_video_command_and_get_crop_args(
-                ctrl_msg_content['log_uuid'], 1920,
-                1080, self.__video_player_volume_pct,
-                self.__display_mode, self.__display_mode2, interlude_pgid = None, is_interlude = True
-            )
+    def __set_video_crop_args(self, ctrl_msg):
+        self.__crop_args, self.__crop_args2 = self.__receiver_command_builder.get_crop_dimensions(
+            ctrl_msg['video_width'], ctrl_msg['video_height']
         )
-        self.__logger.info(f"Running play_video_interlude command: {cmd}")
-        self.__is_video_playback_in_progress = True
-        proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
-        )
-        return proc
+        self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
 
     def __stop_video_playback_if_playing(self):
         if not self.__is_video_playback_in_progress:
@@ -172,6 +142,8 @@ class Receiver:
                 pass
         Logger.set_uuid(self.__orig_log_uuid)
         self.__is_video_playback_in_progress = False
+        self.__crop_args = None
+        self.__crop_args2 = None
 
     # The first video that is played after a system restart appears to have a lag in starting,
     # which can affect video synchronization across the receivers. Ensure we have played at

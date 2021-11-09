@@ -16,7 +16,7 @@ class ControlMessageHelper:
     TYPE_PLAY_VIDEO = 'play_video'
     TYPE_SKIP_VIDEO = 'skip_video'
     TYPE_DISPLAY_MODE = 'display_mode'
-    TYPE_PLAY_INTERLUDE = 'play_interlude'
+    TYPE_VIDEO_DIMENSIONS = 'video_dimensions'
 
     CTRL_MSG_TYPE_KEY = 'msg_type'
     CONTENT_KEY = 'content'

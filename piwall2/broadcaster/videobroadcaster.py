@@ -20,8 +20,8 @@ class VideoBroadcaster:
 
     END_OF_VIDEO_MAGIC_BYTES = b'PIWALL2_END_OF_VIDEO_MAGIC_BYTES'
 
-    __VIDEO_URL_TYPE_YOUTUBEDL = 'video_url_type_youtubedl'
-    __VIDEO_URL_TYPE_FILE = 'video_url_type_file'
+    __VIDEO_URL_TYPE_YOUTUBE = 'video_url_type_youtube'
+    __VIDEO_URL_TYPE_LOCAL_FILE = 'video_url_type_local_file'
     __AUDIO_FORMAT = 'bestaudio'
 
     # Touch this file when video playing is done.
@@ -82,12 +82,7 @@ class VideoBroadcaster:
 
     def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
-        msg = {
-            'log_uuid': Logger.get_uuid(),
-        }
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_INTERLUDE, msg)
-        self.__logger.info("Sent play_interlude control message.")
-
+        self.__start_receivers()
 
         """
         What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:
@@ -121,7 +116,6 @@ class VideoBroadcaster:
         """
         download_and_convert_video_proc = self.__start_download_and_convert_video_proc()
         self.__get_video_info(assert_data_not_yet_loaded = True)
-        self.__start_receivers()
 
         """
         This `sleep` makes the videos more likely to start in-sync across all the TVs, but I'm not totally
@@ -139,7 +133,7 @@ class VideoBroadcaster:
         See data collected on the effectiveness of this sleep:
         https://gist.github.com/dasl-/e5c05bf89c7a92d43881a2ff978dc889
         """
-        time.sleep(2)
+        # time.sleep(2)
         video_broadcast_proc = self.__start_video_broadcast_proc(download_and_convert_video_proc)
 
         self.__logger.info("Waiting for download_and_convert_video and video_broadcast procs to end...")
@@ -183,7 +177,7 @@ class VideoBroadcaster:
         ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
 
         audio_clause = '-c:a mp2 -b:a 192k' # TODO: is this necessary? Can we use mp3?
-        if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_FILE:
+        if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
             # Don't transcode audio if we don't need to
             audio_clause = '-c:a copy'
 
@@ -202,6 +196,13 @@ class VideoBroadcaster:
         return download_and_convert_video_proc
 
     def __start_video_broadcast_proc(self, download_and_convert_video_proc):
+        msg = {
+            'video_width': self.__get_video_info()['width'],
+            'video_height': self.__get_video_info()['height'],
+        }
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VIDEO_DIMENSIONS, msg)
+        self.__logger.info("Sent video_dimensions control message.")
+
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
         mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
         burst_throttling_clause = (f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
@@ -229,8 +230,7 @@ class VideoBroadcaster:
     def __start_receivers(self):
         msg = {
             'log_uuid': Logger.get_uuid(),
-            'video_width': self.__get_video_info()['width'],
-            'video_height': self.__get_video_info()['height'],
+            'video_url_type': self.__get_video_url_type()
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
         self.__logger.info("Sent play_video control message.")
@@ -249,7 +249,7 @@ class VideoBroadcaster:
 
     def __get_ffmpeg_input_clause(self):
         video_url_type = self.__get_video_url_type()
-        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBEDL:
+        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBE:
             """
             Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
             and is trying to reconnect:
@@ -301,7 +301,7 @@ class VideoBroadcaster:
             )
 
             return f"-i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd})"
-        elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
+        elif video_url_type == self.__VIDEO_URL_TYPE_LOCAL_FILE:
             return f"-i {shlex.quote(self.__video_url)} "
 
     # Lazily populate video_info from youtube. This takes a couple seconds, as it invokes youtube-dl on the video.
@@ -313,7 +313,7 @@ class VideoBroadcaster:
             return self.__video_info
 
         video_url_type = self.__get_video_url_type()
-        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBEDL:
+        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBE:
             self.__logger.info("Downloading and populating video metadata...")
             ydl_opts = {
                 'format': self.__config_loader.get_youtube_dl_video_format(),
@@ -354,7 +354,7 @@ class VideoBroadcaster:
 
             self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
                 f"{self.__video_info['width']}x{self.__video_info['height']}")
-        elif video_url_type == self.__VIDEO_URL_TYPE_FILE:
+        elif video_url_type == self.__VIDEO_URL_TYPE_LOCAL_FILE:
             # TODO: guard against unsupported video formats
             ffprobe_cmd = ('ffprobe -hide_banner -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height ' +
                 shlex.quote(self.__video_url))
@@ -372,9 +372,9 @@ class VideoBroadcaster:
 
     def __get_video_url_type(self):
         if self.__video_url.startswith('http://') or self.__video_url.startswith('https://'):
-            return self.__VIDEO_URL_TYPE_YOUTUBEDL
+            return self.__VIDEO_URL_TYPE_YOUTUBE
         else:
-            return self.__VIDEO_URL_TYPE_FILE
+            return self.__VIDEO_URL_TYPE_LOCAL_FILE
 
     def __update_youtube_dl(self):
         update_youtube_dl_output = (subprocess

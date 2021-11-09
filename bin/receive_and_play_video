@@ -17,8 +17,6 @@ def parseArgs():
         help='command to run')
     parser.add_argument('--log-uuid', dest='log_uuid', action='store',
         help='Logger UUID')
-    parser.add_argument('--interlude-pgid', dest='interlude_pgid', action='store', type=int,
-        help='interlude pgid')
 
     args = parser.parse_args()
     return args
@@ -29,7 +27,7 @@ if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 
 try:
-    VideoReceiver().receive_and_play_video(args.command, args.interlude_pgid)
+    VideoReceiver().receive_and_play_video(args.command)
 except Exception:
     logger = Logger().set_namespace(os.path.basename(__file__))
     logger.error(f'Caught exception: {traceback.format_exc()}')
