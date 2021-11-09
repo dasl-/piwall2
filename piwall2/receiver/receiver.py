@@ -125,8 +125,9 @@ class Receiver:
         return proc
 
     def __set_video_crop_args(self, ctrl_msg):
+        ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
         self.__crop_args, self.__crop_args2 = self.__receiver_command_builder.get_crop_dimensions(
-            ctrl_msg['video_width'], ctrl_msg['video_height']
+            ctrl_msg_content['video_width'], ctrl_msg_content['video_height']
         )
         self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
 
