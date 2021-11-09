@@ -8,17 +8,11 @@ At time of writing, https://github.com/dasl-/piwall2/blob/5625b8887f528f671b7944
 omxplayer --crop {0} --adev {1} --display {2} --vol {3} --aspect-mode stretch --no-keys --timeout 30 --threshold 0.2 --video_fifo 35 --genlog pipe:0
 ....
 
-Of particular note are the `threshold` and `video_fifo` options:
-....
-    --threshold   n         Amount of buffered data required to finish buffering [s]
-    --video_fifo  n         Size of video output fifo in MB
-....
-
 Here is some https://github.com/popcornmix/omxplayer/issues/256[more info about some of the more interesting omxplayer parameters].
 
 ## omxplayer configuration
 
-### timeout 
+### timeout
 From the man page:
 ....
 --timeout     n         Timeout for stalled file/network operations (default 10s)
@@ -34,10 +28,17 @@ In the omxplayer log, we will see https://gist.github.com/dasl-/0caa95c6c438685b
 Raising the timeout should make these types of errors less likely. See also https://github.com/dasl-/piwall2/blob/main/docs/issues_weve_seen_before.adoc#receivers-sometimes-fail-to-play-video
 
 ### threshold
-Raising the `threshold` was necessary to prevent random occasional video drop outs. See: https://github.com/dasl-/piwall2/blob/main/docs/profiling_and_debugging_multicast_video_playback.adoc . Hopefully setting it to 5 seconds is enough to accomodate playing of all videos without pauses / drop outs.
+....
+    --threshold   n         Amount of buffered data required to finish buffering [s]
+....
+
+Although we set it explicitly to 0.2s, this is the same as the https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L1177[default threshold value].
 
 ### video_fifo
-Increasing the `video_fifo` option was necessary to accomodate the increased threshold. Without increasing the video_fifo, we'd see videos with a threshold of 5 seconds take about 90 seconds to start playing. In other words, they were taking about 85 seconds longer than expected to start playing. What were they doing all this time? Let's look at a https://gist.github.com/dasl-/0e52feccff6caacecf0955011f925aeb[log from such a run]. From the logs, it looks like we started receiving video signal at around 02:46:07, yet it took until 02:47:39 (about 90 seconds) for the video to actually unpause:
+....
+    --video_fifo  n         Size of video output fifo in MB
+....
+If using a `--threshold` value that is much higher than the default, it may be necessary to increase the `video_fifo` size. Without increasing the `video_fifo`, we'd see videos with a `threshold` of 5 seconds take about 90 seconds to start playing. In other words, they were taking about 85 seconds longer than expected to start playing. What were they doing all this time? Let's look at a https://gist.github.com/dasl-/0e52feccff6caacecf0955011f925aeb[log from such a run]. From the logs, it looks like we started receiving video signal at around 02:46:07, yet it took until 02:47:39 (about 90 seconds) for the video to actually unpause:
 ....
 02:47:39 T:2123221681   DEBUG: OMXClock::OMXSetSpeed(1.00) pause_resume:1
 ....
@@ -48,6 +49,8 @@ If we https://gist.github.com/dasl-/1b0070adf0dbcaca22986d2f33afe88e[filter for 
 ....
 
 Increasing the `video_fifo` size appears to solve the problem, indicating that omxplayer likely didn't have enough memory allocated to buffer the requested 5 seconds of video. Presumably it gave up after about 90 seconds and started playing anyway. By increasing the buffer, we only have to wait about 5 seconds for the video to start playing.
+
+The default `video_fifo` size is https://github.com/popcornmix/omxplayer/blob/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/OMXVideo.h#L83[`4.6875`].
 
 ### audio_fifo
 If we ever need to increase the `threshold` more, we may need to raise `video_fifo` again. Note that according to the logs, the audio buffers didn't go very far past 6.33 seconds. If we ever need to raise the `threshold` beyond that, we may need to increase audio buffer sizes also. Using the `audio_fifo` option to omxplayer didn't seem to have any effect, however. Reading the omxplayer source, it actually seemed like the `audio_fifo` option might not get used for anything, i.e. it's a no-op? Worth reconfirming sometime.
