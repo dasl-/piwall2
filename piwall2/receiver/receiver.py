@@ -136,13 +136,7 @@ class Receiver:
     def __stop_video_playback_if_playing(self):
         if not self.__is_video_playback_in_progress:
             return
-        if self.__receive_and_play_video_proc_pgid:
-            self.__logger.info("Killing receive_and_play_video proc (if it's still running)...")
-            try:
-                os.killpg(self.__receive_and_play_video_proc_pgid, signal.SIGTERM)
-            except Exception:
-                # might raise: `ProcessLookupError: [Errno 3] No such process`
-                pass
+
         try:
             subprocess.check_output(
                 "sudo pkill fbi",
@@ -150,6 +144,14 @@ class Receiver:
             )
         except Exception:
             pass
+
+        if self.__receive_and_play_video_proc_pgid:
+            self.__logger.info("Killing receive_and_play_video proc (if it's still running)...")
+            try:
+                os.killpg(self.__receive_and_play_video_proc_pgid, signal.SIGTERM)
+            except Exception:
+                # might raise: `ProcessLookupError: [Errno 3] No such process`
+                pass
 
         Logger.set_uuid(self.__orig_log_uuid)
         self.__is_video_playback_in_progress = False
