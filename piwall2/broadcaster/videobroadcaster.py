@@ -129,6 +129,13 @@ class VideoBroadcaster:
         occasional very brief video artifacts (green screen, etc) within the first 30 seconds or so of playback:
         https://gist.github.com/dasl-/f3fcc941e276d116320d6fa9e4de25de
 
+        And another thing I tried is starting the receivers early without any crop args to the invocation of
+        omxplayer. I would only send the crop args later via dbus. This allowed me to get rid of the sleep
+        below. I wasn't 100%, but it may have made things *slightly* less likely to start in sync. Hard to
+        know. Very rarely, you would see the crop change at the very start of the video if it couldn't complete
+        the dbus message before the video started playing. See the approach here:
+        https://gist.github.com/dasl-/db3ce584ba90802ba390ac0f07611dea
+
         See data collected on the effectiveness of this sleep:
         https://gist.github.com/dasl-/e5c05bf89c7a92d43881a2ff978dc889
         """
