@@ -106,6 +106,8 @@ class Receiver:
                 self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
             if self.__is_video_playback_in_progress and self.__crop_args2 and old_display_mode2 != self.__display_mode2:
                 pass # TODO display_mode2 with a second dbus interface name
+        elif msg_type == ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN:
+            self.__show_loading_screen()
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
@@ -125,6 +127,12 @@ class Receiver:
         )
         return proc
 
+    def __show_loading_screen(self):
+        subprocess.check_output(
+            f"sudo fbi -T 1 -noverbose --autozoom {DirectoryUtils().root_dir}/assets/loading_screen.png",
+            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+        )
+
     def __stop_video_playback_if_playing(self):
         if not self.__is_video_playback_in_progress:
             return
@@ -135,6 +143,14 @@ class Receiver:
             except Exception:
                 # might raise: `ProcessLookupError: [Errno 3] No such process`
                 pass
+        try:
+            subprocess.check_output(
+                "sudo pkill fbi",
+                shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+            )
+        except Exception:
+            pass
+
         Logger.set_uuid(self.__orig_log_uuid)
         self.__is_video_playback_in_progress = False
         self.__crop_args = None

@@ -82,6 +82,8 @@ class VideoBroadcaster:
 
     def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, {})
+
         """
         What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:
         1) To populate video metadata, including dimensions which allow us to know how much to crop the video
