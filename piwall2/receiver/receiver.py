@@ -30,8 +30,10 @@ class Receiver:
         self.__display_mode = DisplayMode.DISPLAY_MODE_TILE
         self.__display_mode2 = DisplayMode.DISPLAY_MODE_TILE
 
-        self.__crop_args = None
-        self.__crop_args2 = None
+        self.__video_crop_args = None
+        self.__video_crop_args2 = None
+        self.__loading_screen_crop_args = None
+        self.__loading_screen_crop_args2 = None
 
         config_loader = ConfigLoader()
         self.__receiver_config_stanza = config_loader.get_own_receiver_config_stanza()
@@ -96,8 +98,16 @@ class Receiver:
             self.__stop_video_playback_if_playing(stop_loading_screen_playback = True)
         elif msg_type == ControlMessageHelper.TYPE_VOLUME:
             self.__video_player_volume_pct = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-            if self.__is_video_playback_in_progress or self.__is_loading_screen_playback_in_progress:
-                self.__omxplayer_controller.set_vol_pct(self.__video_player_volume_pct)
+            vol_pairs = {}
+            if self.__is_video_playback_in_progress:
+                vol_pairs[OmxplayerController.TV1_VIDEO_DBUS_NAME] = self.__video_player_volume_pct
+                if self.__receiver_config_stanza['is_dual_video_output']:
+                    vol_pairs[OmxplayerController.TV2_VIDEO_DBUS_NAME] = self.__video_player_volume_pct
+            if self.__is_loading_screen_playback_in_progress:
+                vol_pairs[OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME] = self.__video_player_volume_pct
+                if self.__receiver_config_stanza['is_dual_video_output']:
+                    vol_pairs[OmxplayerController.TV2_LOADING_SCREEN_DBUS_NAME] = self.__video_player_volume_pct
+            self.__omxplayer_controller.set_vol_pct(vol_pairs)
         elif msg_type == ControlMessageHelper.TYPE_DISPLAY_MODE:
             display_mode_by_tv_id = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
             old_display_mode = self.__display_mode
@@ -111,10 +121,25 @@ class Receiver:
                         self.__display_mode = display_mode_to_set
                     else:
                         self.__display_mode2 = display_mode_to_set
-            if self.__is_video_playback_in_progress and self.__crop_args and old_display_mode != self.__display_mode:
-                self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
-            if self.__is_video_playback_in_progress and self.__crop_args2 and old_display_mode2 != self.__display_mode2:
-                pass # TODO display_mode2 with a second dbus interface name
+
+            crop_pairs = {}
+            if self.__is_video_playback_in_progress:
+                if self.__video_crop_args and old_display_mode != self.__display_mode:
+                    crop_pairs[OmxplayerController.TV1_VIDEO_DBUS_NAME] = self.__video_crop_args[self.__display_mode]
+                if (
+                    self.__receiver_config_stanza['is_dual_video_output'] and
+                    self.__video_crop_args2 and old_display_mode2 != self.__display_mode2
+                ):
+                    crop_pairs[OmxplayerController.TV2_VIDEO_DBUS_NAME] = self.__video_crop_args2[self.__display_mode2]
+            if self.__is_loading_screen_playback_in_progress:
+                if self.__loading_screen_crop_args and old_display_mode != self.__display_mode:
+                    crop_pairs[OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME] = self.__loading_screen_crop_args[self.__display_mode]
+                if (
+                    self.__receiver_config_stanza['is_dual_video_output'] and
+                    self.__loading_screen_crop_args2 and old_display_mode2 != self.__display_mode2
+                ):
+                    crop_pairs[OmxplayerController.TV2_LOADING_SCREEN_DBUS_NAME] = self.__loading_screen_crop_args2[self.__display_mode2]
+            self.__omxplayer_controller.set_crop(crop_pairs)
         elif msg_type == ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN:
             self.__loading_screen_proc = self.__show_loading_screen(ctrl_msg)
             self.__loading_screen_pgid = os.getpgid(self.__loading_screen_proc.pid)
@@ -141,7 +166,11 @@ class Receiver:
     def __show_loading_screen(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
-        cmd = f'omxplayer --layer 0 /home/pi/glitch.ts'
+        cmd, self.__crop_args, self.__crop_args2 = (
+            self.__receiver_command_builder.build_loading_screen_command_and_get_crop_args(
+                self.__video_player_volume_pct, self.__display_mode, self.__display_mode2
+            )
+        )
         self.__logger.info(f"Showing loading screen with command: {cmd}")
         self.__is_loading_screen_playback_in_progress = True
         proc = subprocess.Popen(

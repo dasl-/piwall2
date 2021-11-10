@@ -8,12 +8,13 @@ from piwall2.tv import Tv
 
 class ConfigLoader:
 
-    # Keep this in sync with the RECEIVERS_CONFIG_PATH variable in the
+    # Keep this in sync with the CONFIG_PATH variable in the
     # install/setup_broadcaster_and_receivers script.
-    RECEIVERS_CONFIG_PATH = DirectoryUtils().root_dir + '/receivers.toml'
+    CONFIG_PATH = DirectoryUtils().root_dir + '/config.toml'
 
     __is_loaded = False
     __receivers_config = None
+    __raw_config = None
     __receivers = None
     __tv_config = None
     __wall_width = None
@@ -46,6 +47,9 @@ class ConfigLoader:
     def get_receivers_list(self):
         return ConfigLoader.__receivers
 
+    def get_raw_config(self):
+        return ConfigLoader.__raw_config
+
     # returns a dict that has a key 'tvs'. This key maps to a dict of TVs and their configuration, and is
     # keyed by tv_id. A single receiver may be present in the 'tvs' dict twice if it has two TVs.
     def get_tv_config(self):
@@ -69,8 +73,8 @@ class ConfigLoader:
         if ConfigLoader.__is_loaded:
             return
 
-        self.__logger.info(f"Loading piwall2 config from: {self.RECEIVERS_CONFIG_PATH}.")
-        raw_config = toml.load(self.RECEIVERS_CONFIG_PATH)
+        self.__logger.info(f"Loading piwall2 config from: {self.CONFIG_PATH}.")
+        raw_config = toml.load(self.CONFIG_PATH)
         self.__logger.info(f"Validating piwall2 config: {raw_config}")
 
         is_any_receiver_dual_video_out = False
@@ -80,7 +84,11 @@ class ConfigLoader:
         # The wall width and height will be computed based on the configuration measurements of each receiver.
         wall_width = None
         wall_height = None
-        for receiver, receiver_config in raw_config.items():
+
+        if 'receivers' not in raw_config:
+            raise Exception("Config is missing 'receivers' stanza.")
+
+        for receiver, receiver_config in raw_config['receivers'].items():
             is_this_receiver_dual_video_out = False
             for key in receiver_config:
                 if key.endswith('2'):
@@ -120,6 +128,7 @@ class ConfigLoader:
 
         ConfigLoader.__hostname = socket.gethostname() + ".local"
         ConfigLoader.__local_ip_address = self.__get_local_ip()
+        ConfigLoader.__raw_config = raw_config
 
         ConfigLoader.__is_loaded = True
 

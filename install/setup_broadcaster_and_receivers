@@ -12,10 +12,10 @@ import time
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(ROOT_DIR)
 
-# Keep this in-sync with ConfigLoader::RECEIVERS_CONFIG_PATH. We cannot reference that constant here
+# Keep this in-sync with ConfigLoader::CONFIG_PATH. We cannot reference that constant here
 # because using the ConfigLoader class imports a bunch of modules that we may not have installed
 # yet. This script is the thing that installs those modules.
-RECEIVERS_CONFIG_PATH = ROOT_DIR + '/receivers.toml'
+CONFIG_PATH = ROOT_DIR + '/config.toml'
 
 def main():
     args = parse_args()
@@ -44,7 +44,7 @@ def main():
 def parse_args():
 
     parser = argparse.ArgumentParser(description=
-f"""Applies the receivers config located in: {RECEIVERS_CONFIG_PATH}.
+f"""Applies the config located in: {CONFIG_PATH}.
 This script should be run on the broadcaster. This script does several things:
 1) Sets up passwordless SSH from the broadcaster to each receiver
 2) Installs piwall2 dependencies on the broadcaster and receivers

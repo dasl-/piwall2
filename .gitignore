@@ -7,7 +7,7 @@ sftp-config.json
 __pycache__/
 *.db
 *.db.bak
-receivers.toml
+config.toml
 
 # these css files are built via scss
 app/src/css/custom-theme.css

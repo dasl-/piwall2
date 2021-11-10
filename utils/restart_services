@@ -24,12 +24,12 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser(description=
 f"""This script should be run from the broadcaster. It restarts all piwall2 services on the
-broadcaster and receivers. Optionally copies the config located at {ConfigLoader.RECEIVERS_CONFIG_PATH}
+broadcaster and receivers. Optionally copies the config located at {ConfigLoader.CONFIG_PATH}
 from the broadcaster to the receivers. Optionally pulls the latest code from git.
 """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--copy-config', dest='should_copy_config', action='store_true', default=False,
-        help=f"Copy config located at {ConfigLoader.RECEIVERS_CONFIG_PATH} from broadcaster to receivers.")
+        help=f"Copy config located at {ConfigLoader.CONFIG_PATH} from broadcaster to receivers.")
     parser.add_argument('--git-pull', dest='should_git_pull', action='store_true',
         default=False, help="Pull latest code from git before restarting services.")
     parser.add_argument('--git-branch', dest='git_branch', type=str, default='main',
