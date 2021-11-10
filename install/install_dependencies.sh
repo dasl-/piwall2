@@ -15,6 +15,7 @@ main(){
     fi
 
     updateAndInstallAptPackages
+    buildAndInstallOmxplayerFork
     updateAndInstallPythonPackages
     clearYoutubedlCache
 
@@ -66,9 +67,15 @@ parseOpts(){
 updateAndInstallAptPackages(){
     echo -e "\\nUpdating and installing apt packages..."
     sudo apt update
-    sudo apt -y install ffmpeg vlc omxplayer python3-pip fbi parallel dsh sshpass mbuffer sqlite3
+    sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3
     sudo apt -y full-upgrade
     sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
+}
+
+# A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.
+buildAndInstallOmxplayerFork(){
+    echo -e "\\nBuilding and installing omxplayer fork..."
+    "$BASE_DIR"/install/build_omxplayer.sh
 }
 
 updateAndInstallPythonPackages(){
