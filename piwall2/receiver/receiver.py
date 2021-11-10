@@ -116,6 +116,8 @@ class Receiver:
         elif msg_type == ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN:
             self.__loading_screen_proc = self.__show_loading_screen(ctrl_msg)
             self.__loading_screen_pgid = os.getpgid(self.__loading_screen_proc.pid)
+        elif msg_type == ControlMessageHelper.TYPE_END_LOADING_SCREEN:
+            self.__stop_loading_screen_playback_if_playing(reset_log_uuid = False)
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]

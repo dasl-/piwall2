@@ -17,6 +17,7 @@ class ControlMessageHelper:
     TYPE_SKIP_VIDEO = 'skip_video'
     TYPE_DISPLAY_MODE = 'display_mode'
     TYPE_SHOW_LOADING_SCREEN = 'type_show_loading_screen'
+    TYPE_END_LOADING_SCREEN = 'type_end_loading_screen'
 
     CTRL_MSG_TYPE_KEY = 'msg_type'
     CONTENT_KEY = 'content'

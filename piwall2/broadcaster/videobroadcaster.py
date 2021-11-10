@@ -412,7 +412,7 @@ class VideoBroadcaster:
                 pass
         if for_end_of_video:
             # sending a skip signal at the beginning of a video could skip the loading screen
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, {})
         try:
             os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
         except Exception:

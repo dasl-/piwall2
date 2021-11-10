@@ -7,6 +7,7 @@ import os
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
+from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 
@@ -31,15 +32,20 @@ if args.log_uuid:
 logger = Logger().set_namespace(os.path.basename(__file__))
 logger.info("Starting to send video...")
 
-m = MulticastHelper().setup_broadcaster_socket()
+multicast_helper = MulticastHelper().setup_broadcaster_socket()
+control_message_helper = ControlMessageHelper().setup_for_broadcaster()
 bytes_sent = 0
 while True:
     data = sys.stdin.buffer.read(4096)
     if not data:
         break
-    bytes_sent += m.send(data, MulticastHelper.VIDEO_PORT)
+
+    if bytes_sent <= 0:
+        control_message_helper.send_msg(ControlMessageHelper.TYPE_END_LOADING_SCREEN, {})
+
+    bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
 
 if args.end_of_video_magic_bytes:
-    bytes_sent += m.send(args.end_of_video_magic_bytes.encode(), MulticastHelper.VIDEO_PORT)
+    bytes_sent += multicast_helper.send(args.end_of_video_magic_bytes.encode(), MulticastHelper.VIDEO_PORT)
 
 logger.info(f"Finished sending video. Sent {bytes_sent} bytes.")
