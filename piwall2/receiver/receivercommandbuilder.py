@@ -13,7 +13,7 @@ from piwall2.volumecontroller import VolumeController
 class ReceiverCommandBuilder:
 
     # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-    __OMX_CMD_TEMPLATE = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --dbus_name {4} --layer {5}' +
+    __OMX_CMD_TEMPLATE = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --dbus_name {4} --layer {5} ' +
             '--aspect-mode stretch --no-keys --timeout 30 --threshold 0.2 --video_fifo 10 --genlog pipe:0')
 
     def __init__(self, config_loader, receiver_config_stanza):

@@ -71,7 +71,7 @@ class OmxplayerController:
             'sudo -u ' + self.__user + ' ' +
             'DBUS_SESSION_BUS_ADDRESS=' + self.__dbus_addr + ' ' +
             'DBUS_SESSION_BUS_PID=' + self.__dbus_pid + ' ' +
-            'dbus-send --print-reply=literal --session --reply-timeout=' + self.__DBUS_TIMEOUT_MS + ' ' +
+            'dbus-send --print-reply=literal --session --reply-timeout=' + str(self.__DBUS_TIMEOUT_MS) + ' ' +
             '--dest={0} /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set ' +
             "string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{1}")
 
@@ -107,7 +107,7 @@ class OmxplayerController:
             'sudo -u ' + self.__user + ' ' +
             'DBUS_SESSION_BUS_ADDRESS=' + self.__dbus_addr + ' ' +
             'DBUS_SESSION_BUS_PID=' + self.__dbus_pid + ' ' +
-            'dbus-send --print-reply=literal --session --reply-timeout=' + self.__DBUS_TIMEOUT_MS + ' ' +
+            'dbus-send --print-reply=literal --session --reply-timeout=' + str(self.__DBUS_TIMEOUT_MS) + ' ' +
             '--dest={0} /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetVideoCropPos ' +
             "objpath:/not/used string:'{1}'")
 
