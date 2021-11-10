@@ -62,7 +62,7 @@ class VideoBroadcaster:
         ))
 
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
-        self.__do_housekeeping()
+        self.__do_housekeeping(for_end_of_video = False)
         self.__register_signal_handlers()
 
     def broadcast(self):
@@ -81,7 +81,7 @@ class VideoBroadcaster:
                 if attempt >= max_attempts:
                     raise e
             finally:
-                self.__do_housekeeping()
+                self.__do_housekeeping(for_end_of_video = True)
             attempt += 1
 
     def __broadcast_internal(self):
@@ -392,7 +392,8 @@ class VideoBroadcaster:
             .decode("utf-8"))
         self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
 
-    def __do_housekeeping(self):
+    # for_end_of_video: whether we are doing housekeeping before or after playing a video
+    def __do_housekeeping(self, for_end_of_video):
         if self.__download_and_convert_video_proc_pgid:
             self.__logger.info("Killing download and convert video process group (PGID: " +
                 f"{self.__download_and_convert_video_proc_pgid})...")
@@ -409,7 +410,9 @@ class VideoBroadcaster:
             except Exception:
                 # might raise: `ProcessLookupError: [Errno 3] No such process`
                 pass
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
+        if for_end_of_video:
+            # sending a skip signal at the beginning of a video could skip the loading screen
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, '')
         try:
             os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
         except Exception:
@@ -428,5 +431,5 @@ class VideoBroadcaster:
 
     def __signal_handler(self, sig, frame):
         self.__logger.info(f"Caught signal {sig}, exiting gracefully...")
-        self.__do_housekeeping()
+        self.__do_housekeeping(for_end_of_video = True)
         sys.exit(sig)
