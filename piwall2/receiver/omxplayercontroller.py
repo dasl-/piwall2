@@ -30,7 +30,7 @@ class OmxplayerController:
         "--halt never ")
 
     # Ensure we don't have too many processes in flight that could overload CPU
-    __MAX_IN_FLIGHT_PROCS = 3
+    __MAX_IN_FLIGHT_PROCS = 1
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
