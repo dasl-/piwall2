@@ -23,7 +23,8 @@ class OmxplayerController:
 
     __DBUS_TIMEOUT_MS = 2000
     __PARALLEL_DELIM = '_'
-    __PARALLEL_CMD_PREFIX = (f"parallel --will-cite --delimiter {__PARALLEL_DELIM} --max-args=2 --link --max-procs 0 " +
+    __PARALLEL_CMD_TEMPLATE_PREFIX = (
+        f"parallel --will-cite --delimiter {__PARALLEL_DELIM} --max-args={{0}} --link --max-procs 0 " +
         # Run all jobs even if one or more failed.
         # Exit status: 1-100 Some of the jobs failed. The exit status gives the number of failed jobs.
         "--halt never ")
@@ -75,13 +76,9 @@ class OmxplayerController:
             self.__logger.warning("Too many in-flight dbus processes; bailing without setting volume.")
             return
 
-        vol_template = (
-            'sudo -u ' + self.__user + ' ' +
-            'DBUS_SESSION_BUS_ADDRESS=' + self.__dbus_addr + ' ' +
-            'DBUS_SESSION_BUS_PID=' + self.__dbus_pid + ' ' +
-            'dbus-send --print-reply=literal --session --reply-timeout=' + str(self.__DBUS_TIMEOUT_MS) + ' ' +
-            '--dest={0} /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set ' +
-            "string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{1} >/dev/null")
+        vol_template = (self.__get_dbus_cmd_template_prefix() +
+            "org.freedesktop.DBus.Properties.Set string:'org.mpris.MediaPlayer2.Player' " +
+            "string:'Volume' double:{1} >/dev/null")
 
         if num_pairs == 1:
             dbus_name, vol_pct = list(pairs.items())[0]
@@ -96,7 +93,8 @@ class OmxplayerController:
                     map(self.__vol_pct_to_omx_vol_pct, pairs.values())
                 )
             )
-            cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {omx_vol_pcts}"
+            cmd = (f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX.format('2')} {parallel_crop_template} ::: {dbus_names} " +
+                f"::: {omx_vol_pcts}")
 
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
@@ -114,13 +112,8 @@ class OmxplayerController:
             self.__logger.warning("Too many in-flight dbus processes; bailing without setting crop.")
             return
 
-        crop_template = (
-            'sudo -u ' + self.__user + ' ' +
-            'DBUS_SESSION_BUS_ADDRESS=' + self.__dbus_addr + ' ' +
-            'DBUS_SESSION_BUS_PID=' + self.__dbus_pid + ' ' +
-            'dbus-send --print-reply=literal --session --reply-timeout=' + str(self.__DBUS_TIMEOUT_MS) + ' ' +
-            '--dest={0} /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetVideoCropPos ' +
-            "objpath:/not/used string:'{1}' >/dev/null")
+        crop_template = (self.__get_dbus_cmd_template_prefix() +
+            "org.mpris.MediaPlayer2.Player.SetVideoCropPos objpath:/not/used string:'{1}' >/dev/null")
 
         if num_pairs == 1:
             dbus_name, crop_string = list(pairs.items())[0]
@@ -129,12 +122,34 @@ class OmxplayerController:
             parallel_crop_template = shlex.quote(crop_template.format('{1}', '{2}'))
             dbus_names = self.__PARALLEL_DELIM.join(pairs.keys())
             crop_strings = self.__PARALLEL_DELIM.join(pairs.values())
-            cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {crop_strings}"
+            cmd = (f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX.format('2')} {parallel_crop_template} ::: {dbus_names} " +
+                f"::: {crop_strings}")
 
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
         proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
         self.__in_flight_procs.append(proc)
+
+    def unpause(self, dbus_names):
+        num_dbus_names = len(dbus_names)
+        if len(num_dbus_names) <= 0:
+            return
+
+        # Don't check if too many procs are in flight, because we never want to ignore an unpause command.
+        # This is used to start the video playback in sync across all the TVs.
+
+        play_template = (self.__get_dbus_cmd_template_prefix() +
+            "org.mpris.MediaPlayer2.Player.Play >/dev/null")
+        if num_dbus_names == 1:
+            cmd = play_template.format(dbus_names[0])
+        else:
+            parallel_play_template = shlex.quote(play_template.format('{1}'))
+            dbus_names_str = self.__PARALLEL_DELIM.join(dbus_names.keys())
+            cmd = f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX.format('1')} {parallel_play_template} ::: {dbus_names_str} "
+
+        # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
+        # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
+        proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
 
     # omxplayer uses a different algorithm for computing volume percentage from the original millibels than
     # our VolumeController class uses. Convert to omxplayer's equivalent percentage for a smoother volume
@@ -156,6 +171,18 @@ class OmxplayerController:
         if len(self.__in_flight_procs) >= self.__MAX_IN_FLIGHT_PROCS:
             return True
         return False
+
+    def __get_dbus_cmd_template_prefix(self):
+        dbus_timeout_s = self.__DBUS_TIMEOUT_MS / 1000 + 0.1
+        dbus_kill_after_timeout_s = dbus_timeout_s + 0.1
+        dbus_prefix = (
+            f'sudo timeout --kill-after={dbus_kill_after_timeout_s} {dbus_timeout_s} '
+            'sudo -u ' + self.__user + ' ' +
+            'DBUS_SESSION_BUS_ADDRESS=' + self.__dbus_addr + ' ' +
+            'DBUS_SESSION_BUS_PID=' + self.__dbus_pid + ' ' +
+            'dbus-send --print-reply=literal --session --reply-timeout=' + str(self.__DBUS_TIMEOUT_MS) + ' ' +
+            '--dest={0} /org/mpris/MediaPlayer2 ')
+        return dbus_prefix
 
     # Returns a boolean. True if the session was loaded or already loaded, false if we failed to load.
     def __load_dbus_session_info(self):

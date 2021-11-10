@@ -94,6 +94,13 @@ class Receiver:
             self.__stop_video_playback_if_playing(stop_loading_screen_playback = False)
             self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
             self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc.pid)
+        if msg_type == ControlMessageHelper.TYPE_UNPAUSE_VIDEO:
+            if self.__is_video_playback_in_progress:
+                if self.__receiver_config_stanza['is_dual_video_output']:
+                    dbus_names = [OmxplayerController.TV1_VIDEO_DBUS_NAME, OmxplayerController.TV2_VIDEO_DBUS_NAME]
+                else:
+                    dbus_names = [OmxplayerController.TV1_VIDEO_DBUS_NAME]
+                self.__omxplayer_controller.unpause(dbus_names)
         elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
             self.__stop_video_playback_if_playing(stop_loading_screen_playback = True)
         elif msg_type == ControlMessageHelper.TYPE_VOLUME:

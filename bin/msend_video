@@ -36,6 +36,8 @@ logger.info("Starting to send video...")
 multicast_helper = MulticastHelper().setup_broadcaster_socket()
 control_message_helper = ControlMessageHelper().setup_for_broadcaster()
 bytes_sent = 0
+has_sent_unpause_signal = False
+first_byte_send_time = None
 while True:
     data = sys.stdin.buffer.read(4096)
     if not data:
@@ -43,7 +45,10 @@ while True:
 
     if bytes_sent <= 0:
         control_message_helper.send_msg(ControlMessageHelper.TYPE_END_LOADING_SCREEN, {})
-        time.sleep(0.1) # give time for the loading screen to end
+        first_byte_send_time = time.time()
+
+    if (time.time() - first_byte_send_time) > 1.5:
+        control_message_helper.send_msg(ControlMessageHelper.TYPE_UNPAUSE_VIDEO, {})
 
     bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
 
