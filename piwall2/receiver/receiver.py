@@ -1,3 +1,4 @@
+import atexit
 import os
 import signal
 import socket
@@ -53,6 +54,7 @@ class Receiver:
         # Set the video player volume to 50%, but set the hardware volume to 100%.
         self.__video_player_volume_pct = 50
         (VolumeController()).set_vol_pct(100)
+        self.__disable_screen()
         self.__play_warmup_video()
 
         # This must come after the warmup video. When run as a systemd service, omxplayer wants to
@@ -205,6 +207,21 @@ class Receiver:
         if proc.returncode != 0:
             raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
+
+    def __disable_screen(self):
+        subprocess.check_output(
+            f"sudo fbi -T 1 --noverbose --autozoom {DirectoryUtils().root_dir}/assets/black_screen.jpg",
+            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+        )
+        atexit.register(self.__enable_screen)
+
+    def __enable_screen(self):
+        try:
+            subprocess.check_output(
+                "sudo pkill fbi", shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+            )
+        except Exception:
+            pass
 
     # Get the tv_ids for this receiver
     def __get_tv_ids_by_tv_num(self):
