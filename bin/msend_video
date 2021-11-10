@@ -47,8 +47,9 @@ while True:
         control_message_helper.send_msg(ControlMessageHelper.TYPE_END_LOADING_SCREEN, {})
         first_byte_send_time = time.time()
 
-    if (time.time() - first_byte_send_time) > 1.5:
+    if not has_sent_unpause_signal and (time.time() - first_byte_send_time) > 1.5:
         control_message_helper.send_msg(ControlMessageHelper.TYPE_UNPAUSE_VIDEO, {})
+        has_sent_unpause_signal = True
 
     bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
 
