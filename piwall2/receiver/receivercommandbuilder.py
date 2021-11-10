@@ -60,7 +60,7 @@ class ReceiverCommandBuilder:
         video, and no matter where in the pipeline the delay is coming from. Using mbuffer seems simpler, and it is
         easier to monitor. By checking its logs, we can see how close the mbuffer gets to becoming full.
         """
-        mbuffer_cmd = ('HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m ' +
+        mbuffer_cmd = ('mbuffer -q -l /tmp/mbuffer.out -m ' +
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
         omx_cmd = self.__OMX_CMD_TEMPLATE.format(

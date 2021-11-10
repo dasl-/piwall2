@@ -209,7 +209,7 @@ class VideoBroadcaster:
     def __start_video_broadcast_proc(self, download_and_convert_video_proc):
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
         mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
-        burst_throttling_clause = (f'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
+        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
             f'{self.__get_standard_ffmpeg_cmd()} -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
             f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
         broadcasting_clause = (f"{DirectoryUtils().root_dir}/bin/msend_video " +
@@ -277,7 +277,7 @@ class VideoBroadcaster:
             https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
             youtube_dl_cmd_template = ("yt-dlp {0} --retries infinite --format {1} --output - {2} | " + 
-                "HOME=/home/pi mbuffer -q -Q -m {3}b")
+                "mbuffer -q -Q -m {3}b")
 
             log_opts = '--no-progress'
             if Logger.get_level() <= Logger.DEBUG:
