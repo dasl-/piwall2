@@ -76,7 +76,7 @@ class OmxplayerController:
             "string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{1}")
 
         if num_pairs == 1:
-            dbus_name, vol_pct = list(pairs.items())
+            dbus_name, vol_pct = list(pairs.items())[0]
             omx_vol_pct = self.__vol_pct_to_omx_vol_pct(vol_pct)
             cmd = vol_template.format(dbus_name, omx_vol_pct)
         else:
@@ -112,7 +112,7 @@ class OmxplayerController:
             "objpath:/not/used string:'{1}'")
 
         if num_pairs == 1:
-            dbus_name, crop_string = list(pairs.items())
+            dbus_name, crop_string = list(pairs.items())[0]
             cmd = crop_template.format(dbus_name, crop_string)
         else:
             parallel_crop_template = shlex.quote(crop_template.format('{1}', '{2}'))
