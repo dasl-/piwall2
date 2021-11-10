@@ -10,14 +10,14 @@ sys.path.append(root_dir)
 from piwall2.cmdrunner import CmdRunner
 from piwall2.configloader import ConfigLoader
 
-if not os.path.isfile(ConfigLoader.RECEIVERS_CONFIG_PATH):
-    print(f"Receivers config file does not exist at path {ConfigLoader.RECEIVERS_CONFIG_PATH}.")
+if not os.path.isfile(ConfigLoader.CONFIG_PATH):
+    print(f"Config file does not exist at path {ConfigLoader.CONFIG_PATH}.")
     sys.exit(99)
 
 cmd_runner = CmdRunner()
 ssh_opts = ' '.join(CmdRunner.STANDARD_SSH_OPTS)
 scp_cmd = (
     f'scp {CmdRunner.SSH_KEY_PATH_FLAG} {ssh_opts} ' +
-    f'{ConfigLoader.RECEIVERS_CONFIG_PATH} pi@{{}}:{ConfigLoader.RECEIVERS_CONFIG_PATH}'
+    f'{ConfigLoader.CONFIG_PATH} pi@{{}}:{ConfigLoader.CONFIG_PATH}'
 )
 cmd_runner.run_parallel(scp_cmd, include_broadcaster = False)

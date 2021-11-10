@@ -1,3 +1,4 @@
+import atexit
 import os
 import signal
 import socket
@@ -29,8 +30,10 @@ class Receiver:
         self.__display_mode = DisplayMode.DISPLAY_MODE_TILE
         self.__display_mode2 = DisplayMode.DISPLAY_MODE_TILE
 
-        self.__crop_args = None
-        self.__crop_args2 = None
+        self.__video_crop_args = None
+        self.__video_crop_args2 = None
+        self.__loading_screen_crop_args = None
+        self.__loading_screen_crop_args2 = None
 
         config_loader = ConfigLoader()
         self.__receiver_config_stanza = config_loader.get_own_receiver_config_stanza()
@@ -38,17 +41,22 @@ class Receiver:
         self.__tv_ids = self.__get_tv_ids_by_tv_num()
 
         self.__control_message_helper = ControlMessageHelper().setup_for_receiver()
-        self.__orig_log_uuid = Logger.get_uuid()
+
+        # Store the PGIDs separately, because attempting to get the PGID later via `os.getpgid` can
+        # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__is_video_playback_in_progress = False
         self.__receive_and_play_video_proc = None
-        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
-        # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__receive_and_play_video_proc_pgid = None
+
+        self.__is_loading_screen_playback_in_progress = False
+        self.__loading_screen_proc = None
+        self.__loading_screen_pgid = None
 
         # house keeping
         # Set the video player volume to 50%, but set the hardware volume to 100%.
         self.__video_player_volume_pct = 50
         (VolumeController()).set_vol_pct(100)
+        self.__disable_terminal_output()
         self.__play_warmup_video()
 
         # This must come after the warmup video. When run as a systemd service, omxplayer wants to
@@ -69,26 +77,37 @@ class Receiver:
     def __run_internal(self):
         ctrl_msg = None
         ctrl_msg = self.__control_message_helper.receive_msg() # This blocks until a message is received!
-        self.__logger.debug(f"Received control message {ctrl_msg}. " +
-            f"self.__is_video_playback_in_progress: {self.__is_video_playback_in_progress}.")
+        self.__logger.debug(f"Received control message {ctrl_msg}.")
 
         if self.__is_video_playback_in_progress:
             if self.__receive_and_play_video_proc and self.__receive_and_play_video_proc.poll() is not None:
                 self.__logger.info("Ending video playback because receive_and_play_video_proc is no longer running...")
-                self.__stop_video_playback_if_playing()
+                self.__stop_video_playback_if_playing(stop_loading_screen_playback = True)
+
+        if self.__is_loading_screen_playback_in_progress:
+            if self.__loading_screen_proc and self.__loading_screen_proc.poll() is not None:
+                self.__logger.info("Ending loading screen playback because loading_screen_proc is no longer running...")
+                self.__stop_loading_screen_playback_if_playing(reset_log_uuid = False)
 
         msg_type = ctrl_msg[ControlMessageHelper.CTRL_MSG_TYPE_KEY]
         if msg_type == ControlMessageHelper.TYPE_PLAY_VIDEO:
-            self.__stop_video_playback_if_playing()
+            self.__stop_video_playback_if_playing(stop_loading_screen_playback = False)
             self.__receive_and_play_video_proc = self.__receive_and_play_video(ctrl_msg)
             self.__receive_and_play_video_proc_pgid = os.getpgid(self.__receive_and_play_video_proc.pid)
         elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
-            if self.__is_video_playback_in_progress:
-                self.__stop_video_playback_if_playing()
+            self.__stop_video_playback_if_playing(stop_loading_screen_playback = True)
         elif msg_type == ControlMessageHelper.TYPE_VOLUME:
             self.__video_player_volume_pct = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
+            vol_pairs = {}
             if self.__is_video_playback_in_progress:
-                self.__omxplayer_controller.set_vol_pct(self.__video_player_volume_pct)
+                vol_pairs[OmxplayerController.TV1_VIDEO_DBUS_NAME] = self.__video_player_volume_pct
+                if self.__receiver_config_stanza['is_dual_video_output']:
+                    vol_pairs[OmxplayerController.TV2_VIDEO_DBUS_NAME] = self.__video_player_volume_pct
+            if self.__is_loading_screen_playback_in_progress:
+                vol_pairs[OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME] = self.__video_player_volume_pct
+                if self.__receiver_config_stanza['is_dual_video_output']:
+                    vol_pairs[OmxplayerController.TV2_LOADING_SCREEN_DBUS_NAME] = self.__video_player_volume_pct
+            self.__omxplayer_controller.set_vol_pct(vol_pairs)
         elif msg_type == ControlMessageHelper.TYPE_DISPLAY_MODE:
             display_mode_by_tv_id = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
             old_display_mode = self.__display_mode
@@ -102,18 +121,35 @@ class Receiver:
                         self.__display_mode = display_mode_to_set
                     else:
                         self.__display_mode2 = display_mode_to_set
-            if self.__is_video_playback_in_progress and self.__crop_args and old_display_mode != self.__display_mode:
-                self.__omxplayer_controller.set_crop(self.__crop_args[self.__display_mode])
-            if self.__is_video_playback_in_progress and self.__crop_args2 and old_display_mode2 != self.__display_mode2:
-                pass # TODO display_mode2 with a second dbus interface name
+
+            crop_pairs = {}
+            if self.__is_video_playback_in_progress:
+                if self.__video_crop_args and old_display_mode != self.__display_mode:
+                    crop_pairs[OmxplayerController.TV1_VIDEO_DBUS_NAME] = self.__video_crop_args[self.__display_mode]
+                if (
+                    self.__receiver_config_stanza['is_dual_video_output'] and
+                    self.__video_crop_args2 and old_display_mode2 != self.__display_mode2
+                ):
+                    crop_pairs[OmxplayerController.TV2_VIDEO_DBUS_NAME] = self.__video_crop_args2[self.__display_mode2]
+            if self.__is_loading_screen_playback_in_progress:
+                if self.__loading_screen_crop_args and old_display_mode != self.__display_mode:
+                    crop_pairs[OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME] = self.__loading_screen_crop_args[self.__display_mode]
+                if (
+                    self.__receiver_config_stanza['is_dual_video_output'] and
+                    self.__loading_screen_crop_args2 and old_display_mode2 != self.__display_mode2
+                ):
+                    crop_pairs[OmxplayerController.TV2_LOADING_SCREEN_DBUS_NAME] = self.__loading_screen_crop_args2[self.__display_mode2]
+            self.__omxplayer_controller.set_crop(crop_pairs)
         elif msg_type == ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN:
-            self.__show_loading_screen()
+            self.__loading_screen_proc = self.__show_loading_screen(ctrl_msg)
+            self.__loading_screen_pgid = os.getpgid(self.__loading_screen_proc.pid)
+        elif msg_type == ControlMessageHelper.TYPE_END_LOADING_SCREEN:
+            self.__stop_loading_screen_playback_if_playing(reset_log_uuid = False)
 
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-        self.__orig_log_uuid = Logger.get_uuid()
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
-        cmd, self.__crop_args, self.__crop_args2 = (
+        cmd, self.__video_crop_args, self.__video_crop_args2 = (
             self.__receiver_command_builder.build_receive_and_play_video_command_and_get_crop_args(
                 ctrl_msg_content['log_uuid'], ctrl_msg_content['video_width'],
                 ctrl_msg_content['video_height'], self.__video_player_volume_pct,
@@ -127,24 +163,28 @@ class Receiver:
         )
         return proc
 
-    def __show_loading_screen(self):
-        subprocess.check_output(
-            f"sudo fbi -T 1 -noverbose --autozoom {DirectoryUtils().root_dir}/assets/loading_screen.png",
-            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
-        )
-
-    def __stop_video_playback_if_playing(self):
-        if not self.__is_video_playback_in_progress:
-            return
-
-        try:
-            subprocess.check_output(
-                "sudo pkill fbi",
-                shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+    def __show_loading_screen(self, ctrl_msg):
+        ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
+        Logger.set_uuid(ctrl_msg_content['log_uuid'])
+        cmd, self.__loading_screen_crop_args, self.__loading_screen_crop_args2 = (
+            self.__receiver_command_builder.build_loading_screen_command_and_get_crop_args(
+                self.__video_player_volume_pct, self.__display_mode, self.__display_mode2
             )
-        except Exception:
-            pass
+        )
+        self.__logger.info(f"Showing loading screen with command: {cmd}")
+        self.__is_loading_screen_playback_in_progress = True
+        proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
+        )
+        return proc
 
+    def __stop_video_playback_if_playing(self, stop_loading_screen_playback):
+        if stop_loading_screen_playback:
+            self.__stop_loading_screen_playback_if_playing(reset_log_uuid = False)
+        if not self.__is_video_playback_in_progress:
+            if stop_loading_screen_playback:
+                Logger.set_uuid('')
+            return
         if self.__receive_and_play_video_proc_pgid:
             self.__logger.info("Killing receive_and_play_video proc (if it's still running)...")
             try:
@@ -152,11 +192,26 @@ class Receiver:
             except Exception:
                 # might raise: `ProcessLookupError: [Errno 3] No such process`
                 pass
-
-        Logger.set_uuid(self.__orig_log_uuid)
+        Logger.set_uuid('')
         self.__is_video_playback_in_progress = False
-        self.__crop_args = None
-        self.__crop_args2 = None
+        self.__video_crop_args = None
+        self.__video_crop_args2 = None
+
+    def __stop_loading_screen_playback_if_playing(self, reset_log_uuid):
+        if not self.__is_loading_screen_playback_in_progress:
+            return
+        if self.__loading_screen_pgid:
+            self.__logger.info("Killing loading_screen proc (if it's still running)...")
+            try:
+                os.killpg(self.__loading_screen_pgid, signal.SIGTERM)
+            except Exception:
+                # might raise: `ProcessLookupError: [Errno 3] No such process`
+                pass
+        if reset_log_uuid:
+            Logger.set_uuid('')
+        self.__is_loading_screen_playback_in_progress = False
+        self.__loading_screen_crop_args = None
+        self.__loading_screen_crop_args2 = None
 
     # The first video that is played after a system restart appears to have a lag in starting,
     # which can affect video synchronization across the receivers. Ensure we have played at
@@ -183,6 +238,23 @@ class Receiver:
         if proc.returncode != 0:
             raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
+
+    # Display a black image so that terminal text output doesn't show up on the TVs in between videos.
+    # Basically this black image will be on display all the time "underneath" any videos that are playing.
+    def __disable_terminal_output(self):
+        subprocess.check_output(
+            f"sudo fbi -T 1 --noverbose --autozoom {DirectoryUtils().root_dir}/assets/black_screen.jpg",
+            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+        )
+        atexit.register(self.__enable_terminal_output)
+
+    def __enable_terminal_output(self):
+        try:
+            subprocess.check_output(
+                "sudo pkill fbi", shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+            )
+        except Exception:
+            pass
 
     # Get the tv_ids for this receiver
     def __get_tv_ids_by_tv_num(self):
