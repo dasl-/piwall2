@@ -130,12 +130,13 @@ class OmxplayerController:
         proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
         self.__in_flight_procs.append(proc)
 
-    def unpause(self, dbus_names):
+    # start playback / unpause the video
+    def play(self, dbus_names):
         num_dbus_names = len(dbus_names)
         if num_dbus_names <= 0:
             return
 
-        # Don't check if too many procs are in flight, because we never want to ignore an unpause command.
+        # Don't check if too many procs are in flight, because we never want to ignore a play command.
         # This is used to start the video playback in sync across all the TVs.
 
         play_template = (self.__get_dbus_cmd_template_prefix() +
