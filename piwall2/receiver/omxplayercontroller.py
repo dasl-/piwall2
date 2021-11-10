@@ -73,7 +73,7 @@ class OmxplayerController:
             'DBUS_SESSION_BUS_PID=' + self.__dbus_pid + ' ' +
             'dbus-send --print-reply=literal --session --reply-timeout=' + str(self.__DBUS_TIMEOUT_MS) + ' ' +
             '--dest={0} /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set ' +
-            "string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{1}")
+            "string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{1} >/dev/null")
 
         if num_pairs == 1:
             dbus_name, vol_pct = list(pairs.items())[0]
@@ -90,15 +90,11 @@ class OmxplayerController:
             )
             cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {omx_vol_pcts}"
 
-        start = time.time()
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
-        # Dbus can sometimes take a while to execute.
+        # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash'
         )
-        elapsed_ms = (time.time() - start) * 1000
-        self.__logger.debug(f"set volume after {elapsed_ms}ms for {', '.join(pairs.keys())}.")
-        return True
 
     # pairs: a dict where each key is a dbus name and each value is a crop string ("x1 y1 x2 y2")
     # e.g.: {'piwall.tv1.video': '0 0 100 100'}
@@ -113,7 +109,7 @@ class OmxplayerController:
             'DBUS_SESSION_BUS_PID=' + self.__dbus_pid + ' ' +
             'dbus-send --print-reply=literal --session --reply-timeout=' + str(self.__DBUS_TIMEOUT_MS) + ' ' +
             '--dest={0} /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetVideoCropPos ' +
-            "objpath:/not/used string:'{1}'")
+            "objpath:/not/used string:'{1}' >/dev/null")
 
         if num_pairs == 1:
             dbus_name, crop_string = list(pairs.items())[0]
@@ -124,16 +120,11 @@ class OmxplayerController:
             crop_strings = self.__PARALLEL_DELIM.join(pairs.values())
             cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {crop_strings}"
 
-        start = time.time()
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
-        # Dbus can sometimes take a while to execute.
+        # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash'
         )
-        elapsed_ms = (time.time() - start) * 1000
-
-        self.__logger.debug(f"set crop position after {elapsed_ms}ms for {', '.join(pairs.keys())}.")
-        return True
 
     # omxplayer uses a different algorithm for computing volume percentage from the original millibels than
     # our VolumeController class uses. Convert to omxplayer's equivalent percentage for a smoother volume

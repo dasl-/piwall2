@@ -8,7 +8,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-# Command to execute when the service is started
+Environment=HOME=/home/pi
 ExecStart=$BASE_DIR/bin/receiver
 Restart=on-failure
 StandardOutput=syslog
