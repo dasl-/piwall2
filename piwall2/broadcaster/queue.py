@@ -47,11 +47,11 @@ class Queue:
         if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
             # Someone deleted the item from the queue in between getting the item and starting it.
             return
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, {})
         self.__orig_log_uuid = Logger.get_uuid()
         log_uuid = Logger.make_uuid()
         Logger.set_uuid(log_uuid)
         self.__logger.info(f"Starting broadcast for playlist_video_id: {playlist_item['playlist_video_id']}")
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, {'log_uuid': log_uuid})
         cmd = (f"{DirectoryUtils().root_dir}/bin/broadcast --url {shlex.quote(playlist_item['url'])} " +
             f"--log-uuid {shlex.quote(log_uuid)} --no-show-loading-screen")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
