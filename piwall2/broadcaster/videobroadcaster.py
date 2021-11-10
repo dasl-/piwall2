@@ -237,8 +237,8 @@ class VideoBroadcaster:
             'video_width': self.__get_video_info()['width'],
             'video_height': self.__get_video_info()['height'],
         }
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, msg)
-        self.__logger.info("Sent play_video control message.")
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_INIT_VIDEO, msg)
+        self.__logger.info(f"Sent {ControlMessageHelper.TYPE_INIT_VIDEO} control message.")
 
     def __get_standard_ffmpeg_cmd(self):
         # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks

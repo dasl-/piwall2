@@ -36,20 +36,28 @@ logger.info("Starting to send video...")
 multicast_helper = MulticastHelper().setup_broadcaster_socket()
 control_message_helper = ControlMessageHelper().setup_for_broadcaster()
 bytes_sent = 0
-has_sent_unpause_signal = False
 first_byte_send_time = None
+end_loading_screen_signal_time = None
+play_signal_time = None
 while True:
     data = sys.stdin.buffer.read(4096)
     if not data:
         break
 
     if bytes_sent <= 0:
-        control_message_helper.send_msg(ControlMessageHelper.TYPE_END_LOADING_SCREEN, {})
         first_byte_send_time = time.time()
 
-    if not has_sent_unpause_signal and (time.time() - first_byte_send_time) > 1.5:
-        control_message_helper.send_msg(ControlMessageHelper.TYPE_UNPAUSE_VIDEO, {})
-        has_sent_unpause_signal = True
+    # give enough time for video decoding to occur after sending the first byte of the video
+    # before ending the loading screen
+    if not end_loading_screen_signal_time and (time.time() - first_byte_send_time) > 1.3:
+        control_message_helper.send_msg(ControlMessageHelper.TYPE_END_LOADING_SCREEN, {})
+        end_loading_screen_signal_time = time.time()
+
+    # give enough time for the loading screen omxplayer instance to shutdown before starting
+    # playback / unpausing the main video instance of omxplayer
+    if not play_signal_time and end_loading_screen_signal_time and (time.time() - end_loading_screen_signal_time) > 0.2:
+        control_message_helper.send_msg(ControlMessageHelper.TYPE_PLAY_VIDEO, {})
+        play_signal_time = time.time()
 
     bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
 

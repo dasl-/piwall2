@@ -13,8 +13,8 @@ class ControlMessageHelper:
 
     # Control message types
     TYPE_VOLUME = 'volume'
+    TYPE_INIT_VIDEO = 'init_video'
     TYPE_PLAY_VIDEO = 'play_video'
-    TYPE_UNPAUSE_VIDEO = 'unpause_video'
     TYPE_SKIP_VIDEO = 'skip_video'
     TYPE_DISPLAY_MODE = 'display_mode'
     TYPE_SHOW_LOADING_SCREEN = 'type_show_loading_screen'
