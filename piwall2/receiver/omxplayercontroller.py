@@ -28,12 +28,16 @@ class OmxplayerController:
         # Exit status: 1-100 Some of the jobs failed. The exit status gives the number of failed jobs.
         "--halt never ")
 
+    # Ensure we don't have too many processes in flight that could overload CPU
+    __MAX_IN_FLIGHT_PROCS = 3
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__user = getpass.getuser()
         self.__dbus_addr = None
         self.__dbus_pid = None
         self.__load_dbus_session_info()
+        self.__in_flight_procs = []
 
     # gets a perceptual loudness %
     # returns a float in the range [0, 100]
@@ -67,6 +71,10 @@ class OmxplayerController:
         if num_pairs <= 0:
             return
 
+        if self.__are_too_many_procs_in_flight():
+            self.__logger.warning("Too many in-flight dbus processes; bailing without setting volume.")
+            return
+
         vol_template = (
             'sudo -u ' + self.__user + ' ' +
             'DBUS_SESSION_BUS_ADDRESS=' + self.__dbus_addr + ' ' +
@@ -92,15 +100,18 @@ class OmxplayerController:
 
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
-        proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/bash'
-        )
+        proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
+        self.__in_flight_procs.append(proc)
 
     # pairs: a dict where each key is a dbus name and each value is a crop string ("x1 y1 x2 y2")
     # e.g.: {'piwall.tv1.video': '0 0 100 100'}
     def set_crop(self, pairs):
         num_pairs = len(pairs)
         if num_pairs <= 0:
+            return
+
+        if self.__are_too_many_procs_in_flight():
+            self.__logger.warning("Too many in-flight dbus processes; bailing without setting crop.")
             return
 
         crop_template = (
@@ -122,9 +133,8 @@ class OmxplayerController:
 
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
-        proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/bash'
-        )
+        proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
+        self.__in_flight_procs.append(proc)
 
     # omxplayer uses a different algorithm for computing volume percentage from the original millibels than
     # our VolumeController class uses. Convert to omxplayer's equivalent percentage for a smoother volume
@@ -136,6 +146,16 @@ class OmxplayerController:
         omx_vol_pct = max(omx_vol_pct, 0)
         omx_vol_pct = min(omx_vol_pct, 1)
         return omx_vol_pct
+
+    def __are_too_many_procs_in_flight(self):
+        updated_in_flight_procs = []
+        for proc in self.__in_flight_procs:
+            if proc.poll() is None:
+                updated_in_flight_procs.append(proc)
+        self.__in_flight_procs = updated_in_flight_procs
+        if len(self.__in_flight_procs) >= self.__MAX_IN_FLIGHT_PROCS:
+            return True
+        return False
 
     # Returns a boolean. True if the session was loaded or already loaded, false if we failed to load.
     def __load_dbus_session_info(self):
