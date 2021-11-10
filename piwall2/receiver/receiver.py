@@ -129,7 +129,7 @@ class Receiver:
         return proc
 
     def __show_loading_screen(self):
-        cmd = f'omxplayer /home/pi/glitch.ts'
+        cmd = f'omxplayer --layer 0 /home/pi/glitch.ts'
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
