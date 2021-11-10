@@ -91,6 +91,8 @@ class OmxplayerController:
             cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {omx_vol_pcts}"
 
         start = time.time()
+        # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
+        # Dbus can sometimes take a while to execute.
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash'
         )
@@ -123,6 +125,8 @@ class OmxplayerController:
             cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {crop_strings}"
 
         start = time.time()
+        # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
+        # Dbus can sometimes take a while to execute.
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash'
         )
