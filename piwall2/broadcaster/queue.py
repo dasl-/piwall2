@@ -66,7 +66,14 @@ class Queue:
         if not self.__is_broadcast_in_progress:
             return
 
-        if self.__playlist.should_skip_video_id(self.__playlist_item['playlist_video_id']):
+        should_skip = False
+        try:
+            # Might result in: `sqlite3.OperationalError: database is locked`, when DB is under load
+            should_skip = self.__playlist.should_skip_video_id(self.__playlist_item['playlist_video_id'])
+        except Exception as e:
+            self.__logger.info(f"Caught exception: {e}.")
+
+        if should_skip:
             self.__stop_broadcast_if_broadcasting()
             return True
 
