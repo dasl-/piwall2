@@ -132,7 +132,7 @@ class OmxplayerController:
 
     def unpause(self, dbus_names):
         num_dbus_names = len(dbus_names)
-        if len(num_dbus_names) <= 0:
+        if num_dbus_names <= 0:
             return
 
         # Don't check if too many procs are in flight, because we never want to ignore an unpause command.
