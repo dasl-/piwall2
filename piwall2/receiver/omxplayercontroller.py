@@ -82,7 +82,12 @@ class OmxplayerController:
         else:
             parallel_crop_template = shlex.quote(vol_template.format('{1}', '{2}'))
             dbus_names = self.__PARALLEL_DELIM.join(pairs.keys())
-            omx_vol_pcts = self.__PARALLEL_DELIM.join(map(self.__vol_pct_to_omx_vol_pct, pairs.values()))
+            omx_vol_pcts = self.__PARALLEL_DELIM.join(
+                map(
+                    str,
+                    map(self.__vol_pct_to_omx_vol_pct, pairs.values())
+                )
+            )
             cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {omx_vol_pcts}"
 
         start = time.time()

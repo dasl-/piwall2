@@ -149,7 +149,7 @@ class Receiver:
     def __receive_and_play_video(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
-        cmd, self.__crop_args, self.__crop_args2 = (
+        cmd, self.__video_crop_args, self.__video_crop_args2 = (
             self.__receiver_command_builder.build_receive_and_play_video_command_and_get_crop_args(
                 ctrl_msg_content['log_uuid'], ctrl_msg_content['video_width'],
                 ctrl_msg_content['video_height'], self.__video_player_volume_pct,
@@ -166,7 +166,7 @@ class Receiver:
     def __show_loading_screen(self, ctrl_msg):
         ctrl_msg_content = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
-        cmd, self.__crop_args, self.__crop_args2 = (
+        cmd, self.__loading_screen_crop_args, self.__loading_screen_crop_args2 = (
             self.__receiver_command_builder.build_loading_screen_command_and_get_crop_args(
                 self.__video_player_volume_pct, self.__display_mode, self.__display_mode2
             )
@@ -194,8 +194,8 @@ class Receiver:
                 pass
         Logger.set_uuid('')
         self.__is_video_playback_in_progress = False
-        self.__crop_args = None
-        self.__crop_args2 = None
+        self.__video_crop_args = None
+        self.__video_crop_args2 = None
 
     def __stop_loading_screen_playback_if_playing(self, reset_log_uuid):
         if not self.__is_loading_screen_playback_in_progress:
@@ -210,6 +210,8 @@ class Receiver:
         if reset_log_uuid:
             Logger.set_uuid('')
         self.__is_loading_screen_playback_in_progress = False
+        self.__loading_screen_crop_args = None
+        self.__loading_screen_crop_args2 = None
 
     # The first video that is played after a system restart appears to have a lag in starting,
     # which can affect video synchronization across the receivers. Ensure we have played at
