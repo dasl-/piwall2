@@ -63,13 +63,14 @@ class ReceiverCommandBuilder:
         mbuffer_cmd = ('mbuffer -q -l /tmp/mbuffer.out -m ' +
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
-        omx_cmd = self.__OMX_CMD_TEMPLATE.format(
+        omx_cmd_tempate = self.__OMX_CMD_TEMPLATE + ' --start-paused'
+        omx_cmd = omx_cmd_tempate.format(
             shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels)),
             OmxplayerController.TV1_VIDEO_DBUS_NAME, '1'
         )
         cmd = 'set -o pipefail && '
         if self.__receiver_config_stanza['is_dual_video_output']:
-            omx_cmd2 = self.__OMX_CMD_TEMPLATE.format(
+            omx_cmd2 = omx_cmd_tempate.format(
                 shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels)),
                 OmxplayerController.TV2_VIDEO_DBUS_NAME, '1'
             )
