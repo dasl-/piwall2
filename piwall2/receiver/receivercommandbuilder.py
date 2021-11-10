@@ -5,6 +5,7 @@ from piwall2.directoryutils import DirectoryUtils
 from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
 import piwall2.receiver.receiver
+from piwall2.receiver.omxplayercontroller import OmxplayerController
 from piwall2.volumecontroller import VolumeController
 
 # Helper to build the "receive and play video" command
@@ -64,16 +65,18 @@ class ReceiverCommandBuilder:
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
         # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
-        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --aspect-mode stretch ' +
-            '--layer 1 --no-keys --timeout 30 --threshold 0.2 --video_fifo 10 --genlog pipe:0')
+        omx_cmd_template = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --dbus_name {4} ' +
+            '--aspect-mode stretch --layer 1 --no-keys --timeout 30 --threshold 0.2 --video_fifo 10 --genlog pipe:0')
 
         omx_cmd = omx_cmd_template.format(
-            shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels))
+            shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels)),
+            OmxplayerController.TV1_VIDEO_DBUS_NAME
         )
         cmd = 'set -o pipefail && '
         if self.__receiver_config_stanza['is_dual_video_output']:
             omx_cmd2 = omx_cmd_template.format(
-                shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels))
+                shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels)),
+                OmxplayerController.TV2_VIDEO_DBUS_NAME
             )
             cmd += f'{mbuffer_cmd} | tee >({omx_cmd}) >({omx_cmd2}) >/dev/null'
         else:

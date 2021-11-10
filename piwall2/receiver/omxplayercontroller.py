@@ -15,6 +15,9 @@ from piwall2.volumecontroller import VolumeController
 # TODO: support dual video output. Perhaps send dbus messages in parallel to both?
 class OmxplayerController:
 
+    TV1_VIDEO_DBUS_NAME = 'piwall_tv1_video'
+    TV2_VIDEO_DBUS_NAME = 'piwall_tv2_video'
+
     __DBUS_TIMEOUT_MS = 2000
 
     def __init__(self):
@@ -32,7 +35,7 @@ class OmxplayerController:
 
         cmd = (f"sudo -u {self.__user} DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
-            "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get " +
+            f"--dest={self.TV1_VIDEO_DBUS_NAME} /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get " +
             "string:'org.mpris.MediaPlayer2.Player' string:'Volume'")
         vol_cmd_output = None
         try:
@@ -67,7 +70,7 @@ class OmxplayerController:
 
         cmd = (f"sudo -u {self.__user} DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
-            "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set " +
+            f"--dest={self.TV1_VIDEO_DBUS_NAME} /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Set " +
             f"string:'org.mpris.MediaPlayer2.Player' string:'Volume' double:{omx_vol_pct}")
         start = time.time()
         try:
@@ -90,7 +93,7 @@ class OmxplayerController:
 
         cmd = (f"sudo -u {self.__user} DBUS_SESSION_BUS_ADDRESS={self.__dbus_addr} DBUS_SESSION_BUS_PID={self.__dbus_pid} dbus-send " +
             f"--print-reply=literal --session --reply-timeout={self.__DBUS_TIMEOUT_MS} " +
-            "--dest=org.mpris.MediaPlayer2.omxplayer /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetVideoCropPos " +
+            f"--dest={self.TV1_VIDEO_DBUS_NAME} /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.SetVideoCropPos " +
             f"objpath:/not/used string:'{crop_string}'")
 
         start = time.time()

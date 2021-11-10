@@ -54,7 +54,7 @@ class Receiver:
         # Set the video player volume to 50%, but set the hardware volume to 100%.
         self.__video_player_volume_pct = 50
         (VolumeController()).set_vol_pct(100)
-        self.__disable_screen()
+        self.__disable_terminal_output()
         self.__play_warmup_video()
 
         # This must come after the warmup video. When run as a systemd service, omxplayer wants to
@@ -208,14 +208,16 @@ class Receiver:
             raise Exception(f"The process for cmd: [{warmup_cmd}] exited non-zero: " +
                 f"{proc.returncode}.")
 
-    def __disable_screen(self):
+    # Display a black image so that terminal text output doesn't show up on the TVs in between videos.
+    # Basically this black image will be on display all the time "underneath" any videos that are playing.
+    def __disable_terminal_output(self):
         subprocess.check_output(
             f"sudo fbi -T 1 --noverbose --autozoom {DirectoryUtils().root_dir}/assets/black_screen.jpg",
             shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
         )
-        atexit.register(self.__enable_screen)
+        atexit.register(self.__enable_terminal_output)
 
-    def __enable_screen(self):
+    def __enable_terminal_output(self):
         try:
             subprocess.check_output(
                 "sudo pkill fbi", shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
