@@ -28,12 +28,16 @@ class OmxplayerController:
         # Exit status: 1-100 Some of the jobs failed. The exit status gives the number of failed jobs.
         "--halt never ")
 
+    # Ensure we don't have too many volume processes in flight that could overload CPU
+    __MAX_IN_FLIGHT_VOLUME_PROCS = 2
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__user = getpass.getuser()
         self.__dbus_addr = None
         self.__dbus_pid = None
         self.__load_dbus_session_info()
+        self.__in_flight_volume_procs = []
 
     # gets a perceptual loudness %
     # returns a float in the range [0, 100]
@@ -67,6 +71,15 @@ class OmxplayerController:
         if num_pairs <= 0:
             return
 
+        updated_in_flight_volume_procs = []
+        for volume_proc in self.__in_flight_volume_procs:
+            if volume_proc.poll() is None:
+                updated_in_flight_volume_procs.append(volume_proc)
+        self.__in_flight_volume_procs = updated_in_flight_volume_procs
+        if len(self.__in_flight_volume_procs) > self.__MAX_IN_FLIGHT_VOLUME_PROCS:
+            self.__logger.warn("Too many in-flight volume processes; bailing without setting volume.")
+            return
+
         vol_template = (
             'sudo -u ' + self.__user + ' ' +
             'DBUS_SESSION_BUS_ADDRESS=' + self.__dbus_addr + ' ' +
@@ -95,6 +108,7 @@ class OmxplayerController:
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash'
         )
+        self.__in_flight_volume_procs.append(proc)
 
     # pairs: a dict where each key is a dbus name and each value is a crop string ("x1 y1 x2 y2")
     # e.g.: {'piwall.tv1.video': '0 0 100 100'}
