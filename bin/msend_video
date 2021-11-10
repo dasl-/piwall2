@@ -3,6 +3,7 @@
 import sys
 import argparse
 import os
+import time
 
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
@@ -42,6 +43,7 @@ while True:
 
     if bytes_sent <= 0:
         control_message_helper.send_msg(ControlMessageHelper.TYPE_END_LOADING_SCREEN, {})
+        time.sleep(0.5) # give time for the loading screen to end
 
     bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
 
