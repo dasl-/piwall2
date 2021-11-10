@@ -38,6 +38,7 @@ control_message_helper = ControlMessageHelper().setup_for_broadcaster()
 bytes_sent = 0
 first_byte_send_time = None
 has_sent_end_loading_screen_signal = False
+end_loading_screen_signal_time = None
 has_sent_unpause_signal = False
 while True:
     data = sys.stdin.buffer.read(4096)
@@ -47,11 +48,16 @@ while True:
     if bytes_sent <= 0:
         first_byte_send_time = time.time()
 
-    if not has_sent_end_loading_screen_signal and (time.time() - first_byte_send_time) > 1.4:
+    # give enough time for video decoding to occur after sending the first byte of the video
+    # before ending the loading screen
+    if not has_sent_end_loading_screen_signal and (time.time() - first_byte_send_time) > 1.3:
         control_message_helper.send_msg(ControlMessageHelper.TYPE_END_LOADING_SCREEN, {})
         has_sent_end_loading_screen_signal = True
+        end_loading_screen_signal_time = time.time()
 
-    if not has_sent_unpause_signal and (time.time() - first_byte_send_time) > 1.5:
+    # give enough time for the loading screen omxplayer instance to shutdown before unpausing
+    # the main video instance of omxplayer
+    if not has_sent_unpause_signal and (time.time() - end_loading_screen_signal_time) > 0.2:
         control_message_helper.send_msg(ControlMessageHelper.TYPE_UNPAUSE_VIDEO, {})
         has_sent_unpause_signal = True
 
