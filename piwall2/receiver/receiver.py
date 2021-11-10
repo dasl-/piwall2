@@ -44,6 +44,7 @@ class Receiver:
         # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__receive_and_play_video_proc_pgid = None
+        self.__loading_screen_pgid = None
 
         # house keeping
         # Set the video player volume to 50%, but set the hardware volume to 100%.
@@ -128,22 +129,23 @@ class Receiver:
         return proc
 
     def __show_loading_screen(self):
-        subprocess.check_output(
-            f"sudo fbi -T 1 -noverbose --autozoom {DirectoryUtils().root_dir}/assets/loading_screen.png",
-            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
+        cmd = f'omxplayer /home/pi/glitch.ts'
+        proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
+        self.__loading_screen_pgid = os.getpgid(proc.pid)
 
     def __stop_video_playback_if_playing(self):
         if not self.__is_video_playback_in_progress:
             return
 
-        try:
-            subprocess.check_output(
-                "sudo pkill fbi",
-                shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
-            )
-        except Exception:
-            pass
+        if self.__loading_screen_pgid:
+            self.__logger.info("Killing loading_screen proc (if it's still running)...")
+            try:
+                os.killpg(self.__loading_screen_pgid, signal.SIGTERM)
+            except Exception:
+                # might raise: `ProcessLookupError: [Errno 3] No such process`
+                pass
 
         if self.__receive_and_play_video_proc_pgid:
             self.__logger.info("Killing receive_and_play_video proc (if it's still running)...")

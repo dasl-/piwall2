@@ -29,6 +29,9 @@ class VideoBroadcaster:
     __VIDEO_PLAYBACK_DONE_FILE = '/tmp/video_playback_done.file'
 
     # video_url may be a youtube url or a path to a file on disk
+    # Loading screen may also get shown by the queue process. Sending the signal to show it from
+    # the queue is faster than showing it in the videobroadcaster process. But one may still wish
+    # to show a loading screen when playing videos via the command line.
     def __init__(self, video_url, log_uuid, show_loading_screen):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         if log_uuid:
