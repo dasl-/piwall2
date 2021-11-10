@@ -15,8 +15,8 @@ from piwall2.volumecontroller import VolumeController
 # TODO: support dual video output. Perhaps send dbus messages in parallel to both?
 class OmxplayerController:
 
-    TV1_VIDEO_DBUS_NAME = 'piwall_tv1_video'
-    TV2_VIDEO_DBUS_NAME = 'piwall_tv2_video'
+    TV1_VIDEO_DBUS_NAME = 'piwall.tv1.video'
+    TV2_VIDEO_DBUS_NAME = 'piwall.tv2.video'
 
     __DBUS_TIMEOUT_MS = 2000
 
