@@ -77,7 +77,7 @@ class OmxplayerController:
                 updated_in_flight_volume_procs.append(volume_proc)
         self.__in_flight_volume_procs = updated_in_flight_volume_procs
         if len(self.__in_flight_volume_procs) > self.__MAX_IN_FLIGHT_VOLUME_PROCS:
-            self.__logger.warn("Too many in-flight volume processes; bailing without setting volume.")
+            self.__logger.warning("Too many in-flight volume processes; bailing without setting volume.")
             return
 
         vol_template = (
