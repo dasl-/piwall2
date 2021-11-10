@@ -91,12 +91,9 @@ class OmxplayerController:
             cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {omx_vol_pcts}"
 
         start = time.time()
-        try:
-            vol_cmd_output = (subprocess
-                .check_output(cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT))
-        except Exception:
-            self.__logger.debug(f"failed to set omxplayer volume with command: [{cmd}] for {', '.join(pairs.keys())}.")
-            return False
+        proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash'
+        )
         elapsed_ms = (time.time() - start) * 1000
         self.__logger.debug(f"set volume after {elapsed_ms}ms for {', '.join(pairs.keys())}.")
         return True
@@ -126,12 +123,9 @@ class OmxplayerController:
             cmd = f"{self.__PARALLEL_CMD_PREFIX} {parallel_crop_template} ::: {dbus_names} ::: {crop_strings}"
 
         start = time.time()
-        try:
-            cmd_output = (subprocess
-                .check_output(cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT))
-        except Exception:
-            self.__logger.debug(f"failed to set omxplayer crop position for {', '.join(pairs.keys())}")
-            return False
+        proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash'
+        )
         elapsed_ms = (time.time() - start) * 1000
 
         self.__logger.debug(f"set crop position after {elapsed_ms}ms for {', '.join(pairs.keys())}.")
