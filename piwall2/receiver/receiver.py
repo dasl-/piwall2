@@ -175,7 +175,8 @@ class Receiver:
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
         cmd, self.__loading_screen_crop_args, self.__loading_screen_crop_args2 = (
             self.__receiver_command_builder.build_loading_screen_command_and_get_crop_args(
-                self.__video_player_volume_pct, self.__display_mode, self.__display_mode2
+                self.__video_player_volume_pct, self.__display_mode, self.__display_mode2,
+                ctrl_msg_content['loading_screen_data']
             )
         )
         self.__logger.info(f"Showing loading screen with command: {cmd}")
