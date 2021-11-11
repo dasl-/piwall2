@@ -11,8 +11,6 @@ from piwall2.volumecontroller import VolumeController
 # See:
 # https://github.com/popcornmix/omxplayer/blob/master/dbuscontrol.sh
 # https://github.com/popcornmix/omxplayer#dbus-control
-#
-# TODO: support dual video output. Perhaps send dbus messages in parallel to both?
 class OmxplayerController:
 
     TV1_VIDEO_DBUS_NAME = 'piwall.tv1.video'
