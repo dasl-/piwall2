@@ -70,8 +70,9 @@ class Queue:
         else:
             options = screensavers_config['1080p']
         screensaver_data = random.choice(list(options.values()))
+        path = DirectoryUtils().root_dir + '/' + screensaver_data['path']
         self.__logger.info("Starting broadcast of screensaver...")
-        self.__do_broadcast(screensaver_data['path'], log_uuid)
+        self.__do_broadcast(path, log_uuid)
 
     def __do_broadcast(self, url, log_uuid):
         cmd = (f"{DirectoryUtils().root_dir}/bin/broadcast --url {shlex.quote(url)} " +
