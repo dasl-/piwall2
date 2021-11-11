@@ -20,6 +20,7 @@ class ConfigLoader:
     __wall_width = None
     __wall_height = None
     __youtube_dl_video_format = None
+    __is_any_receiver_dual_video_output = None
     __hostname = None
     __local_ip_address = None
 
@@ -68,6 +69,9 @@ class ConfigLoader:
     # see: https://github.zm/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#one-vs-two-tvs-per-receiver-raspberry-pi
     def get_youtube_dl_video_format(self):
         return ConfigLoader.__youtube_dl_video_format
+
+    def is_any_receiver_dual_video_output(self):
+        return ConfigLoader.__is_any_receiver_dual_video_output
 
     def __load_config_if_not_loaded(self):
         if ConfigLoader.__is_loaded:
@@ -128,6 +132,7 @@ class ConfigLoader:
 
         ConfigLoader.__hostname = socket.gethostname() + ".local"
         ConfigLoader.__local_ip_address = self.__get_local_ip()
+        ConfigLoader.__is_any_receiver_dual_video_output = is_any_receiver_dual_video_out
         ConfigLoader.__raw_config = raw_config
 
         ConfigLoader.__is_loaded = True

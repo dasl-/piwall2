@@ -1,4 +1,5 @@
 import os
+import random
 import shlex
 import signal
 import subprocess
@@ -6,6 +7,7 @@ import time
 
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.settingsdb import SettingsDb
+from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
@@ -17,9 +19,9 @@ class Queue:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Starting queue...")
+        self.__config_loader = ConfigLoader()
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
-        self.__orig_log_uuid = Logger.get_uuid()
         self.__volume_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__last_receiver_state_set_time = 0
@@ -42,6 +44,8 @@ class Queue:
                 next_item = self.__playlist.get_next_playlist_item()
                 if next_item:
                     self.__play_playlist_item(next_item)
+                else:
+                    self.__play_screensaver()
             self.__maybe_set_receiver_state()
             time.sleep(0.050)
 
@@ -49,19 +53,34 @@ class Queue:
         if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
             # Someone deleted the item from the queue in between getting the item and starting it.
             return
-        self.__orig_log_uuid = Logger.get_uuid()
         log_uuid = Logger.make_uuid()
         Logger.set_uuid(log_uuid)
         self.__logger.info(f"Starting broadcast for playlist_video_id: {playlist_item['playlist_video_id']}")
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, {'log_uuid': log_uuid})
-        cmd = (f"{DirectoryUtils().root_dir}/bin/broadcast --url {shlex.quote(playlist_item['url'])} " +
+        self.__do_broadcast(playlist_item['url'], log_uuid)
+        self.__playlist_item = playlist_item
+
+    def __play_screensaver(self):
+        log_uuid = 'SCREENSAVER__' + Logger.make_uuid()
+        Logger.set_uuid(log_uuid)
+        # choose random screensaver video to play
+        screensavers_config = self.__config_loader.get_raw_config()['screensavers']
+        if self.__config_loader.is_any_receiver_dual_video_output():
+            options = screensavers_config['720p']
+        else:
+            options = screensavers_config['1080p']
+        screensaver_data = random.choice(list(options.values()))
+        self.__logger.info("Starting broadcast of screensaver...")
+        self.__do_broadcast(screensaver_data['path'], log_uuid)
+
+    def __do_broadcast(self, url, log_uuid):
+        cmd = (f"{DirectoryUtils().root_dir}/bin/broadcast --url {shlex.quote(url)} " +
             f"--log-uuid {shlex.quote(log_uuid)} --no-show-loading-screen")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
         # it should not hurt if we were to set it to True either)
         self.__broadcast_proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash', start_new_session = False
         )
-        self.__playlist_item = playlist_item
         self.__is_broadcast_in_progress = True
 
     def __maybe_skip_broadcast(self):
@@ -69,17 +88,24 @@ class Queue:
             return
 
         should_skip = False
-        try:
-            # Might result in: `sqlite3.OperationalError: database is locked`, when DB is under load
-            should_skip = self.__playlist.should_skip_video_id(self.__playlist_item['playlist_video_id'])
-        except Exception as e:
-            self.__logger.info(f"Caught exception: {e}.")
+        if self.__playlist_item:
+            try:
+                # Might result in: `sqlite3.OperationalError: database is locked`, when DB is under load
+                should_skip = self.__playlist.should_skip_video_id(self.__playlist_item['playlist_video_id'])
+            except Exception as e:
+                self.__logger.info(f"Caught exception: {e}.")
+
+        if self.__is_screensaver_broadcast_in_progress():
+            should_skip = self.__playlist.get_next_playlist_item() is not None
 
         if should_skip:
             self.__stop_broadcast_if_broadcasting()
             return True
 
         return False
+
+    def __is_screensaver_broadcast_in_progress(self):
+        return self.__is_broadcast_in_progress and self.__playlist_item is None
 
     def __stop_broadcast_if_broadcasting(self):
         if not self.__is_broadcast_in_progress:
@@ -104,7 +130,7 @@ class Queue:
             self.__playlist.end_video(self.__playlist_item["playlist_video_id"])
 
         self.__logger.info("Ended video broadcast.")
-        Logger.set_uuid(self.__orig_log_uuid)
+        Logger.set_uuid('')
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
