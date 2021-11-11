@@ -3,7 +3,6 @@ import math
 import re
 import shlex
 import subprocess
-import time
 
 from piwall2.logger import Logger
 from piwall2.volumecontroller import VolumeController
@@ -29,8 +28,12 @@ class OmxplayerController:
         # Exit status: 1-100 Some of the jobs failed. The exit status gives the number of failed jobs.
         "--halt never ")
 
-    # Ensure we don't have too many processes in flight that could overload CPU
-    __MAX_IN_FLIGHT_PROCS = 1
+    # Ensure we don't have too many processes in flight that could overload CPU.
+    # Need to track the limits separately because in Queue.__maybe_set_receiver_state,
+    # we set volume and display_mode in quick succession. If we had a global limit of 1,
+    # we'd risk that the display_mode never gets set due to throttling.
+    __MAX_IN_FLIGHT_VOL_PROCS = 1
+    __MAX_IN_FLIGHT_CROP_PROCS = 1
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -38,7 +41,8 @@ class OmxplayerController:
         self.__dbus_addr = None
         self.__dbus_pid = None
         self.__load_dbus_session_info()
-        self.__in_flight_procs = []
+        self.__in_flight_vol_procs = []
+        self.__in_flight_crop_procs = []
 
     # gets a perceptual loudness %
     # returns a float in the range [0, 100]
@@ -72,7 +76,7 @@ class OmxplayerController:
         if num_pairs <= 0:
             return
 
-        if self.__are_too_many_procs_in_flight():
+        if self.__are_too_many_procs_in_flight(self.__in_flight_vol_procs, self.__MAX_IN_FLIGHT_VOL_PROCS):
             self.__logger.warning("Too many in-flight dbus processes; bailing without setting volume.")
             return
 
@@ -99,7 +103,7 @@ class OmxplayerController:
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
         proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
-        self.__in_flight_procs.append(proc)
+        self.__in_flight_vol_procs.append(proc)
 
     # pairs: a dict where each key is a dbus name and each value is a crop string ("x1 y1 x2 y2")
     # e.g.: {'piwall.tv1.video': '0 0 100 100'}
@@ -108,7 +112,7 @@ class OmxplayerController:
         if num_pairs <= 0:
             return
 
-        if self.__are_too_many_procs_in_flight():
+        if self.__are_too_many_procs_in_flight(self.__in_flight_crop_procs, self.__MAX_IN_FLIGHT_CROP_PROCS):
             self.__logger.warning("Too many in-flight dbus processes; bailing without setting crop.")
             return
 
@@ -128,7 +132,7 @@ class OmxplayerController:
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
         proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
-        self.__in_flight_procs.append(proc)
+        self.__in_flight_crop_procs.append(proc)
 
     # start playback / unpause the video
     def play(self, dbus_names):
@@ -163,13 +167,16 @@ class OmxplayerController:
         omx_vol_pct = min(omx_vol_pct, 1)
         return omx_vol_pct
 
-    def __are_too_many_procs_in_flight(self):
+    def __are_too_many_procs_in_flight(self, in_flight_procs, max_procs):
         updated_in_flight_procs = []
-        for proc in self.__in_flight_procs:
+        for proc in in_flight_procs:
             if proc.poll() is None:
                 updated_in_flight_procs.append(proc)
-        self.__in_flight_procs = updated_in_flight_procs
-        if len(self.__in_flight_procs) >= self.__MAX_IN_FLIGHT_PROCS:
+
+        # modify in_flight_procs in place so that all references are updated
+        in_flight_procs.clear()
+        in_flight_procs.extend(updated_in_flight_procs)
+        if len(in_flight_procs) >= max_procs:
             return True
         return False
 
