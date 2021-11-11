@@ -117,8 +117,6 @@ class Receiver:
             self.__omxplayer_controller.set_vol_pct(vol_pairs)
         elif msg_type == ControlMessageHelper.TYPE_DISPLAY_MODE:
             display_mode_by_tv_id = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-            old_display_mode = self.__display_mode
-            old_display_mode2 = self.__display_mode2
             for tv_num, tv_id in self.__tv_ids.items():
                 if tv_id in display_mode_by_tv_id:
                     display_mode_to_set = display_mode_by_tv_id[tv_id]
@@ -131,19 +129,17 @@ class Receiver:
 
             crop_pairs = {}
             if self.__is_video_playback_in_progress:
-                if self.__video_crop_args and old_display_mode != self.__display_mode:
+                if self.__video_crop_args:
                     crop_pairs[OmxplayerController.TV1_VIDEO_DBUS_NAME] = self.__video_crop_args[self.__display_mode]
                 if (
-                    self.__receiver_config_stanza['is_dual_video_output'] and
-                    self.__video_crop_args2 and old_display_mode2 != self.__display_mode2
+                    self.__receiver_config_stanza['is_dual_video_output'] and self.__video_crop_args2
                 ):
                     crop_pairs[OmxplayerController.TV2_VIDEO_DBUS_NAME] = self.__video_crop_args2[self.__display_mode2]
             if self.__is_loading_screen_playback_in_progress:
-                if self.__loading_screen_crop_args and old_display_mode != self.__display_mode:
+                if self.__loading_screen_crop_args:
                     crop_pairs[OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME] = self.__loading_screen_crop_args[self.__display_mode]
                 if (
-                    self.__receiver_config_stanza['is_dual_video_output'] and
-                    self.__loading_screen_crop_args2 and old_display_mode2 != self.__display_mode2
+                    self.__receiver_config_stanza['is_dual_video_output'] and self.__loading_screen_crop_args2
                 ):
                     crop_pairs[OmxplayerController.TV2_LOADING_SCREEN_DBUS_NAME] = self.__loading_screen_crop_args2[self.__display_mode2]
             self.__omxplayer_controller.set_crop(crop_pairs)
