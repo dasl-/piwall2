@@ -16,7 +16,8 @@ from piwall2.logger import Logger
 def parseArgs():
     parser = argparse.ArgumentParser(
         description=('download a video from youtube in the format ' +
-            'required to make it a user defined loading screen video or a screensaver video'),
+            'required to make it a user defined loading screen video or a screensaver video.' +
+            'Videos may be cropped via: https://stackoverflow.com/a/42827058/627663'),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--url', dest='url', action='store', required = True,
