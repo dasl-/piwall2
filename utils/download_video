@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import subprocess
+import sys
+import time
+
+# This is necessary for the imports below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
+from piwall2.broadcaster.videobroadcaster import VideoBroadcaster
+from piwall2.configloader import ConfigLoader
+from piwall2.logger import Logger
+
+def parseArgs():
+    parser = argparse.ArgumentParser(
+        description=('download a video from youtube in the format ' +
+            'required to make it a user defined loading screen video or a screensaver video'),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--url', dest='url', action='store', required = True,
+        help='youtube video url')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--1080p', dest='video_quality', action='store_const', const='1080p')
+    group.add_argument('--720p', dest='video_quality', action='store_const', const='720p')
+    parser.add_argument('--output-file', dest='output_file', action='store', required = True,
+        help='output file')
+    args = parser.parse_args()
+    return args
+
+
+logger = Logger()
+args = parseArgs()
+broadcaster = VideoBroadcaster(args.url, log_uuid = '', show_loading_screen = False)
+if args.video_quality == '1080p':
+    ytdl_video_format = ConfigLoader.SINGLE_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT
+elif args.video_quality == '720p':
+    ytdl_video_format = ConfigLoader.DUAL_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT
+else:
+    logger.error(f"Invalid video quality: {args.video_quality}")
+    sys.exit(1)
+
+download_and_convert_video_proc = broadcaster.start_download_and_convert_video_proc(ytdl_video_format = ytdl_video_format)
+write_output_proc = subprocess.Popen(
+    f'cat - >{args.output_file}', shell = True, executable = '/usr/bin/bash', start_new_session = True,
+    stdin = download_and_convert_video_proc.stdout
+)
+
+while write_output_proc.poll() is None:
+    time.sleep(0.1)
+
+if write_output_proc.returncode != 0:
+    logger.error(f"Got non-zero exit code: {write_output_proc.returncode}")
+    sys.exit(write_output_proc.returncode)

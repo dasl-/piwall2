@@ -96,7 +96,7 @@ class VideoBroadcaster:
         3) To download the best audio quality
 
         Ytdl takes couple of seconds to be invoked. Luckily, (2) and (3) happen in parallel
-        (see self.____get_ffmpeg_input_clause). But that would still leave us with effectively two groups of ytdl
+        (see self.__get_ffmpeg_input_clause). But that would still leave us with effectively two groups of ytdl
         invocations which are happening serially: the group consisting of "1" and the group consisting of "2 and 3".
         Note that (1) happens in self.__get_video_info.
 
@@ -119,7 +119,7 @@ class VideoBroadcaster:
         Thus, we need to know the video dimensions before broadcasting the video. Without breaking up the pipeline,
         we wouldn't be able to enforce that we don't start broadcasting the video before knowing the dimensions.
         """
-        download_and_convert_video_proc = self.__start_download_and_convert_video_proc()
+        download_and_convert_video_proc = self.start_download_and_convert_video_proc()
         self.__get_video_info(assert_data_not_yet_loaded = True)
         self.__start_receivers()
 
@@ -185,14 +185,14 @@ class VideoBroadcaster:
     Note that we only download the video if the input was a youtube_url. If playing a local file, no
     download is necessary.
     """
-    def __start_download_and_convert_video_proc(self):
+    def start_download_and_convert_video_proc(self, ytdl_video_format = None):
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
             cmd = f"cat {shlex.quote(self.__video_url)}"
         else:
             # Mix the best audio with the video and send via multicast
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
             # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
-            ffmpeg_input_clause = self.__get_ffmpeg_input_clause()
+            ffmpeg_input_clause = self.__get_ffmpeg_input_clause(ytdl_video_format)
             # TODO: can we use mp3 instead of mp2?
             cmd = (f"set -o pipefail && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
                 "-c:v copy -c:a mp2 -b:a 192k -f mpegts -")
@@ -252,7 +252,7 @@ class VideoBroadcaster:
             log_opts += '-loglevel error'
         return f"ffmpeg -hide_banner {log_opts} "
 
-    def __get_ffmpeg_input_clause(self):
+    def __get_ffmpeg_input_clause(self, ytdl_video_format):
         video_url_type = self.__get_video_url_type()
         if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBE:
             """
@@ -285,12 +285,15 @@ class VideoBroadcaster:
             if not sys.stderr.isatty():
                 log_opts += ' --newline'
 
+            if not ytdl_video_format:
+                ytdl_video_format = self.__config_loader.get_youtube_dl_video_format()
+
             # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
             # be enough buffer for ~139s
             video_buffer_size = 1024 * 1024 * 50
             youtube_dl_video_cmd = youtube_dl_cmd_template.format(
                 shlex.quote(self.__video_url),
-                shlex.quote(self.__config_loader.get_youtube_dl_video_format()),
+                shlex.quote(ytdl_video_format),
                 log_opts,
                 video_buffer_size
             )

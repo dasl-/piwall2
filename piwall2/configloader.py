@@ -12,6 +12,9 @@ class ConfigLoader:
     # install/setup_broadcaster_and_receivers script.
     CONFIG_PATH = DirectoryUtils().root_dir + '/config.toml'
 
+    DUAL_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT = 'bestvideo[vcodec^=avc1][height<=720]'
+    SINGLE_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT = 'bestvideo[vcodec^=avc1][height<=1080]'
+
     __is_loaded = False
     __receivers_config = None
     __raw_config = None
@@ -123,9 +126,9 @@ class ConfigLoader:
         self.__logger.info(f"Computed wall dimensions: {ConfigLoader.__wall_width}x{ConfigLoader.__wall_height}.")
 
         if is_any_receiver_dual_video_out:
-            ConfigLoader.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=720]'
+            ConfigLoader.__youtube_dl_video_format = self.DUAL_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT
         else:
-            ConfigLoader.__youtube_dl_video_format = 'bestvideo[vcodec^=avc1][height<=1080]'
+            ConfigLoader.__youtube_dl_video_format = self.SINGLE_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT
         self.__logger.info(f"Using youtube-dl video format: {ConfigLoader.__youtube_dl_video_format}")
 
         self.__generate_tv_config()
