@@ -1,5 +1,4 @@
 import math
-import random
 import shlex
 
 from piwall2.directoryutils import DirectoryUtils
@@ -82,12 +81,13 @@ class ReceiverCommandBuilder:
             f'--log-uuid {shlex.quote(log_uuid)}')
         return (receiver_cmd, crop_args, crop_args2)
 
-    def build_loading_screen_command_and_get_crop_args(self, volume_pct, display_mode, display_mode2):
-        video_data = self.__get_random_loading_screen_video()
-        video_path = DirectoryUtils().root_dir + '/' + video_data['path']
+    def build_loading_screen_command_and_get_crop_args(
+        self, volume_pct, display_mode, display_mode2, loading_screen_data
+    ):
+        video_path = DirectoryUtils().root_dir + '/' + loading_screen_data['path']
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
-        crop_args, crop_args2 = self.__get_video_command_crop_args(video_data['width'], video_data['height'])
+        crop_args, crop_args2 = self.__get_video_command_crop_args(loading_screen_data['width'], loading_screen_data['height'])
         crop = crop_args[display_mode]
         crop2 = crop_args2[display_mode2]
         volume_millibels = self.__get_video_command_volume_arg(volume_pct)
@@ -263,15 +263,6 @@ class ReceiverCommandBuilder:
         else:
             volume_millibels = 2000 * math.log(volume_pct, 10)
         return volume_millibels
-
-    def __get_random_loading_screen_video(self):
-        loading_screens_config = self.__config_loader.get_raw_config()['loading_screens']
-        if self.__receiver_config_stanza['is_dual_video_output']:
-            options = loading_screens_config['720p']
-        else:
-            options = loading_screens_config['1080p']
-        video_data = random.choice(list(options.values()))
-        return video_data
 
     """
     The displayable width and height represents the section of the video that the wall will be
