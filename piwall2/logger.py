@@ -61,7 +61,7 @@ class Logger:
             file = sys.stderr
         else:
             file = sys.stdout
-        print(msg, file = file)
+        self.__print_msg(msg, file = file)
 
     def info(self, msg):
         if Logger.__level > Logger.INFO:
@@ -72,22 +72,35 @@ class Logger:
             file = sys.stderr
         else:
             file = sys.stdout
-        print(msg, file = file)
+        self.__print_msg(msg, file = file)
 
     def warning(self, msg):
         if Logger.__level > Logger.WARNING:
             return
 
         msg = self.__format_msg(level = 'warning', msg = msg)
-        print(msg, file = sys.stderr)
+        self.__print_msg(msg, file = sys.stderr)
 
     def error(self, msg):
         if Logger.__level > Logger.ERROR:
             return
 
         msg = self.__format_msg(level = 'error', msg = msg)
-        print(msg, file = sys.stderr)
+        self.__print_msg(msg, file = sys.stderr)
 
     def __format_msg(self, level, msg):
         return (datetime.datetime.now(pytz.timezone('UTC')).isoformat() +
             " [" + level + "] [" + self.__namespace + "] [" + Logger.__uuid + "] " + msg)
+
+    def __print_msg(msg, file):
+        # Note: we could use `flush = True` in our print function. This would result in quicker printing
+        # of logs. But strace analysis showed that this resulted in a lot more `write` syscalls, so it is
+        # likely harder on the disks, and SD cards in the raspberry pi aren't so great at taking writes
+        # anyway.
+        #
+        # See docs:
+        # https://docs.python.org/3/library/functions.html#print
+        #
+        # See strace analysis of with and without `flush = True`
+        # https://gist.github.com/dasl-/796031c305ac26da76cdc2887d9fa817
+        print(msg, file = file)
