@@ -26,8 +26,8 @@ class ReceiverCommandBuilder:
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
         crop_args, crop_args2 = self.__get_video_command_crop_args(video_width, video_height)
-        crop = ' '.join(crop_args[display_mode])
-        crop2 = ' '.join(crop_args2[display_mode2])
+        crop = OmxplayerController.crop_coordinate_list_to_string(crop_args[display_mode])
+        crop2 = OmxplayerController.crop_coordinate_list_to_string(crop_args2[display_mode2])
         volume_millibels = self.__get_video_command_volume_arg(volume_pct)
 
         """
@@ -88,8 +88,8 @@ class ReceiverCommandBuilder:
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
         crop_args, crop_args2 = self.__get_video_command_crop_args(loading_screen_data['width'], loading_screen_data['height'])
-        crop = ' '.join(crop_args[display_mode])
-        crop2 = ' '.join(crop_args2[display_mode2])
+        crop = OmxplayerController.crop_coordinate_list_to_string(crop_args[display_mode])
+        crop2 = OmxplayerController.crop_coordinate_list_to_string(crop_args2[display_mode2])
         volume_millibels = self.__get_video_command_volume_arg(volume_pct)
 
         omx_cmd = self.__OMX_CMD_TEMPLATE.format(

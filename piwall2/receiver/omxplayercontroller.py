@@ -120,7 +120,10 @@ class OmxplayerController:
 
         if num_pairs == 1:
             dbus_name, crop_coords = list(pairs.items())[0]
-            cmd = crop_template.format(dbus_name, ' '.join(crop_coords))
+            cmd = crop_template.format(
+                dbus_name,
+                OmxplayerController.crop_coordinate_list_to_string(crop_coords)
+            )
         else:
             parallel_crop_template = shlex.quote(crop_template.format('{1}', '{2} {3} {4} {5}'))
             dbus_names = ''
@@ -146,6 +149,10 @@ class OmxplayerController:
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
         proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
         self.__in_flight_crop_procs.append(proc)
+
+    @staticmethod
+    def crop_coordinate_list_to_string(crop_coord_list):
+        return ' '.join([str(e) for e in crop_coord_list])
 
     # start playback / unpause the video
     def play(self, dbus_names):
