@@ -92,7 +92,7 @@ class Logger:
         return (datetime.datetime.now(pytz.timezone('UTC')).isoformat() +
             " [" + level + "] [" + self.__namespace + "] [" + Logger.__uuid + "] " + msg)
 
-    def __print_msg(msg, file):
+    def __print_msg(self, msg, file):
         # Note: we could use `flush = True` in our print function. This would result in quicker printing
         # of logs. But strace analysis showed that this resulted in a lot more `write` syscalls, so it is
         # likely harder on the disks, and SD cards in the raspberry pi aren't so great at taking writes
