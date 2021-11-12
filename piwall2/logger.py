@@ -61,7 +61,7 @@ class Logger:
             file = sys.stderr
         else:
             file = sys.stdout
-        self.__print_msg(msg, file = file)
+        self.__print_msg(msg, file)
 
     def info(self, msg):
         if Logger.__level > Logger.INFO:
@@ -72,21 +72,21 @@ class Logger:
             file = sys.stderr
         else:
             file = sys.stdout
-        self.__print_msg(msg, file = file)
+        self.__print_msg(msg, file)
 
     def warning(self, msg):
         if Logger.__level > Logger.WARNING:
             return
 
         msg = self.__format_msg(level = 'warning', msg = msg)
-        self.__print_msg(msg, file = sys.stderr)
+        self.__print_msg(msg, sys.stderr)
 
     def error(self, msg):
         if Logger.__level > Logger.ERROR:
             return
 
         msg = self.__format_msg(level = 'error', msg = msg)
-        self.__print_msg(msg, file = sys.stderr)
+        self.__print_msg(msg, sys.stderr)
 
     def __format_msg(self, level, msg):
         return (datetime.datetime.now(pytz.timezone('UTC')).isoformat() +
