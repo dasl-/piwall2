@@ -197,7 +197,7 @@ class ConfigLoader:
         }
 
     def __get_local_ip(self):
-        return (subprocess
+        private_ip = (subprocess
             .check_output(
                 'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
                 'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
@@ -206,3 +206,5 @@ class ConfigLoader:
             .decode("utf-8")
             .strip()
         )
+        self.__logger.info(f"This device's private IP is: {private_ip}")
+        return private_ip
