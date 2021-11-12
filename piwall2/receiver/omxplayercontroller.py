@@ -19,9 +19,8 @@ class OmxplayerController:
     TV2_LOADING_SCREEN_DBUS_NAME = 'piwall.tv2.loadingscreen'
 
     __DBUS_TIMEOUT_MS = 2000
-    __PARALLEL_DELIM = '_'
     __PARALLEL_CMD_TEMPLATE_PREFIX = (
-        f"parallel --will-cite --delimiter {__PARALLEL_DELIM} --max-args={{0}} --link --max-procs 0 " +
+        f"parallel --will-cite --link --max-procs 0 " +
         # Run all jobs even if one or more failed.
         # Exit status: 1-100 Some of the jobs failed. The exit status gives the number of failed jobs.
         "--halt never ")
@@ -80,23 +79,25 @@ class OmxplayerController:
 
         vol_template = (self.__get_dbus_cmd_template_prefix() +
             "org.freedesktop.DBus.Properties.Set string:'org.mpris.MediaPlayer2.Player' " +
-            "string:'Volume' double:{1} >/dev/null")
+            "string:'Volume' double:{1} >/dev/null 2>&1")
 
         if num_pairs == 1:
             dbus_name, vol_pct = list(pairs.items())[0]
             omx_vol_pct = self.__vol_pct_to_omx_vol_pct(vol_pct)
             cmd = vol_template.format(dbus_name, omx_vol_pct)
         else:
-            parallel_crop_template = shlex.quote(vol_template.format('{1}', '{2}'))
-            dbus_names = self.__PARALLEL_DELIM.join(pairs.keys())
-            omx_vol_pcts = self.__PARALLEL_DELIM.join(
-                map(
-                    str,
-                    map(self.__vol_pct_to_omx_vol_pct, pairs.values())
-                )
-            )
-            cmd = (f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX.format('2')} {parallel_crop_template} ::: {dbus_names} " +
+            parallel_vol_template = shlex.quote(vol_template.format('{1}', '{2}'))
+            dbus_names = ''
+            omx_vol_pcts = ''
+            for dbus_name, vol_pct in pairs.items():
+                dbus_names += dbus_name + ' '
+                omx_vol_pcts += str(self.__vol_pct_to_omx_vol_pct(vol_pct)) + ' '
+            dbus_names = dbus_names.strip()
+            omx_vol_pcts = omx_vol_pcts.strip()
+            cmd = (f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX} {parallel_vol_template} ::: {dbus_names} " +
                 f"::: {omx_vol_pcts}")
+
+        self.__logger.debug(f"dbus_cmd vol_cmd: {cmd}")
 
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
@@ -115,17 +116,31 @@ class OmxplayerController:
             return
 
         crop_template = (self.__get_dbus_cmd_template_prefix() +
-            "org.mpris.MediaPlayer2.Player.SetVideoCropPos objpath:/not/used string:'{1}' >/dev/null")
+            "org.mpris.MediaPlayer2.Player.SetVideoCropPos objpath:/not/used string:'{1}' >/dev/null 2>&1")
 
         if num_pairs == 1:
             dbus_name, crop_string = list(pairs.items())[0]
             cmd = crop_template.format(dbus_name, crop_string)
         else:
-            parallel_crop_template = shlex.quote(crop_template.format('{1}', '{2}'))
-            dbus_names = self.__PARALLEL_DELIM.join(pairs.keys())
-            crop_strings = self.__PARALLEL_DELIM.join(pairs.values())
-            cmd = (f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX.format('2')} {parallel_crop_template} ::: {dbus_names} " +
-                f"::: {crop_strings}")
+            parallel_crop_template = shlex.quote(crop_template.format('{1}', '{2} {3} {4} {5}'))
+            dbus_names = ''
+            crop_x1s = crop_y1s = crop_x2s = crop_y2s = ''
+            for dbus_name, crop_string in pairs.items():
+                dbus_names += dbus_name + ' '
+                x1, y1, x2, y2 = crop_string.split(' ')
+                crop_x1s += x1 + ' '
+                crop_y1s += y1 + ' '
+                crop_x2s += x2 + ' '
+                crop_y2s += y2 + ' '
+            dbus_names = dbus_names.strip()
+            crop_x1s = crop_x1s.strip()
+            crop_y1s = crop_y1s.strip()
+            crop_x2s = crop_x2s.strip()
+            crop_y2s = crop_y2s.strip()
+            cmd = (f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX} {parallel_crop_template} ::: {dbus_names} " +
+                f"::: {crop_x1s} ::: {crop_y1s} ::: {crop_x2s} ::: {crop_y2s}")
+
+        self.__logger.debug(f"dbus_cmd crop_cmd: {cmd}")
 
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
@@ -142,13 +157,15 @@ class OmxplayerController:
         # This is used to start the video playback in sync across all the TVs.
 
         play_template = (self.__get_dbus_cmd_template_prefix() +
-            "org.mpris.MediaPlayer2.Player.Play >/dev/null")
+            "org.mpris.MediaPlayer2.Player.Play >/dev/null 2>&1")
         if num_dbus_names == 1:
             cmd = play_template.format(dbus_names[0])
         else:
             parallel_play_template = shlex.quote(play_template.format('{1}'))
-            dbus_names_str = self.__PARALLEL_DELIM.join(dbus_names.keys())
-            cmd = f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX.format('1')} {parallel_play_template} ::: {dbus_names_str} "
+            dbus_names_str = ' '.join(dbus_names.keys())
+            cmd = f"{self.__PARALLEL_CMD_TEMPLATE_PREFIX} {parallel_play_template} ::: {dbus_names_str} "
+
+        self.__logger.debug(f"dbus_cmd play_cmd: {cmd}")
 
         # Send dbus commands in non-blocking fashion so that the receiver process is free to handle other input.
         # Dbus can sometimes take a while to execute. Starting the subprocess takes about 3-20ms
@@ -163,7 +180,7 @@ class OmxplayerController:
         omx_vol_pct = math.pow(10, millibels / 2000)
         omx_vol_pct = max(omx_vol_pct, 0)
         omx_vol_pct = min(omx_vol_pct, 1)
-        return omx_vol_pct
+        return round(omx_vol_pct, 2)
 
     def __are_too_many_procs_in_flight(self, in_flight_procs, max_procs):
         updated_in_flight_procs = []
