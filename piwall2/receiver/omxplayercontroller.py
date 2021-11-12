@@ -152,6 +152,8 @@ class OmxplayerController:
 
     @staticmethod
     def crop_coordinate_list_to_string(crop_coord_list):
+        if not crop_coord_list:
+            return ''
         return ' '.join([str(e) for e in crop_coord_list])
 
     # start playback / unpause the video
