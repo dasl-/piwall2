@@ -104,8 +104,8 @@ class OmxplayerController:
         proc = subprocess.Popen(cmd, shell = True, executable = '/usr/bin/bash')
         self.__in_flight_vol_procs.append(proc)
 
-    # pairs: a dict where each key is a dbus name and each value is a crop string ("x1 y1 x2 y2")
-    # e.g.: {'piwall.tv1.video': '0 0 100 100'}
+    # pairs: a dict where each key is a dbus name and each value is a list of crop coordinates
+    # e.g.: {'piwall.tv1.video': (0, 0, 100, 100)}
     def set_crop(self, pairs):
         num_pairs = len(pairs)
         if num_pairs <= 0:
@@ -119,19 +119,19 @@ class OmxplayerController:
             "org.mpris.MediaPlayer2.Player.SetVideoCropPos objpath:/not/used string:'{1}' >/dev/null 2>&1")
 
         if num_pairs == 1:
-            dbus_name, crop_string = list(pairs.items())[0]
-            cmd = crop_template.format(dbus_name, crop_string)
+            dbus_name, crop_coords = list(pairs.items())[0]
+            cmd = crop_template.format(dbus_name, ' '.join(crop_coords))
         else:
             parallel_crop_template = shlex.quote(crop_template.format('{1}', '{2} {3} {4} {5}'))
             dbus_names = ''
             crop_x1s = crop_y1s = crop_x2s = crop_y2s = ''
-            for dbus_name, crop_string in pairs.items():
+            for dbus_name, crop_coords in pairs.items():
                 dbus_names += dbus_name + ' '
-                x1, y1, x2, y2 = crop_string.split(' ')
-                crop_x1s += x1 + ' '
-                crop_y1s += y1 + ' '
-                crop_x2s += x2 + ' '
-                crop_y2s += y2 + ' '
+                x1, y1, x2, y2 = crop_coords
+                crop_x1s += f'{x1} '
+                crop_y1s += f'{y1} '
+                crop_x2s += f'{x2} '
+                crop_y2s += f'{y2} '
             dbus_names = dbus_names.strip()
             crop_x1s = crop_x1s.strip()
             crop_y1s = crop_y1s.strip()

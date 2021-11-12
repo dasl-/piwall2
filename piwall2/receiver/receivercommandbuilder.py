@@ -26,8 +26,8 @@ class ReceiverCommandBuilder:
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
         crop_args, crop_args2 = self.__get_video_command_crop_args(video_width, video_height)
-        crop = crop_args[display_mode]
-        crop2 = crop_args2[display_mode2]
+        crop = ' '.join(crop_args[display_mode])
+        crop2 = ' '.join(crop_args2[display_mode2])
         volume_millibels = self.__get_video_command_volume_arg(volume_pct)
 
         """
@@ -88,8 +88,8 @@ class ReceiverCommandBuilder:
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
         crop_args, crop_args2 = self.__get_video_command_crop_args(loading_screen_data['width'], loading_screen_data['height'])
-        crop = crop_args[display_mode]
-        crop2 = crop_args2[display_mode2]
+        crop = ' '.join(crop_args[display_mode])
+        crop2 = ' '.join(crop_args2[display_mode2])
         volume_millibels = self.__get_video_command_volume_arg(volume_pct)
 
         omx_cmd = self.__OMX_CMD_TEMPLATE.format(
@@ -196,7 +196,7 @@ class ReceiverCommandBuilder:
             self.__logger.warn(f"The crop y1 coordinate ({y1}) " +
                 f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
 
-        tile_mode_crop = f"{x0} {y0} {x1} {y1}"
+        tile_mode_crop = (x0, y0, x1, y1)
 
         tile_mode_crop2 = None
         if receiver_config['is_dual_video_output']:
@@ -218,7 +218,7 @@ class ReceiverCommandBuilder:
                 self.__logger.warn(f"The crop y1_2 coordinate ({y1_2}) " +
                     f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
 
-            tile_mode_crop2 = f"{x0_2} {y0_2} {x1_2} {y1_2}"
+            tile_mode_crop2 = (x0_2, y0_2, x1_2, y1_2)
 
         #####################################################################################
         # Do repeat mode calculations second ################################################
@@ -230,8 +230,11 @@ class ReceiverCommandBuilder:
         )
         x_offset = (video_width - displayable_video_width) / 2
         y_offset = (video_height - displayable_video_height) / 2
-
-        repeat_mode_crop = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {y_offset + displayable_video_height}"
+        x0 = round(x_offset)
+        y0 = round(y_offset)
+        x1 = round(x_offset + displayable_video_width)
+        y1 = round(y_offset + displayable_video_height)
+        repeat_mode_crop = (x0, y0, x1, y1)
 
         repeat_mode_crop2 = None
         if receiver_config['is_dual_video_output']:
@@ -242,8 +245,11 @@ class ReceiverCommandBuilder:
             )
             x_offset = (video_width - displayable_video_width) / 2
             y_offset = (video_height - displayable_video_height) / 2
-
-            repeat_mode_crop2 = f"{x_offset} {y_offset} {x_offset + displayable_video_width} {y_offset + displayable_video_height}"
+            x0 = round(x_offset)
+            y0 = round(y_offset)
+            x1 = round(x_offset + displayable_video_width)
+            y1 = round(y_offset + displayable_video_height)
+            repeat_mode_crop2 = (x0, y0, x1, y1)
 
         crop_args = {
             DisplayMode.DISPLAY_MODE_TILE: tile_mode_crop,
