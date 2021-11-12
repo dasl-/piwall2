@@ -93,14 +93,19 @@ class Logger:
             " [" + level + "] [" + self.__namespace + "] [" + Logger.__uuid + "] " + msg)
 
     def __print_msg(self, msg, file):
-        # Note: we could use `flush = True` in our print function. This would result in quicker printing
-        # of logs. But strace analysis showed that this resulted in a lot more `write` syscalls, so it is
-        # likely harder on the disks, and SD cards in the raspberry pi aren't so great at taking writes
-        # anyway.
+        # Note: we could omit `flush = True` in our print function. This would result in a lot fewer
+        # `write` syscalls, at the expense of having to wait longer for logs to show up. But this makes
+        # things harder to reason about. There might be delays in between calling print and the log line
+        # actually being written to the file. And with separate log files (stdout vs stderr), each one
+        # keeps a separate buffer, so error vs info logs will be out of order in the log file.
+        #
+        # Furthermore, other binaries we shell out to, like youtube-dl, don't buffer their writes, so
+        # the output of those binaries will be out of order relative to our logs. Fwiw, omxplayer
+        # flushes with every log when using its `--genlog` param.
         #
         # See docs:
         # https://docs.python.org/3/library/functions.html#print
         #
         # See strace analysis of with and without `flush = True`
         # https://gist.github.com/dasl-/796031c305ac26da76cdc2887d9fa817
-        print(msg, file = file)
+        print(msg, file = file, flush = True)
