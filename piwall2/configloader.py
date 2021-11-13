@@ -138,6 +138,11 @@ class ConfigLoader:
         ConfigLoader.__is_any_receiver_dual_video_output = is_any_receiver_dual_video_out
         ConfigLoader.__raw_config = raw_config
 
+        if 'log_level' in raw_config:
+            log_level = raw_config['log_level']
+            self.__logger.info(f'Setting log_level to {log_level}.')
+            Logger.set_level(log_level)
+
         ConfigLoader.__is_loaded = True
 
     def __assert_receiver_config_valid(self, receiver, receiver_config, is_this_receiver_dual_video_out):
