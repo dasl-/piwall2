@@ -1,0 +1,15 @@
+@import "./../../css/themes/pink-blue.scss";
+.vfx-button {
+    font-size: 1.5rem;
+    border: 1px solid $background-light;
+    border-radius: .3em;
+}
+.vfx-button.selected {
+  text-stroke: 1px $text-title;
+  -webkit-text-stroke: 1px $text-title;
+  text-shadow: $icon-shadow 0px 0px $icon-shadow-blur;
+  box-shadow: $logo-shadow 0px 0px $logo-shadow-blur;
+  background-color: $background-primary !important;
+  box-shadow: $logo-shadow 0px 0px $logo-shadow-blur;
+  border: 1px solid $border;
+}
