@@ -242,7 +242,7 @@ class VideoBroadcaster:
 
     def __get_standard_ffmpeg_cmd(self):
         # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks
-        log_opts = '-nostats'
+        log_opts = '-nostats '
         if sys.stderr.isatty():
             log_opts = '-stats '
 
