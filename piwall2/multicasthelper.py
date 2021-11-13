@@ -21,7 +21,7 @@ class MulticastHelper:
     # ---------------------------------
     # for all packets sent, after two hops on the network the packet will not
     # be re-sent/broadcast (see https://www.tldp.org/HOWTO/Multicast-HOWTO-6.html)
-    __TTL = 2
+    __TTL = 1
 
     # max UDP packet size is 65535 bytes
     # IP Header is 20 bytes, UDP header is 8 bytes
@@ -35,6 +35,7 @@ class MulticastHelper:
     def setup_broadcaster_socket(self):
         self.__send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.__send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.__TTL)
+        self.__send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
         return self
 
     def setup_receiver_video_socket(self):
