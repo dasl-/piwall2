@@ -1,6 +1,6 @@
 import piwall2.broadcaster.database
+import piwall2.displaymode
 from piwall2.configloader import ConfigLoader
-from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
 
 """
@@ -119,7 +119,7 @@ class SettingsDb:
             display_mode_settings_keys.append(display_mode_settings_key)
             tv_settings[tv_id] = {}
 
-        display_mode_settings = self.get_multi(display_mode_settings_keys, DisplayMode.DISPLAY_MODE_TILE)
+        display_mode_settings = self.get_multi(display_mode_settings_keys, piwall2.DisplayMode.DISPLAY_MODE_TILE)
         for key, display_mode in display_mode_settings.items():
             tv_id = self.get_tv_id_from_settings_key(key)
             tv_settings[tv_id][self.SETTING_DISPLAY_MODE] = display_mode
