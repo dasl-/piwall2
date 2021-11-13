@@ -73,6 +73,7 @@ class App extends React.Component {
 
     /* Tv callbacks */
     this.setDisplayMode = this.setDisplayMode.bind(this);
+    this.setAnimationMode = this.setAnimationMode.bind(this);
 
     // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
     if (window.__firefox__) {
@@ -144,6 +145,7 @@ class App extends React.Component {
               is_screensaver_enabled={this.state.is_screensaver_enabled}
               tv_data={this.state.tv_data}
               setDisplayMode={this.setDisplayMode}
+              setAnimationMode={this.setAnimationMode}
             />
           </div>
         </CSSTransition>
@@ -270,13 +272,33 @@ class App extends React.Component {
         if (!new_tv_data) { // The then() handler must not have run because the ajax request failed
           new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
         }
-        for (var tv_id in display_mode_by_tv_id){
+        for (var tv_id in display_mode_by_tv_id) {
           if (tv_id in new_tv_data) {
             new_tv_data[tv_id]['loading'] = false;
           }
         }
         this.setState({tv_data: new_tv_data});
         this.getPlaylistQueue()
+      });
+  }
+
+  setAnimationMode(animation_mode) {
+    // Clone the state so we don't modify it in place. React frowns upon modifying state outside of setState.
+    let new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data));
+      for (var tv_id in new_tv_data) {
+        new_tv_data[tv_id]['loading'] = true;
+      }
+    this.setState({tv_data: new_tv_data});
+
+    new_tv_data = null;
+    this.apiClient.setAnimationMode(animation_mode)
+      .finally(() => {
+        new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
+        for (var tv_id in new_tv_data) {
+          new_tv_data[tv_id]['loading'] = false;
+        }
+        this.setState({tv_data: new_tv_data});
+        this.getPlaylistQueue();
       });
   }
 
