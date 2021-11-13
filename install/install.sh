@@ -216,6 +216,7 @@ maybeAdjustCompositeVideoOutput(){
     fi
 }
 
+# See: https://github.com/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#video-rotation
 maybeAdjustScreenRotateMode(){
     local rotate_mode;
     rotate_mode=$("$BASE_DIR"/utils/get_receiver_config_value --keys rotate)
