@@ -78,7 +78,7 @@ updateAndInstallAptPackages(){
 # A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.
 buildAndInstallOmxplayerFork(){
     echo -e "\\nBuilding and installing omxplayer fork..."
-    "$BASE_DIR/install/build_omxplayer.sh -b $omxplayer_branch"
+    "$BASE_DIR"/install/build_omxplayer.sh -b "$omxplayer_branch"
 }
 
 updateAndInstallPythonPackages(){

@@ -146,7 +146,8 @@ def copy_config_to_receivers(cmd_runner):
 def install_dependencies(cmd_runner, omxplayer_branch):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
-    print(f"Installing dependencies on: {broadcaster_and_receivers}...")
+    print(f"Installing dependencies on: {broadcaster_and_receivers}. " +
+        f"Using omxplayer branch: {omxplayer_branch}...")
     install_deps_cmd = (f"{ROOT_DIR}/install/install_dependencies.sh -b {omxplayer_branch} -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     cmd_runner.run_dsh(install_deps_cmd)
