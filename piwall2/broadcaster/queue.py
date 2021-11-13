@@ -5,7 +5,7 @@ import signal
 import subprocess
 import time
 
-from piwall2.Animator import Animator
+from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
