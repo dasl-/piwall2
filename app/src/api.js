@@ -114,6 +114,10 @@ class APIClient {
     return this.perform('post', '/display_mode', display_mode_by_tv_id);
   }
 
+  setAnimationMode(animation_mode) {
+    return this.perform('post', '/animation_mode', {animation_mode: animation_mode});
+  }
+
   async perform (method, resource, data) {
     return client({
        method,

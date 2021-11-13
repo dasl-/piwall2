@@ -29,6 +29,7 @@ class PlaylistExpanded extends React.Component {
               video={this.props.current_video}
               tv_data={this.props.tv_data}
               setDisplayMode={this.props.setDisplayMode}
+              setAnimationMode={this.props.setAnimationMode}
             />
 
             <div className="play-queue">
