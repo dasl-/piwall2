@@ -21,7 +21,7 @@ class Animator:
 
     def tick(self):
         old_animation_mode = self.__animation_mode
-        new_animation_mode = self.__settings_db.get(SettingsDb.SETTING_ANIMATION_MODE, SettingsDb.ANIMATION_MODE_NONE)
+        new_animation_mode = self.__settings_db.get(SettingsDb.SETTING_ANIMATION_MODE, self.ANIMATION_MODE_NONE)
         self.__animation_mode = new_animation_mode
         if old_animation_mode != new_animation_mode:
             self.__ticks = 0
