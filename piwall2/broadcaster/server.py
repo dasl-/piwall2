@@ -22,6 +22,7 @@ class Piwall2Api():
         self.__vol_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__display_mode_helper = DisplayMode()
 
     # get all the data that we poll for every second in the piwall2
     def get_queue(self):
@@ -81,19 +82,15 @@ class Piwall2Api():
 
     # post_data is key value pairs where the key is a tv_id and the value is a display_mode for that TV.
     def set_display_mode(self, post_data):
-        # validate data and make DB keys
-        db_data = {}
-        for tv_id, display_mode in post_data.items():
+        # validate data
+        display_mode_by_tv_id = post_data
+        for tv_id, display_mode in display_mode_by_tv_id.items():
             if display_mode not in DisplayMode.DISPLAY_MODES:
                 return {'success': False}
-            db_key = self.__settings_db.make_tv_key_for_setting(SettingsDb.SETTING_DISPLAY_MODE, tv_id)
-            db_data[db_key] = display_mode
 
-        # send display_mode control message to receivers
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, post_data)
-
-        # store display_mode settings in DB
-        success = self.__settings_db.set_multi(db_data)
+        # send display_mode control message to receivers and update DB
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
+        success = self.__display_mode_helper.update_db(display_mode_by_tv_id)
         return {'success': success}
 
     def set_animation_mode(self, post_data):

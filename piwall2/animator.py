@@ -19,6 +19,7 @@ class Animator:
         self.__config_loader = ConfigLoader()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__ticks = None
+        self.__display_mode_helper = DisplayMode()
 
     def tick(self):
         old_animation_mode = self.__animation_mode
@@ -30,17 +31,18 @@ class Animator:
             self.__ticks += 1
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
-            display_modes_by_tv_id = self.__get_current_display_modes()
+            display_mode_by_tv_id = self.__get_current_display_modes()
         elif self.__animation_mode == self.ANIMATION_MODE_TILE_REPEAT:
-            display_modes_by_tv_id = self.__get_display_modes_for_tile_repeat()
+            display_mode_by_tv_id = self.__get_display_modes_for_tile_repeat()
 
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_modes_by_tv_id)
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
+        self.__display_mode_helper.update_db(display_mode_by_tv_id)
 
     def __get_current_display_modes(self):
-        display_modes_by_tv_id = {}
+        display_mode_by_tv_id = {}
         for tv_id, tv_settings in self.__settings_db.get_tv_settings().items():
-            display_modes_by_tv_id[tv_id] = tv_settings[SettingsDb.SETTING_DISPLAY_MODE]
-        return display_modes_by_tv_id
+            display_mode_by_tv_id[tv_id] = tv_settings[SettingsDb.SETTING_DISPLAY_MODE]
+        return display_mode_by_tv_id
 
     def __get_display_modes_for_tile_repeat(self):
         if self.__ticks % 2 == 0:
@@ -49,7 +51,7 @@ class Animator:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
 
         tv_ids = self.__config_loader.get_tv_ids_list()
-        display_modes_by_tv_id = {}
+        display_mode_by_tv_id = {}
         for tv_id in tv_ids:
-            display_modes_by_tv_id[tv_id] = display_mode
-        return display_modes_by_tv_id
+            display_mode_by_tv_id[tv_id] = display_mode
+        return display_mode_by_tv_id
