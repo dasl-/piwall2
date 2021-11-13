@@ -9,11 +9,14 @@ import Slider from 'rc-slider';
 import LoadWithVideo from '../util/load_with_video';
 import TvWall from '../tv_wall/tv_wall';
 
+import tv_config from 'tv_config.json';
+
 class CurrentlyPlayingVideo extends React.Component {
   constructor(props) {
     super(props);
     this.handleSkip = this.handleSkip.bind(this);
-    this.apiClient = new api();
+    this.handleFxAllTile = this.handleFxAllTile.bind(this);
+    this.handleFxAllRepeat = this.handleFxAllRepeat.bind(this);
     this.state = {
       vol_pct: this.props.vol_pct,
       is_vol_locked: false,
@@ -79,7 +82,19 @@ class CurrentlyPlayingVideo extends React.Component {
           <div className='col-1 p-0'><span className='glyphicon glyphicon-volume-up bg-light-text vol-icon' aria-hidden='true' /></div>
         </div>
 
-        <div className='container pt-2 px-0 mt-2'>
+        <div className='container pt-1 px-0 mt-1'>
+          <div className='row d-flex justify-content-center'>
+            <span
+              className='glyphicon glyphicon-resize-full bg-light-text video-fx-icon'
+              aria-hidden='true'
+              onClick={this.handleFxAllTile} data-fx='all_tile' />
+            <span className='glyphicon glyphicon-resize-small bg-light-text video-fx-icon'
+              aria-hidden='true'
+              onClick={this.handleFxAllRepeat} data-fx='all_repeat' />
+          </div>
+        </div>
+
+        <div className='container pt-1 px-0 mt-1'>
           <div className='row mr-0'>
             <div className='col-8 px-2 pl-3 small-vertical-center'>
                 Up Next
@@ -107,6 +122,26 @@ class CurrentlyPlayingVideo extends React.Component {
       this.tv_wall.props.setLoading();
     }
     this.props.nextVideo();
+  }
+
+  handleFxAllTile(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var display_mode_by_tv_id = {}
+    for (const tv_id in tv_config['tvs']) {
+      display_mode_by_tv_id[tv_id] = 'DISPLAY_MODE_TILE'
+    }
+    this.props.setDisplayMode(display_mode_by_tv_id)
+  }
+
+  handleFxAllRepeat(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var display_mode_by_tv_id = {}
+    for (const tv_id in tv_config['tvs']) {
+      display_mode_by_tv_id[tv_id] = 'DISPLAY_MODE_REPEAT'
+    }
+    this.props.setDisplayMode(display_mode_by_tv_id)
   }
 
   onVolChange = (vol_pct) => {
