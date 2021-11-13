@@ -4,6 +4,7 @@ import json
 import traceback
 import urllib
 
+from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
@@ -83,10 +84,8 @@ class Piwall2Api():
         # validate data and make DB keys
         db_data = {}
         for tv_id, display_mode in post_data.items():
-            if display_mode not in [DisplayMode.DISPLAY_MODE_TILE, DisplayMode.DISPLAY_MODE_REPEAT]:
-                return {
-                    'success': False
-                }
+            if display_mode not in DisplayMode.DISPLAY_MODES:
+                return {'success': False}
             db_key = self.__settings_db.make_tv_key_for_setting(SettingsDb.SETTING_DISPLAY_MODE, tv_id)
             db_data[db_key] = display_mode
 
@@ -95,9 +94,14 @@ class Piwall2Api():
 
         # store display_mode settings in DB
         success = self.__settings_db.set_multi(db_data)
-        return {
-            'success': success
-        }
+        return {'success': success}
+
+    def set_animation_mode(self, post_data):
+        animation_mode = post_data[SettingsDb.SETTING_ANIMATION_MODE]
+        if animation_mode not in Animator.ANIMATION_MODES:
+            return {'success': False}
+        success = self.__settings_db.set(SettingsDb.SETTING_ANIMATION_MODE, animation_mode)
+        return {'success': success}
 
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
@@ -178,6 +182,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.set_vol_pct(post_data)
         elif path == 'display_mode':
             response = self.__api.set_display_mode(post_data)
+        elif path == 'animation_mode':
+            response = self.__api.set_animation_mode(post_data)
         else:
             self.__do_404()
             return

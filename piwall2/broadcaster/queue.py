@@ -5,6 +5,7 @@ import signal
 import subprocess
 import time
 
+from piwall2.Animator import Animator
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
@@ -28,6 +29,7 @@ class Queue:
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
+        self.__animator = Animator()
 
         # house keeping
         self.__volume_controller.set_vol_pct(50)
@@ -166,10 +168,6 @@ class Queue:
             vol_pct = self.__volume_controller.get_vol_pct()
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
 
-            # set display_mode
-            display_modes_by_tv_id = {}
-            for tv_id, tv_settings in self.__settings_db.get_tv_settings().items():
-                display_modes_by_tv_id[tv_id] = tv_settings[SettingsDb.SETTING_DISPLAY_MODE]
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_modes_by_tv_id)
-
+            # sets the display_mode of the TVs
+            self.__animator.tick()
             self.__last_receiver_state_set_time = now
