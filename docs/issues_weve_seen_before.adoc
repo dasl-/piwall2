@@ -157,3 +157,28 @@ pi@piwall6.local: Err:115 http://raspbian.raspberrypi.org/raspbian buster/main a
 pi@piwall6.local:   Cannot initiate the connection to raspbian.raspberrypi.org:80 (2a00:1098:0:80:1000:75:0:3). - connect (101: Network is unreachable) Could not connect to raspbian.raspberrypi.org:80 (93.93.128.193), connection timed out [IP: 93.93.128.193 80]
 ....
 This is likely a transient failure for the raspbian package servers. Try again.
+
+## Video playback freezes
+Playback will freeze on a single TV, while the other TVs in the TV wall continue playback normally. Not totally sure what's going on here yet. I notice freezing is more common when playing the https://www.youtube.com/watch?v=-pdVUsCqd2U[dvd bounce screensaver]. Sometimes restarting the receiver service fixes things (only for playback to freeze again later), but sometimes not. Restarting always fixes the problem, only for it to recur later. Sometimes I am able to reliably reproduce the problem with every play of the DVD bounce video.
+
+The problem appears specific to a given TV or raspberry pi -- generally two of my TVs have this problem, one more often than the other. I have tried swapping the hardware out to determine if it's the hardware. This gave conflicting results. In one test, I swapped a plugged a "defective" pi into a different TV (keeping the SD card, but using different cables). The problem recurred, seeming to isolate the problem to the pi hardware or the SD card. But in another round of testing, I replaced "good" pis with the "defective" pi, using the "good" pi's SD card inserted into the bad pi. I noticed no playback freezing, indicating that the pi hardware itself was not the cause of the freezing. That leaves the SD card. I plugged the "defective" SD card into a good pi, and that resulted in no freezing. So I'm not sure wtf is going on.
+
+Perhaps interference of some sort is at play? Maybe getting cases for the pis would help -- sometimes parts of the electrified metal chasis make contact with neighboring pis, resulting in shorts.
+
+When this freeze happens, you may see nothing in the omxplayer logs. Although on the video _after_ the freeze started (if the issue does not magically fix itself on the subsequent playback as it sometimes does), you may see in the omxplayer logs:
+
+....
+ERROR: COMXVideo::Open error OMX_IndexConfigDisplayRegion omx_err(0x80001001)
+...
+ERROR: COMXCoreComponent::DecoderEventHandler OMX.broadcom.video_decode - OMX_ErrorStreamCorrupt, Bitstream corrupt
+...
+
+Note that the `OMX_IndexConfigDisplayRegion` errors always appear to happen after dbus crop messages. Not sure what to make of this. Using `strace` doesn't give much insight. You may notice output like this from stracing omxplayer:
+....
+ioctl(4</dev/vchiq>, _IOC(_IOC_WRITE, 0xc4, 0x4, 0xc), 0xbedceabc) = 0
+futex(0x3a6804, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 1, NULL, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+....
+
+But this is actual normal strace output for a functioning omxplayer instance.
+
+In a final note about this issue, after swapping the "defective" raspberry pi around to a bunch of TVs, I finally restored it to its original TV location (i.e. original defective pi, simcard, and cables). Previously to moving it around, I had been able to reproduce the freezing issue with virtually every playback of the dvd bounce issues. But after returning it here, I was unable to reproduce the issue at all after two full playthroughs of the dvd bounce video. So maybe this does mean it's related to physical positioning of the pi, interference, electrical contact, etc?
