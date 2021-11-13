@@ -29,13 +29,19 @@ class MulticastHelper:
     # Sending a message of any larger will result in: `OSError: [Errno 90] Message too long`
     __MAX_MSG_SIZE = 65507
 
+    __send_socket = None
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def setup_broadcaster_socket(self):
-        self.__send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.__send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.__TTL)
-        self.__send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
+        # Multiple classes in the broadcaster code will send messages over the socket. By using a static
+        # __send_socket variable, ensure no matter how many instances of this class are created, all of
+        # them use the same send socket.
+        if MulticastHelper.__send_socket is None:
+            MulticastHelper.__send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            MulticastHelper.__send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, self.__TTL)
+            MulticastHelper.__send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
         return self
 
     def setup_receiver_video_socket(self):
@@ -74,7 +80,7 @@ class MulticastHelper:
         while msg_remainder: # Don't send more than __MAX_MSG_SIZE at a time
             msg_part = msg_remainder[:self.__MAX_MSG_SIZE]
             msg_remainder = msg_remainder[self.__MAX_MSG_SIZE:]
-            bytes_sent += self.__send_socket.sendto(msg_part, address_tuple)
+            bytes_sent += MulticastHelper.__send_socket.sendto(msg_part, address_tuple)
         if bytes_sent == 0:
             self.__logger.warn(f"Unable to send message. Address: {address_tuple}. Message: {msg}")
         elif bytes_sent != len(msg):
