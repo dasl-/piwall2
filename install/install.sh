@@ -120,6 +120,12 @@ setupLogging(){
 
 setupSystemdServices(){
     echo "Setting up systemd services..."
+
+    # Make home directory for root user -- it doesn't exist by default. The systemd services will be run as root.
+    # Each service's HOME environment variable is specified in the service file. This environment variable is
+    # expected by various programs we use, such as mbuffer, parallel, etc.
+    sudo -u root mkdir --parents /home/root
+
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
         sudo "$BASE_DIR/install/piwall2_queue_service.sh"
         sudo "$BASE_DIR/install/piwall2_server_service.sh"

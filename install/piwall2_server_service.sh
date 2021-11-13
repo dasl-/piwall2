@@ -8,7 +8,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Environment=HOME=/home/pi
+Environment=HOME=/home/root
 ExecStart=$BASE_DIR/bin/server
 Restart=on-failure
 StandardOutput=syslog
