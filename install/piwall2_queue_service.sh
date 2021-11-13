@@ -8,7 +8,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Environment=HOME=/home/root
+Environment=HOME=/root
 ExecStart=$BASE_DIR/bin/queue
 Restart=on-failure
 StandardOutput=syslog
