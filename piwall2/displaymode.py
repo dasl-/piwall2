@@ -1,4 +1,3 @@
-
 class DisplayMode:
     
     # Tile mode is like this: https://i.imgur.com/BBrA1Cr.png

@@ -6,6 +6,7 @@ from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.tv import Tv
 
+# Constructing a new instance of this class is what sets the global log level based on config settings
 class ConfigLoader:
 
     # Keep this in sync with the CONFIG_PATH variable in the
@@ -67,6 +68,12 @@ class ConfigLoader:
 
     def get_wall_height(self):
         return ConfigLoader.__wall_height
+
+    def get_wall_rows(self):
+        return ConfigLoader.__raw_config.get('rows', 0)
+
+    def get_wall_columns(self):
+        return ConfigLoader.__raw_config.get('columns', 0)
 
     # youtube-dl video format depends on whether any receiver has dual video output
     # see: https://github.zm/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#one-vs-two-tvs-per-receiver-raspberry-pi

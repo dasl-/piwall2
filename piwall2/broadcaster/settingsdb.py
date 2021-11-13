@@ -10,7 +10,12 @@ and re-read during program execution. They may be modified from a UI.
 class SettingsDb:
 
     # This is a per-TV setting.
+    # Determines whether each individual TV is in tile vs repeat mode.
+    # See: DisplayMode
     SETTING_DISPLAY_MODE = 'display_mode'
+
+    # This is a global setting. See: Animator
+    SETTING_ANIMATION_MODE = 'animation_mode'
 
     __SETTING_TV_ID_DELIM = '__'
 
