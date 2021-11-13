@@ -5,6 +5,7 @@ set -eou pipefail
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 installation_type=false
 only_install_python_deps=false
+omxplayer_branch='master'
 
 main(){
     parseOpts "$@"
@@ -30,11 +31,12 @@ usage() {
     echo "    -h  display this help message"
     echo "    -t  Installation type: either 'broadcaster', 'receiver', or 'all'"
     echo "    -p  only install python dependencies"
+    echo "    -b  omxplayer branch to build. Default: $omxplayer_branch (uses https://github.com/dasl-/omxplayer/ )"
     exit "$exit_code"
 }
 
 parseOpts(){
-    while getopts ":ht:p" opt; do
+    while getopts ":ht:pb:" opt; do
         case $opt in
             h) usage 0 ;;
             t)
@@ -46,6 +48,7 @@ parseOpts(){
                 fi
                 ;;
             p) only_install_python_deps=true ;;
+            b) omxplayer_branch=${OPTARG} ;;
             \?)
                 echo "Invalid option: -$OPTARG" >&2
                 usage 1
@@ -75,7 +78,7 @@ updateAndInstallAptPackages(){
 # A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.
 buildAndInstallOmxplayerFork(){
     echo -e "\\nBuilding and installing omxplayer fork..."
-    "$BASE_DIR"/install/build_omxplayer.sh
+    "$BASE_DIR/install/build_omxplayer.sh -b $omxplayer_branch"
 }
 
 updateAndInstallPythonPackages(){

@@ -34,7 +34,7 @@ def main():
     clone_and_pull_repo(cmd_runner, CmdRunner.STANDARD_SSH_OPTS)
     copy_config_to_receivers(cmd_runner)
     if args.install_dependencies:
-        install_dependencies(cmd_runner)
+        install_dependencies(cmd_runner, args.omxplayer_branch)
     if args.install_app:
         install_app(cmd_runner, args.dont_disable_wifi)
 
@@ -56,6 +56,8 @@ This script should be run on the broadcaster. This script does several things:
     parser.add_argument('--ssh-password', dest='ssh_password', action='store', default=None,
         help="SSH password for logging into the broadcaster and receiver raspberry pis. If you " +
         "haven't changed this, it will be 'raspberry'. Required if setting up SSH.")
+    parser.add_argument('--omxplayer-branch', dest='omxplayer_branch', action='store', default='master',
+        help="omxplayer branch to build (uses https://github.com/dasl-/omxplayer/ )")
     parser.add_argument('--dont-install-dependencies', dest='install_dependencies', action='store_false',
         default=True, help="Skip installing dependencies.")
     parser.add_argument('--dont-install-app', dest='install_app', action='store_false',
@@ -141,11 +143,11 @@ def copy_config_to_receivers(cmd_runner):
     elif exit_code != 0:
         raise Exception(f"Unable to run {cmd}!")
 
-def install_dependencies(cmd_runner):
+def install_dependencies(cmd_runner, omxplayer_branch):
     broadcaster_and_receivers = cmd_runner.get_broadcaster_and_receivers_hostname_list()
     broadcaster_hostname = socket.gethostname()
     print(f"Installing dependencies on: {broadcaster_and_receivers}...")
-    install_deps_cmd = (f"{ROOT_DIR}/install/install_dependencies.sh -t " +
+    install_deps_cmd = (f"{ROOT_DIR}/install/install_dependencies.sh -b {omxplayer_branch} -t " +
         f"$(if [[ $(hostname) == \"{broadcaster_hostname}\" ]]; then echo broadcaster ; else echo receiver ; fi)")
     cmd_runner.run_dsh(install_deps_cmd)
 
