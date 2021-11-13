@@ -17,7 +17,7 @@ class Animator:
         self.__animation_mode = None
         self.__settings_db = SettingsDb()
         self.__config_loader = ConfigLoader()
-        self.__control_message_helper = ControlMessageHelper()
+        self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__ticks = None
 
     def tick(self):
