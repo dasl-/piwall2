@@ -169,6 +169,9 @@ updateDbSchema(){
 buildWebApp(){
     echo "Building web app..."
     npm run build --prefix "$BASE_DIR"/app
+
+    echo "Writing web app config..."
+    "$BASE_DIR"/utils/write_tv_config_for_web_app
 }
 
 # We disable wifi because multicast doesn't work well over wifi. Since the TV wall
