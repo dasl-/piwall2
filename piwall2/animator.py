@@ -89,9 +89,12 @@ class Animator:
         elif self.__animation_mode == self.ANIMATION_MODE_TILE_REPEAT:
             display_mode_by_tv_id = self.__get_display_modes_for_tile_repeat()
 
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
-        if self.__animation_mode != self.ANIMATION_MODE_NONE:
-            self.__display_mode_helper.update_db(display_mode_by_tv_id)
+        if self.__animation_mode == self.ANIMATION_MODE_NONE:
+            # send the DISPLAY_MODE control message even if we're using ANIMATION_MODE_NONE to ensure
+            # eventual consistency of the DISPLAY_MODE
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
+        else:
+            self.__display_mode_helper.set_display_mode(display_mode_by_tv_id)
 
     def __get_current_display_modes(self):
         display_mode_by_tv_id = {}
