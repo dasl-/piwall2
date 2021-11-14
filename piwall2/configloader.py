@@ -1,3 +1,4 @@
+import json
 import socket
 import subprocess
 import toml
@@ -27,6 +28,8 @@ class ConfigLoader:
     __is_any_receiver_dual_video_output = None
     __hostname = None
     __local_ip_address = None
+
+    __APP_TV_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/tv_config.json"
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -82,6 +85,12 @@ class ConfigLoader:
 
     def is_any_receiver_dual_video_output(self):
         return ConfigLoader.__is_any_receiver_dual_video_output
+
+    def write_tv_config_for_web_app(self):
+        tv_config_json = json.dumps(self.get_tv_config())
+        file = open(self.__APP_TV_CONFIG_FILE, "w")
+        file.write(tv_config_json)
+        file.close()
 
     def __load_config_if_not_loaded(self):
         if ConfigLoader.__is_loaded:

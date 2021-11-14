@@ -239,21 +239,11 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
 class Server:
 
-    __APP_TV_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/tv_config.json"
-
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
         self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
         self.__config_loader = ConfigLoader()
-        self.__write_tv_config()
-
-    # TODO: move this to the app build process, because it will require an app rebuild anyway.
-    def __write_tv_config(self):
-        tv_config_json = json.dumps(self.__config_loader.get_tv_config())
-        file = open(self.__APP_TV_CONFIG_FILE, "w")
-        file.write(tv_config_json)
-        file.close()
 
     def serve_forever(self):
         self.__logger.info('Server is serving forever...')
