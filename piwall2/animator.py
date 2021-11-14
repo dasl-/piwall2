@@ -1,3 +1,4 @@
+import math
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -11,13 +12,22 @@ class Animator:
     # Cycles between switching all TVs to DISPLAY_MODE_TILE and DISPLAY_MODE_REPEAT
     ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'    
 
+    # Toggle display_modes one column at a time
+    ANIMATION_MODE_LEFT = 'ANIMATION_MODE_LEFT'
+    ANIMATION_MODE_RIGHT = 'ANIMATION_MODE_RIGHT'
+
+    # Toggle display_modes one row at a time
+    ANIMATION_MODE_UP = 'ANIMATION_MODE_UP'
+    ANIMATION_MODE_DOWN = 'ANIMATION_MODE_DOWN'
+
     # Pseudo animation mode: turn all the TVs to DISPLAY_MODE_TILE
     ANIMATION_MODE_TILE = 'ANIMATION_MODE_TILE'
 
     # Pseudo animation mode: turn all the TVs to DISPLAY_MODE_REPEAT
     ANIMATION_MODE_REPEAT = 'ANIMATION_MODE_REPEAT'
 
-    ANIMATION_MODES = (ANIMATION_MODE_NONE, ANIMATION_MODE_TILE_REPEAT, ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
+    ANIMATION_MODES = (ANIMATION_MODE_NONE, ANIMATION_MODE_TILE_REPEAT, ANIMATION_MODE_LEFT,
+        ANIMATION_MODE_RIGHT, ANIMATION_MODE_UP, ANIMATION_MODE_DOWN, ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
     PSEUDO_ANIMATION_MODES = (ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
 
     def __init__(self):
@@ -88,10 +98,20 @@ class Animator:
             display_mode_by_tv_id = self.__get_current_display_modes()
         elif self.__animation_mode == self.ANIMATION_MODE_TILE_REPEAT:
             display_mode_by_tv_id = self.__get_display_modes_for_tile_repeat()
+        elif (
+            self.__animation_mode in (
+                self.ANIMATION_MODE_LEFT, self.ANIMATION_MODE_RIGHT,
+                self.ANIMATION_MODE_UP, self.ANIMATION_MODE_DOWN
+            )
+        ):
+            display_mode_by_tv_id = self.__get_display_modes_for_direction()
 
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
-        if self.__animation_mode != self.ANIMATION_MODE_NONE:
-            self.__display_mode_helper.update_db(display_mode_by_tv_id)
+        if self.__animation_mode == self.ANIMATION_MODE_NONE:
+            # send the DISPLAY_MODE control message even if we're using ANIMATION_MODE_NONE to ensure
+            # eventual consistency of the DISPLAY_MODE
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
+        else:
+            self.__display_mode_helper.set_display_mode(display_mode_by_tv_id)
 
     def __get_current_display_modes(self):
         display_mode_by_tv_id = {}
@@ -106,6 +126,43 @@ class Animator:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
 
         tv_ids = self.__config_loader.get_tv_ids_list()
+        display_mode_by_tv_id = {}
+        for tv_id in tv_ids:
+            display_mode_by_tv_id[tv_id] = display_mode
+        return display_mode_by_tv_id
+
+    def __get_display_modes_for_direction(self):
+        num_rows = self.__config_loader.get_num_wall_rows()
+        num_columns = self.__config_loader.get_num_wall_columns()
+
+        if self.__ticks == 0:
+            tv_ids = self.__config_loader.get_tv_ids_list()
+        elif self.__animation_mode == self.ANIMATION_MODE_LEFT:
+            column_number = (num_columns - 1) - ((self.__ticks - 1) % num_columns)
+            tv_ids = self.__config_loader.get_wall_columns()[column_number]
+        elif self.__animation_mode == self.ANIMATION_MODE_RIGHT:
+            column_number = ((self.__ticks - 1) % num_columns)
+            tv_ids = self.__config_loader.get_wall_columns()[column_number]
+        elif self.__animation_mode == self.ANIMATION_MODE_UP:
+            row_number = (num_rows - 1) - ((self.__ticks - 1) % num_rows)
+            tv_ids = self.__config_loader.get_wall_rows()[row_number]
+        elif self.__animation_mode == self.ANIMATION_MODE_DOWN:
+            row_number = ((self.__ticks - 1) % num_rows)
+            tv_ids = self.__config_loader.get_wall_rows()[row_number]
+
+        if self.__ticks == 0:
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
+        elif self.__animation_mode in (self.ANIMATION_MODE_LEFT, self.ANIMATION_MODE_RIGHT):
+            if math.floor((self.__ticks - 1) / num_columns) % 2 == 0:
+                display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+            else:
+                display_mode = DisplayMode.DISPLAY_MODE_TILE
+        elif self.__animation_mode in (self.ANIMATION_MODE_UP, self.ANIMATION_MODE_DOWN):
+            if math.floor((self.__ticks - 1) / num_rows) % 2 == 0:
+                display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+            else:
+                display_mode = DisplayMode.DISPLAY_MODE_TILE
+
         display_mode_by_tv_id = {}
         for tv_id in tv_ids:
             display_mode_by_tv_id[tv_id] = display_mode

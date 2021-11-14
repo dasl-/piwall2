@@ -1,4 +1,5 @@
 import json
+import math
 import socket
 import subprocess
 import toml
@@ -28,6 +29,8 @@ class ConfigLoader:
     __is_any_receiver_dual_video_output = None
     __hostname = None
     __local_ip_address = None
+    __wall_rows = None
+    __wall_columns = None
 
     __APP_TV_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/tv_config.json"
 
@@ -72,11 +75,21 @@ class ConfigLoader:
     def get_wall_height(self):
         return ConfigLoader.__wall_height
 
-    def get_wall_rows(self):
-        return ConfigLoader.__raw_config.get('rows', 0)
+    def get_num_wall_rows(self):
+        return ConfigLoader.__raw_config.get('rows', 1)
 
+    def get_num_wall_columns(self):
+        return ConfigLoader.__raw_config.get('columns', 1)
+
+    # Returns a 0-indexed array where each element of the array is an array of tv_ids
+    # e.g. [[tv_id1, tv_id2], [tv_id3, tv_id4]]
+    def get_wall_rows(self):
+        return ConfigLoader.__wall_rows
+
+    # Returns a 0-indexed array where each element of the array is an array of tv_ids
+    # e.g. [[tv_id1, tv_id3], [tv_id2, tv_id4]]
     def get_wall_columns(self):
-        return ConfigLoader.__raw_config.get('columns', 0)
+        return ConfigLoader.__wall_columns
 
     # youtube-dl video format depends on whether any receiver has dual video output
     # see: https://github.zm/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#one-vs-two-tvs-per-receiver-raspberry-pi
@@ -148,11 +161,11 @@ class ConfigLoader:
         self.__logger.info(f"Using youtube-dl video format: {ConfigLoader.__youtube_dl_video_format}")
 
         self.__generate_tv_config()
-
         ConfigLoader.__hostname = socket.gethostname() + ".local"
         ConfigLoader.__local_ip_address = self.__get_local_ip()
         ConfigLoader.__is_any_receiver_dual_video_output = is_any_receiver_dual_video_out
         ConfigLoader.__raw_config = raw_config
+        ConfigLoader.__wall_rows, ConfigLoader.__wall_columns = self.__compute_wall_rows_and_columns()
 
         if 'log_level' in raw_config:
             log_level = raw_config['log_level']
@@ -216,6 +229,35 @@ class ConfigLoader:
             'wall_width': self.get_wall_width(),
             'wall_height': self.get_wall_height(),
         }
+
+    # returns a tuple (rows, columns). Each part of the tuple will be a 0-indexed array
+    # where each element of the array is an array of tv_ids
+    #
+    # e.g.
+    # (
+    #   rows = [[tv_id1, tv_id2], [tv_id3, tv_id4]],
+    #   columns = [[tv_id1, tv_id3], [tv_id2, tv_id4]]
+    # )
+    def __compute_wall_rows_and_columns(self):
+        num_rows = self.get_num_wall_rows()
+        num_columns = self.get_num_wall_columns()
+        wall_width = self.get_wall_width()
+        wall_height = self.get_wall_height()
+        rows = [[] for i in range(num_rows)]
+        columns = [[] for i in range(num_columns)]
+
+        row_height = wall_height / num_rows
+        column_width = wall_width / num_columns
+        for tv_id, tv_config in self.get_tv_config()['tvs'].items():
+            tv_center_x = tv_config['x'] + tv_config['width'] / 2
+            tv_center_y = tv_config['y'] + tv_config['height'] / 2
+            tv_row = math.floor(tv_center_y / row_height)
+            tv_column = math.floor(tv_center_x / column_width)
+
+            rows[tv_row].append(tv_id)
+            columns[tv_column].append(tv_id)
+
+        return rows, columns
 
     def __get_local_ip(self):
         private_ip = (subprocess

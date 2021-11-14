@@ -40,7 +40,7 @@ class SettingsDb:
                 "UPDATE SET value=excluded.value, update_date=excluded.update_date"),
             [key, value]
         )
-        return self.__cursor.lastrowid
+        return self.__cursor.rowcount == 1
 
     # returns boolean success
     def set_multi(self, kv_dict):
@@ -56,7 +56,7 @@ class SettingsDb:
                 "UPDATE SET value=excluded.value, update_date=excluded.update_date"),
             params
         )
-        return self.__cursor.lastrowid is not None
+        return self.__cursor.rowcount == len(kv_dict)
 
     def get(self, key, default = None):
         self.__cursor.execute(
