@@ -87,6 +87,7 @@ class Content extends React.Component {
                   tv_data={this.props.tv_data}
                   setDisplayMode={this.props.setDisplayMode}
                   setAnimationMode={this.props.setAnimationMode}
+                  animation_mode={this.props.animation_mode}
                 />
               </div>
             </div>
@@ -117,6 +118,7 @@ class Content extends React.Component {
                 tv_data={this.props.tv_data}
                 setDisplayMode={this.props.setDisplayMode}
                 setAnimationMode={this.props.setAnimationMode}
+                animation_mode={this.props.animation_mode}
               />
             </div>
           </div>

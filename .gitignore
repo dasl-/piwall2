@@ -13,7 +13,7 @@ config.toml
 app/src/css/custom-theme.css
 app/src/css/themes/*.css
 app/src/css/**/*.css.map
-
+app/src/component/**/*.css.map
 
 # config file written on python server start up
 app/src/tv_config.json

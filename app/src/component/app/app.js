@@ -42,6 +42,7 @@ class App extends React.Component {
       last_queued_video_color_modes: [],
       vol_pct: undefined,
       is_screensaver_enabled: true,
+      animation_mode: null,
 
       // tv_data contains a mix of state from the backend and the frontend per TV. Keyed by tv_id.
       // Ex: {
@@ -146,6 +147,7 @@ class App extends React.Component {
               tv_data={this.state.tv_data}
               setDisplayMode={this.setDisplayMode}
               setAnimationMode={this.setAnimationMode}
+              animation_mode={this.state.animation_mode}
             />
           </div>
         </CSSTransition>
@@ -288,7 +290,10 @@ class App extends React.Component {
       for (var tv_id in new_tv_data) {
         new_tv_data[tv_id]['loading'] = true;
       }
-    this.setState({tv_data: new_tv_data});
+    this.setState({
+      tv_data: new_tv_data,
+      animation_mode: animation_mode
+    });
 
     new_tv_data = null;
     this.apiClient.setAnimationMode(animation_mode)
@@ -363,6 +368,7 @@ class App extends React.Component {
             playlist_videos: playlist_videos,
             vol_pct: vol_pct,
             is_screensaver_enabled: data.is_screensaver_enabled,
+            animation_mode: data.animation_mode,
             tv_data: new_tv_data,
           });
         }

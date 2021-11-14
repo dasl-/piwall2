@@ -1,4 +1,17 @@
 .vfx-button {
-    font-size: 1.5rem;
-    padding: 0 20px;
+  font-size: 1.5rem;
+  border: 1px solid #2E3135;
+  border-radius: 0.3em;
 }
+
+.vfx-button.selected {
+  text-stroke: 1px #5cedf9;
+  -webkit-text-stroke: 1px #5cedf9;
+  text-shadow: #52c6f3 0px 0px 3.5px;
+  box-shadow: #f84aad 0px 0px 6.5px;
+  background-color: #1C1E22 !important;
+  box-shadow: #f84aad 0px 0px 6.5px;
+  border: 1px solid #ef75bb;
+}
+
+/*# sourceMappingURL=vfx_button.css.map */

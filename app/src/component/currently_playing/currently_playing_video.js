@@ -83,24 +83,21 @@ class CurrentlyPlayingVideo extends React.Component {
           <div className='row d-flex justify-content-center'>
             <VfxButton
               button_class='glyphicon glyphicon-resize-full'
-              animation_mode={false}
-              setAnimationMode={false}
-              display_mode='DISPLAY_MODE_TILE'
-              setDisplayMode={this.props.setDisplayMode}
+              button_animation_mode='ANIMATION_MODE_TILE'
+              setAnimationMode={this.props.setAnimationMode}
+              app_animation_mode={this.props.animation_mode}
             />
             <VfxButton
               button_class='glyphicon glyphicon-resize-small'
-              animation_mode={false}
-              setAnimationMode={false}
-              display_mode='DISPLAY_MODE_REPEAT'
-              setDisplayMode={this.props.setDisplayMode}
+              button_animation_mode='ANIMATION_MODE_REPEAT'
+              setAnimationMode={this.props.setAnimationMode}
+              app_animation_mode={this.props.animation_mode}
             />
             <VfxButton
               button_class='glyphicon glyphicon-refresh'
-              animation_mode='ANIMATION_MODE_TILE_REPEAT'
+              button_animation_mode='ANIMATION_MODE_TILE_REPEAT'
               setAnimationMode={this.props.setAnimationMode}
-              display_mode={false}
-              setDisplayMode={false}
+              app_animation_mode={this.props.animation_mode}
             />
           </div>
         </div>

@@ -23,16 +23,19 @@ class Piwall2Api():
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__display_mode_helper = DisplayMode()
+        self.__animator = Animator()
 
     # get all the data that we poll for every second in the piwall2
     def get_queue(self):
         response_details = {}
         queue = self.__playlist.get_queue()
         tv_settings = self.__settings_db.get_tv_settings()
+        animation_mode = self.__animator.get_animation_mode()
         response_details = {
             'queue': queue,
             'vol_pct': self.__vol_controller.get_vol_pct(),
             'tv_settings': tv_settings,
+            SettingsDb.SETTING_ANIMATION_MODE: animation_mode,
             'success': True,
         }
         return response_details
@@ -88,16 +91,14 @@ class Piwall2Api():
             if display_mode not in DisplayMode.DISPLAY_MODES:
                 return {'success': False}
 
-        # send display_mode control message to receivers and update DB
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
-        success = self.__display_mode_helper.update_db(display_mode_by_tv_id)
+        success = self.__display_mode_helper.set_display_mode(display_mode_by_tv_id)
         return {'success': success}
 
     def set_animation_mode(self, post_data):
         animation_mode = post_data[SettingsDb.SETTING_ANIMATION_MODE]
         if animation_mode not in Animator.ANIMATION_MODES:
             return {'success': False}
-        success = self.__settings_db.set(SettingsDb.SETTING_ANIMATION_MODE, animation_mode)
+        success = self.__animator.set_animation_mode(animation_mode)
         return {'success': success}
 
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):

@@ -119,7 +119,7 @@ class SettingsDb:
             display_mode_settings_keys.append(display_mode_settings_key)
             tv_settings[tv_id] = {}
 
-        display_mode_settings = self.get_multi(display_mode_settings_keys, piwall2.displaymode.DisplayMode.DISPLAY_MODE_TILE)
+        display_mode_settings = self.get_multi(display_mode_settings_keys, piwall2.displaymode.DisplayMode.DEFAULT_DISPLAY_MODE)
         for key, display_mode in display_mode_settings.items():
             tv_id = self.get_tv_id_from_settings_key(key)
             tv_settings[tv_id][self.SETTING_DISPLAY_MODE] = display_mode
