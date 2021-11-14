@@ -76,6 +76,9 @@ class App extends React.Component {
     this.setDisplayMode = this.setDisplayMode.bind(this);
     this.setAnimationMode = this.setAnimationMode.bind(this);
 
+    this.animation_mode_mutex = false;
+    this.animation_mode_mutex_releasable = false;
+
     // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
     if (window.__firefox__) {
         window.__firefox__.NightMode.setEnabled(false);
@@ -296,6 +299,24 @@ class App extends React.Component {
     });
 
     new_tv_data = null;
+
+    /*
+      Setting the animation mode should instantaneously change which animation mode button is selected,
+      which is reflected in the UI. There is a race condition:
+      1) a getPlaylistQueue poll starts
+      2) selected button is changed in the UI when button is clicked
+      3) an ajax call is initiated to change the animation mode
+      4) the poll request from (1) returns with stale data -- the previous animation mode.
+          This causes the selected button to change
+      5) The ajax call from (3) finishes, and kicks off another polling request. When this
+          request returns, the UI will be corrected
+
+      This results in UI "flicker" as the selected button changes quickly from one state to another
+      due to this race condition. To prevent these issues, we hold a lock to prevent any in-flight
+      polling requests from changing which animation_mode is selected until setting the animation
+      mode is done.
+     */
+    this.animation_mode_mutex = true;
     this.apiClient.setAnimationMode(animation_mode)
       .finally(() => {
         new_tv_data = JSON.parse(JSON.stringify(this.state.tv_data))
@@ -303,6 +324,7 @@ class App extends React.Component {
           new_tv_data[tv_id]['loading'] = false;
         }
         this.setState({tv_data: new_tv_data});
+        this.animation_mode_mutex_releasable = true;
         this.getPlaylistQueue();
       });
   }
@@ -316,7 +338,8 @@ class App extends React.Component {
     }
 
     this.setState({'playlist_loading':true});
-
+    const release_animation_mode_mutex = this.animation_mode_mutex_releasable;
+    this.animation_mode_mutex_releasable = false;
     return this.apiClient
       .getQueue()
       .then((data) => {
@@ -363,20 +386,26 @@ class App extends React.Component {
             }
           }
 
-          this.setState({
+          let new_state = {
             playlist_current_video: playlist_current_video,
             playlist_videos: playlist_videos,
             vol_pct: vol_pct,
             is_screensaver_enabled: data.is_screensaver_enabled,
-            animation_mode: data.animation_mode,
             tv_data: new_tv_data,
-          });
+          }
+          if (!this.animation_mode_mutex || release_animation_mode_mutex) {
+            new_state.animation_mode = data.animation_mode;
+          }
+          this.setState(new_state);
         }
 
         this.setState({ playlist_loading: false });
       })
       .finally(() => {
         this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), App.QUEUE_POLL_INTERVAL_MS);
+        if (release_animation_mode_mutex) {
+          this.animation_mode_mutex = false;
+        }
       });
   }
 
