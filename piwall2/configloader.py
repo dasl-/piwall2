@@ -161,11 +161,11 @@ class ConfigLoader:
         self.__logger.info(f"Using youtube-dl video format: {ConfigLoader.__youtube_dl_video_format}")
 
         self.__generate_tv_config()
-        ConfigLoader.__wall_rows, ConfigLoader.__wall_columns = self.__compute_wall_rows_and_columns()
         ConfigLoader.__hostname = socket.gethostname() + ".local"
         ConfigLoader.__local_ip_address = self.__get_local_ip()
         ConfigLoader.__is_any_receiver_dual_video_output = is_any_receiver_dual_video_out
         ConfigLoader.__raw_config = raw_config
+        ConfigLoader.__wall_rows, ConfigLoader.__wall_columns = self.__compute_wall_rows_and_columns()
 
         if 'log_level' in raw_config:
             log_level = raw_config['log_level']
