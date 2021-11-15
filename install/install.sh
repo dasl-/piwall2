@@ -275,7 +275,7 @@ setGpuMem(){
         # create the new stanza
         echo 'gpu_mem=128' | sudo tee -a $CONFIG >/dev/null
     else
-        echo "gpu_mem was large enough already: $gpu_mem megabytes..."
+        echo "gpu_mem was the right size already: $gpu_mem megabytes..."
     fi
 }
 
