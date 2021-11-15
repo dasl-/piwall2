@@ -15,6 +15,7 @@ main(){
         exit
     fi
 
+    stopPiwallServices
     updateAndInstallAptPackages
     buildAndInstallOmxplayerFork
     updateAndInstallPythonPackages
@@ -64,6 +65,20 @@ parseOpts(){
     if [ "$installation_type" = false ] ; then
         echo "Installation type must be specified ('-t')."
         usage 1
+    fi
+}
+
+stopPiwallServices(){
+    echo -e "\\nStopping piwall services..."
+    # stop the services because in particular, a running omxplayer instance can cause the installation to fail,
+    # specifically the `buildAndInstallOmxplayerFork` step:
+    #   pi@piwall8.local: cp: cannot create regular file '/usr/bin/omxplayer.bin': Text file busy
+    #   pi@piwall8.local: make: *** [Makefile:98: install] Error 1`
+    local piwall2_units
+    piwall2_units=$(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }' | paste -sd ' ')
+    if [ -n "${piwall2_units}" ]; then
+        # shellcheck disable=SC2086
+        sudo systemctl stop $piwall2_units || true
     fi
 }
 
