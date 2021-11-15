@@ -11,7 +11,7 @@ class VfxButton extends React.Component {
   render() {
     const selected_class = this.isSelected() ? ' selected ' : '';
     return (
-      <span className={this.props.button_class + selected_class + ' p-1 ml-3 mr-3 bg-light-text vfx-button'}
+      <span className={this.props.button_class + selected_class + ' p-1 ml-1 mr-1 bg-light-text vfx-button'}
         aria-hidden='true'
         onClick={this.setAnimationMode} />
     );
