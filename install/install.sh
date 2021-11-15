@@ -167,11 +167,11 @@ updateDbSchema(){
 }
 
 buildWebApp(){
-    echo "Building web app..."
-    npm run build --prefix "$BASE_DIR"/app
-
     echo "Writing web app config..."
     "$BASE_DIR"/utils/write_tv_config_for_web_app
+
+    echo "Building web app..."
+    npm run build --prefix "$BASE_DIR"/app
 }
 
 # We disable wifi because multicast doesn't work well over wifi. Since the TV wall
@@ -267,7 +267,7 @@ maybeAdjustScreenRotateMode(){
 #      https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#gpu_mem
 setGpuMem(){
     gpu_mem=$(vcgencmd get_mem gpu | sed -n 's/gpu=\(.*\)M/\1/p')
-    if (( gpu_mem < 128 )); then
+    if (( gpu_mem < 256 )); then
         echo 'Increasing gpu_mem to 256 megabytes...'
 
         # comment out existing gpu_mem.* lines in config
