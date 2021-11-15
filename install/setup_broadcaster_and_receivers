@@ -130,7 +130,7 @@ def clone_and_pull_repo(cmd_runner, ssh_opts):
         # currently on?
         f'GIT_SSH_COMMAND="{ssh_opts}" git -C "{ROOT_DIR}" pull'
     )
-    cmd_runner.run_dsh(clone_or_pull_repo_and_checkout_branch, include_broadcaster = False)
+    cmd_runner.run_dsh(clone_or_pull_repo_and_checkout_branch, include_broadcaster = True)
 
 def copy_config_to_receivers(cmd_runner):
     print("Copying config (if it exists) from broadcaster to receivers...")
