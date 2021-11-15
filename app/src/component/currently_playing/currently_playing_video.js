@@ -101,25 +101,25 @@ class CurrentlyPlayingVideo extends React.Component {
             />
             <VfxButton
               button_class='glyphicon glyphicon-arrow-right'
-              button_animation_mode='ANIMATION_MODE_TILE_RIGHT'
+              button_animation_mode='ANIMATION_MODE_RIGHT'
               setAnimationMode={this.props.setAnimationMode}
               app_animation_mode={this.props.animation_mode}
             />
             <VfxButton
               button_class='glyphicon glyphicon-arrow-down'
-              button_animation_mode='ANIMATION_MODE_TILE_DOWN'
+              button_animation_mode='ANIMATION_MODE_DOWN'
               setAnimationMode={this.props.setAnimationMode}
               app_animation_mode={this.props.animation_mode}
             />
             <VfxButton
               button_class='glyphicon glyphicon-arrow-left'
-              button_animation_mode='ANIMATION_MODE_TILE_LEFT'
+              button_animation_mode='ANIMATION_MODE_LEFT'
               setAnimationMode={this.props.setAnimationMode}
               app_animation_mode={this.props.animation_mode}
             />
             <VfxButton
               button_class='glyphicon glyphicon-arrow-up'
-              button_animation_mode='ANIMATION_MODE_TILE_UP'
+              button_animation_mode='ANIMATION_MODE_UP'
               setAnimationMode={this.props.setAnimationMode}
               app_animation_mode={this.props.animation_mode}
             />

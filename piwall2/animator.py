@@ -140,13 +140,13 @@ class Animator:
         elif self.__animation_mode == self.ANIMATION_MODE_LEFT:
             column_number = (num_columns - 1) - ((self.__ticks - 1) % num_columns)
             tv_ids = self.__config_loader.get_wall_columns()[column_number]
-        elif self.animation_mode == self.ANIMATION_MODE_RIGHT:
+        elif self.__animation_mode == self.ANIMATION_MODE_RIGHT:
             column_number = ((self.__ticks - 1) % num_columns)
             tv_ids = self.__config_loader.get_wall_columns()[column_number]
         elif self.__animation_mode == self.ANIMATION_MODE_UP:
             row_number = (num_rows - 1) - ((self.__ticks - 1) % num_rows)
             tv_ids = self.__config_loader.get_wall_rows()[row_number]
-        elif self.animation_mode == self.ANIMATION_MODE_DOWN:
+        elif self.__animation_mode == self.ANIMATION_MODE_DOWN:
             row_number = ((self.__ticks - 1) % num_rows)
             tv_ids = self.__config_loader.get_wall_rows()[row_number]
 
