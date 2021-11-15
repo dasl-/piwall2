@@ -38,8 +38,10 @@ main(){
     setGpuMem
 
     new_config=$(cat $CONFIG)
-    config_diff=$(diff <(echo "$old_config") <(echo "$new_config"))
+    set -e # allow the subsequent line to exit non-zero without aborting the script
+    config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
     config_diff_exit_code=$?
+    set +e
     if [[ $is_restart_required = true || ! $config_diff_exit_code ]] ; then
         echo "Please restart to complete installation!"
         echo -e "Config diff:\n$config_diff"
@@ -167,11 +169,11 @@ updateDbSchema(){
 }
 
 buildWebApp(){
-    echo "Building web app..."
-    npm run build --prefix "$BASE_DIR"/app
-
     echo "Writing web app config..."
     "$BASE_DIR"/utils/write_tv_config_for_web_app
+
+    echo "Building web app..."
+    npm run build --prefix "$BASE_DIR"/app
 }
 
 # We disable wifi because multicast doesn't work well over wifi. Since the TV wall
