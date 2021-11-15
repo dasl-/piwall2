@@ -269,8 +269,8 @@ maybeAdjustScreenRotateMode(){
 #      https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc#gpu_mem
 setGpuMem(){
     gpu_mem=$(vcgencmd get_mem gpu | sed -n 's/gpu=\(.*\)M/\1/p')
-    if (( gpu_mem < 128 )); then
-        echo 'Increasing gpu_mem to 128 megabytes...'
+    if (( gpu_mem != 128 )); then
+        echo 'Setting gpu_mem to 128 megabytes...'
 
         # comment out existing gpu_mem.* lines in config
         sudo sed $CONFIG -i -e "s/^\(gpu_mem.*\)/#\1/"
