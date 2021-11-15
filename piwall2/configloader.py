@@ -248,7 +248,7 @@ class ConfigLoader:
 
         row_height = wall_height / num_rows
         column_width = wall_width / num_columns
-        for tv_id, tv_config in self.get_tv_config().items():
+        for tv_id, tv_config in self.get_tv_config()['tvs'].items():
             tv_center_x = tv_config['x'] + tv_config['width'] / 2
             tv_center_y = tv_config['y'] + tv_config['height'] / 2
             tv_row = math.floor(tv_center_y / row_height)
