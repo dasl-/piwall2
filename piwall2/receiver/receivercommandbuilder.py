@@ -67,7 +67,7 @@ class ReceiverCommandBuilder:
             shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels)),
             OmxplayerController.TV1_VIDEO_DBUS_NAME, '1'
         )
-        cmd = 'set -o pipefail && '
+        cmd = 'set -o pipefail && export SHELLOPTS && '
         if self.__receiver_config_stanza['is_dual_video_output']:
             omx_cmd2 = omx_cmd_tempate.format(
                 shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels)),
@@ -97,7 +97,7 @@ class ReceiverCommandBuilder:
             OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME, '0'
         )
         cat_cmd = f'cat {video_path}'
-        loading_screen_cmd = 'set -o pipefail && '
+        loading_screen_cmd = 'set -o pipefail && export SHELLOPTS && '
         if self.__receiver_config_stanza['is_dual_video_output']:
             omx_cmd2 = self.__OMX_CMD_TEMPLATE.format(
                 shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels)),
