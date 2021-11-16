@@ -194,7 +194,7 @@ class VideoBroadcaster:
             # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
             ffmpeg_input_clause = self.__get_ffmpeg_input_clause(ytdl_video_format)
             # TODO: can we use mp3 instead of mp2?
-            cmd = (f"set -o pipefail && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
+            cmd = (f"set -o pipefail && export SHELLOPTS && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
                 "-c:v copy -c:a mp2 -b:a 192k -f mpegts -")
         self.__logger.info(f"Running download_and_convert_video_proc command: {cmd}")
 
@@ -218,7 +218,7 @@ class VideoBroadcaster:
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
-        video_broadcast_cmd = ("set -o pipefail && " +
+        video_broadcast_cmd = ("set -o pipefail && export SHELLOPTS && " +
             f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {video_broadcast_cmd}")
 
@@ -250,7 +250,7 @@ class VideoBroadcaster:
             pass # don't change anything, ffmpeg is pretty verbose by default
         else:
             log_opts += '-loglevel error'
-        return f"ffmpeg -hide_banner {log_opts} "
+        return f"ffmpeg -hide_banner -xerror {log_opts} "
 
     def __get_ffmpeg_input_clause(self, ytdl_video_format):
         video_url_type = self.__get_video_url_type()
