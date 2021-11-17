@@ -255,7 +255,7 @@ maybeAdjustScreenRotateMode(){
         echo "Resetting screen rotation options if present..."
 
         # uncomment existing `#dtoverlay=vc4-fkms-v3d` lines in config
-        sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-fkms-v3d.*/dtoverlay=vc4-fkms-v3d.*/"
+        sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-fkms-v3d.*/dtoverlay=vc4-fkms-v3d/"
 
         # comment out existing `display_hdmi_rotate` lines in config
         sudo sed $CONFIG -i -e "s/^\(display_hdmi_rotate=.*\)/#\1/"
