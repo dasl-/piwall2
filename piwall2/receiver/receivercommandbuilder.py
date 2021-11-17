@@ -13,7 +13,10 @@ class ReceiverCommandBuilder:
 
     # See: https://github.com/dasl-/piwall2/blob/main/docs/configuring_omxplayer.adoc
     __OMX_CMD_TEMPLATE = ('omxplayer --crop {0} --adev {1} --display {2} --vol {3} --dbus_name {4} --layer {5} ' +
-            '--aspect-mode stretch --no-keys --timeout 30 --threshold 0.2 --video_fifo 10 pipe:0')
+            '--aspect-mode stretch --no-keys --timeout 30 --threshold 0.2 --video_fifo 10 ' +
+            '--no-osd ' + # Try to fix random video freezes? https://github.com/popcornmix/omxplayer/issues/437#issuecomment-208044879
+                # But it should already be disabled on raspberry pi 4: https://github.com/popcornmix/omxplayer/blame/1f1d0ccd65d3a1caa86dc79d2863a8f067c8e3f8/omxplayer.cpp#L83
+            'pipe:0')
 
     def __init__(self, config_loader, receiver_config_stanza):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
