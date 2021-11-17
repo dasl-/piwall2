@@ -113,9 +113,9 @@ class ReceiverCommandBuilder:
         receiver_config = self.__receiver_config_stanza
         adev = None
         if receiver_config['audio'] == 'hdmi' or receiver_config['audio'] == 'hdmi0':
-            adev = 'hdmi'
+            adev = 'alsa:default:CARD=b1'
         elif receiver_config['audio'] == 'headphone':
-            adev = 'local'
+            adev = 'alsa:hw:0,0'
         elif receiver_config['audio'] == 'hdmi_alsa' or receiver_config['audio'] == 'hdmi0_alsa':
             adev = 'alsa:default:CARD=b1'
         else:
@@ -124,9 +124,9 @@ class ReceiverCommandBuilder:
         adev2 = None
         if receiver_config['is_dual_video_output']:
             if receiver_config['audio2'] == 'hdmi1':
-                adev2 = 'hdmi1'
+                adev2 = 'alsa:default:CARD=b2'
             elif receiver_config['audio2'] == 'headphone':
-                adev2 = 'local'
+                adev2 = 'alsa:hw:0,0'
             elif receiver_config['audio'] == 'hdmi1_alsa':
                 adev2 = 'alsa:default:CARD=b2'
             else:

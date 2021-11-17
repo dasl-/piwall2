@@ -53,9 +53,8 @@ class Receiver:
         self.__loading_screen_pgid = None
 
         # house keeping
-        # Set the video player volume to 50%, but set the hardware volume to 100%.
-        self.__video_player_volume_pct = 50
-        (VolumeController()).set_vol_pct(100)
+        self.__volume_controller = VolumeController()
+        self.__volume_controller.set_vol_pct(50)
         self.__disable_terminal_output()
         self.__play_warmup_video()
 
@@ -104,17 +103,8 @@ class Receiver:
         elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
             self.__stop_video_playback_if_playing(stop_loading_screen_playback = True)
         elif msg_type == ControlMessageHelper.TYPE_VOLUME:
-            self.__video_player_volume_pct = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
-            vol_pairs = {}
-            if self.__is_video_playback_in_progress:
-                vol_pairs[OmxplayerController.TV1_VIDEO_DBUS_NAME] = self.__video_player_volume_pct
-                if self.__receiver_config_stanza['is_dual_video_output']:
-                    vol_pairs[OmxplayerController.TV2_VIDEO_DBUS_NAME] = self.__video_player_volume_pct
-            if self.__is_loading_screen_playback_in_progress:
-                vol_pairs[OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME] = self.__video_player_volume_pct
-                if self.__receiver_config_stanza['is_dual_video_output']:
-                    vol_pairs[OmxplayerController.TV2_LOADING_SCREEN_DBUS_NAME] = self.__video_player_volume_pct
-            self.__omxplayer_controller.set_vol_pct(vol_pairs)
+            volume_pct = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
+            self.__volume_controller.set_vol_pct(volume_pct)
         elif msg_type == ControlMessageHelper.TYPE_DISPLAY_MODE:
             display_mode_by_tv_id = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
             for tv_num, tv_id in self.__tv_ids.items():
@@ -155,7 +145,7 @@ class Receiver:
         cmd, self.__video_crop_args, self.__video_crop_args2 = (
             self.__receiver_command_builder.build_receive_and_play_video_command_and_get_crop_args(
                 ctrl_msg_content['log_uuid'], ctrl_msg_content['video_width'],
-                ctrl_msg_content['video_height'], self.__video_player_volume_pct,
+                ctrl_msg_content['video_height'], 100,
                 self.__display_mode, self.__display_mode2
             )
         )
@@ -171,7 +161,7 @@ class Receiver:
         Logger.set_uuid(ctrl_msg_content['log_uuid'])
         cmd, self.__loading_screen_crop_args, self.__loading_screen_crop_args2 = (
             self.__receiver_command_builder.build_loading_screen_command_and_get_crop_args(
-                self.__video_player_volume_pct, self.__display_mode, self.__display_mode2,
+                100, self.__display_mode, self.__display_mode2,
                 ctrl_msg_content['loading_screen_data']
             )
         )
