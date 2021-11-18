@@ -49,6 +49,7 @@ class DisplayMode:
     # TODO: use SettingsDb.toggle_multi once we have a version of sqlite that supports the `returning` clause
     # See: SettingsDb.toggle_multi
     def toggle_display_mode(self, tv_ids):
+        self.__logger.info(f'toggle_display_mode {tv_ids}')
         db_keys = []
         for tv_id in tv_ids:
             db_keys.append(self.__settings_db.make_tv_key_for_setting(
