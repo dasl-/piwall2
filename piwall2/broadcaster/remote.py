@@ -118,9 +118,8 @@ class Remote:
         elif key_name == 'KEY_VOLUMEDOWN':
             new_volume_pct = self.__vol_controller.increment_vol_pct(inc = -self.__VOLUME_INCREMENT)
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
-        elif key_name == 'KEY_SCREEN':
+        elif key_name == 'KEY_SCREEN' and sequence == '00':
             animation_mode = self.__animator.get_animation_mode()
-            self.__logger.info(f'Got old animation mode: {animation_mode}')
             if animation_mode == Animator.ANIMATION_MODE_REPEAT:
                 self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
             else:
