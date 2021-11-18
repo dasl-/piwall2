@@ -92,13 +92,17 @@ class Remote:
 
     def __handle_input(self, sequence, key_name, remote):
         if key_name == 'KEY_MUTE' and sequence == '00':
-            if self.__unmute_vol_pct is None:
+            current_vol_pct = self.__vol_controller.get_vol_pct()
+            if current_vol_pct > 0:
                 # mute
-                self.__unmute_vol_pct = self.__vol_controller.get_vol_pct()
+                self.__unmute_vol_pct = current_vol_pct
                 self.__vol_controller.set_vol_pct(0)
                 self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, 0)
             else:
                 # unmute
+                if not self.__unmute_vol_pct:
+                    # handle case where someone manually adjusted the volume to zero.
+                    self.__unmute_vol_pct = 50
                 self.__vol_controller.set_vol_pct(self.__unmute_vol_pct)
                 self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, self.__unmute_vol_pct)
                 self.__unmute_vol_pct = None
