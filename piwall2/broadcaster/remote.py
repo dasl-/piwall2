@@ -26,6 +26,7 @@ class Remote:
 
     def check_for_input_and_handle(self):
         start_time = time.time()
+        data = b''
         while True:
             is_ready_to_read, ignore1, ignore2 = select.select([self.__socket], [], [], 0)
             if not is_ready_to_read:
@@ -35,10 +36,48 @@ class Remote:
             #   b'0000000000000490 00 KEY_VOLUMEUP RM-729A\n'
             #   b'0000000000000490 01 KEY_VOLUMEUP RM-729A\n'
             #   etc...
-            data = self.__socket.recv(128).decode('utf-8').strip()
+            #
+            # Socket data for multiple button presses can be received in a single recv call. Unfortunately
+            # a fixed width protocol is not used, so we have to check for the presence of the expected line
+            # ending character (newline).
+            data += self.__socket.recv(128)
             self.__logger.debug(f"Received remote data ({len(data)}): {data}")
+            data_lines = data.decode('utf-8').split('\n')
+            num_lines = len(data_lines)
+            line_to_use = None
+            if data_lines[num_lines - 1] == '':
+                """
+                This means we read some data like:
+
+                    0000000000000490 00 KEY_VOLUMEUP RM-729A\n
+                    0000000000000490 01 KEY_VOLUMEUP RM-729A\n
+
+                The lines we read ended with a newline. This means the most recent line we read was complete,
+                so we can use it.
+                """
+                line_to_use = data_lines[num_lines - 2]
+                data = b''
+            else:
+                """
+                This means we read some data like:
+
+                    0000000000000490 00 KEY_VOLUMEUP RM-729A\n
+                    0000000000000490 01 KEY_VOLU
+
+                The lines we read did not end with a newline. This means it was a partial read of the last line,
+                so we can't use it.
+                """
+                if num_lines >= 2:
+                    line_to_use = data_lines[num_lines - 2]
+
+                # since the last line was a partial read, don't reset the `data` variable.
+                # We'll read the remainder of the line in the next loop.
+
+            if not line_to_use:
+                continue
+
             try:
-                ignore, sequence, key_name, remote = data.split(' ')
+                ignore, sequence, key_name, remote = line_to_use.split(' ')
             except Exception as e:
                 self.__logger.warning(f'Got exception parsing remote data: {e}')
 
