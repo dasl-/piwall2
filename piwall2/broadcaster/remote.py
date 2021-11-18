@@ -120,6 +120,7 @@ class Remote:
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
         elif key_name == 'KEY_SCREEN':
             animation_mode = self.__animator.get_animation_mode()
+            self.__logger.info(f'Got old animation mode: {animation_mode}')
             if animation_mode == Animator.ANIMATION_MODE_REPEAT:
                 self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
             else:
