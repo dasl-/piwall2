@@ -60,6 +60,7 @@ class Remote:
             key_num = int(key_name.split('_')[1])
             tv_ids = self.__config_loader.get_tv_ids_list()
             tv_id = tv_ids[key_num % len(tv_ids)]
+            self.__logger.info(f'toggle_display_mode {tv_id}')
             self.__display_mode.toggle_display_mode((tv_id))
         elif key_name == 'KEY_VOLUMEUP':
             new_volume_pct = self.__vol_controller.increment_vol_pct(inc = self.__VOLUME_INCREMENT)
