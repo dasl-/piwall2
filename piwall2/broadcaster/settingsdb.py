@@ -58,6 +58,22 @@ class SettingsDb:
         )
         return self.__cursor.rowcount == len(kv_dict)
 
+    # TODO: use RETURNING clause if we have a recent version of sqlite that supports it (>= 3.35.0)
+    # https://www.sqlite.org/lang_returning.html
+    def toggle_multi(self, key_list, toggle_value1, toggle_value2):
+        params = [toggle_value1, toggle_value2, toggle_value1]
+        placeholders = '('
+        for key in key_list:
+            placeholders += '?,'
+            params.append(key)
+        placeholders = placeholders.rstrip(',') + ')'
+
+        self.__cursor.execute(
+            (f"UPDATE settings SET value = CASE WHEN value = ? THEN ? ELSE ? END WHERE key IN {placeholders}"),
+            params
+        )
+        return self.__cursor.rowcount == len(key_list)
+
     def get(self, key, default = None):
         self.__cursor.execute(
             "SELECT value FROM settings WHERE key = ?", [key]
