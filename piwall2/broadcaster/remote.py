@@ -5,6 +5,7 @@ import time
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
+from piwall2.animator import Animator
 from piwall2.logger import Logger
 from piwall2.volumecontroller import VolumeController
 
@@ -16,7 +17,9 @@ class Remote:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__display_mode = DisplayMode()
+        self.__animator = Animator()
         self.__vol_controller = VolumeController()
+        self.__unmute_vol_pct = None
         self.__config_loader = ConfigLoader()
         self.__logger.info("Connecting to LIRC remote socket...")
         self.__socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -89,8 +92,16 @@ class Remote:
 
     def __handle_input(self, sequence, key_name, remote):
         if key_name == 'KEY_MUTE' and sequence == '00':
-            self.__vol_controller.set_vol_pct(0)
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, 0)
+            if self.__unmute_vol_pct is None:
+                # mute
+                self.__unmute_vol_pct = self.__vol_controller.get_vol_pct()
+                self.__vol_controller.set_vol_pct(0)
+                self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, 0)
+            else:
+                # unmute
+                self.__vol_controller.set_vol_pct(self.__unmute_vol_pct)
+                self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, self.__unmute_vol_pct)
+                self.__unmute_vol_pct = None
         elif (
             key_name in (
                 'KEY_1', 'KEY_2', 'KEY_3', 'KEY_4', 'KEY_5', 'KEY_6', 'KEY_7', 'KEY_8', 'KEY_9', 'KEY_0'
@@ -107,3 +118,9 @@ class Remote:
         elif key_name == 'KEY_VOLUMEDOWN':
             new_volume_pct = self.__vol_controller.increment_vol_pct(inc = -self.__VOLUME_INCREMENT)
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
+        elif key_name == 'KEY_SCREEN':
+            animation_mode = self.__animator.get_animation_mode()
+            if animation_mode == Animator.ANIMATION_MODE_REPEAT:
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
+            else:
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_REPEAT)
