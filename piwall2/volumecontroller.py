@@ -59,6 +59,16 @@ class VolumeController:
         pct_to_set = ((mb_level - self.GLOBAL_MIN_VOL_VAL) / (self.GLOBAL_MAX_VOL_VAL - self.GLOBAL_MIN_VOL_VAL)) * 100
         subprocess.check_output(('amixer', 'cset', 'numid=1', '{}%'.format(pct_to_set)))
 
+    # increments volume percentage by the specified increment. The increment should be a float in the range [0, 100]
+    # Returns the new volume percent, which will be a float in the range [0, 100]
+    def increment_vol_pct(self, inc = 1):
+        old_vol_pct = self.get_vol_pct()
+        new_vol_pct = old_vol_pct + inc
+        new_vol_pct = max(0, new_vol_pct)
+        new_vol_pct = min(100, new_vol_pct)
+        self.set_vol_pct(new_vol_pct)
+        return new_vol_pct
+
     # Return volume in millibels. Returns an integer in the range [self.GLOBAL_MIN_VOL_VAL, 0]
     def get_vol_millibels(self):
         res = subprocess.check_output(('amixer', 'cget', 'numid=1')).decode("utf-8")

@@ -1,0 +1,102 @@
+# Setting up a remote
+:toc:
+:toclevels: 5
+
+#### Purchase and install required hardware
+1. infrared receiver: https://www.adafruit.com/product/157
+1. wires: https://www.adafruit.com/product/794
+
+Setup hardware via instructions here: https://learn.adafruit.com/using-an-ir-remote-with-a-raspberry-pi-media-center/hardware
+
+#### Install LIRC on the broadcaster: 
+....
+sudo apt install -y lirc
+....
+
+#### Configure raspberry pi
+In `/boot/config.txt`, add a line:
+....
+dtoverlay=gpio-ir,gpio_pin=18
+....
+
+Note: this is a different pin than the default commented out lines in `/boot/config.txt` suggest:
+....
+# Uncomment this to enable infrared communication.
+#dtoverlay=gpio-ir,gpio_pin=17
+#dtoverlay=gpio-ir-tx,gpio_pin=18
+....
+
+#### Configure LIRC
+Create a file: `/etc/lirc/hardware.conf`
+Enter the following contents:
+....
+LIRCD_ARGS="--uinput --listen"
+LOAD_MODULES=true
+DRIVER="default"
+DEVICE="/dev/lirc0"
+MODULES="lirc_rpi"
+....
+
+Edit the file: `/etc/lirc/lirc_options.conf`
+Update its contents to:
+....
+#driver         = devinput
+#device         = auto
+driver          = default
+device          = /dev/lirc0
+....
+
+Reboot the raspberry pi:
+....
+sudo shutdown -r now
+....
+
+The LIRC service should be running after reboot: `sudo systemctl status lircd.service`
+
+#### Test your remote
+run `irw`. Press some buttons on your remote and you should see some output. Ctrl + c to quit.
+
+#### Configure your remote
+Go to the http://lirc-remotes.sourceforge.net/remotes-table.html[remotes database website]. Find your remote and download it's config file. Copy it to the LIRC config directory: 
+....
+sudo cp ~/<model_name>.lircd.conf /etc/lirc/lircd.conf.d/<model_name>.lircd.conf
+....
+
+If you cannot find your remote model on the website, you can create a new configuration file for it.
+
+##### creating a config file for your remote
+Stop the lirc services:
+....
+sudo systemctl stop lircd.service
+sudo systemctl stop lircd.socket
+....
+
+Change to your home directory:
+....
+cd ~
+....
+
+Record your remotes signals and follow the instructions (see the list of https://gist.github.com/unforgiven512/0c232f4112b63021a8e0df6eedfb2ff3[official key names here]):
+....
+sudo irrecord -d /dev/lirc0 --disable-namespace
+....
+
+A file should have been created in your current directory: `<model_name>.lircd.conf`. Move the file to the lirc config directory:
+....
+sudo cp ~/<model_name>.lircd.conf /etc/lirc/lircd.conf.d/<model_name>.lircd.conf
+....
+
+Restart lirc services:
+....
+sudo systemctl start lircd.service
+sudo systemctl start lircd.socket
+....
+
+Test your remote by running `irw` again. You should see signals recognized for your remote!
+
+If you have problems with each button triggerring repeated signals, you can make use of https://www.lirc.org/html/lircd.conf.html[LIRC's `suppress_repeat` config setting]. Edit the file `/etc/lirc/lircd.conf.d/<model_name>.lircd.conf` if necessary.
+
+
+#### Useful links:
+* https://devkimchi.com/2020/08/12/turning-raspberry-pi-into-remote-controller/
+* https://shallowsky.com/blog/hardware/raspberry-pi-ir-remote.html

@@ -7,6 +7,7 @@ import time
 
 from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
+from piwall2.broadcaster.remote import Remote
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -30,6 +31,7 @@ class Queue:
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
         self.__animator = Animator()
+        self.__remote = Remote()
 
         # house keeping
         self.__volume_controller.set_vol_pct(50)
@@ -49,6 +51,8 @@ class Queue:
                 else:
                     self.__play_screensaver()
             self.__maybe_set_receiver_state()
+            self.__remote.check_for_input_and_handle()
+
             time.sleep(0.050)
 
     def __play_playlist_item(self, playlist_item):
