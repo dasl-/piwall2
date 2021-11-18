@@ -64,6 +64,8 @@ class VolumeController:
     def increment_vol_pct(self, inc = 1):
         old_vol_pct = self.get_vol_pct()
         new_vol_pct = old_vol_pct + inc
+        new_vol_pct = max(0, new_vol_pct)
+        new_vol_pct = min(100, new_vol_pct)
         self.set_vol_pct(new_vol_pct)
         return new_vol_pct
 
