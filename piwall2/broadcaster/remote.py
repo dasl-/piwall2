@@ -40,7 +40,7 @@ class Remote:
             try:
                 ignore, sequence, key_name, remote = data.split(' ')
             except Exception as e:
-                self.__logger.warn(f'Got exception parsing remote data: {e}')
+                self.__logger.warning(f'Got exception parsing remote data: {e}')
 
             self.__handle_input(sequence, key_name, remote)
 
@@ -61,7 +61,7 @@ class Remote:
             tv_ids = self.__config_loader.get_tv_ids_list()
             tv_id = tv_ids[key_num % len(tv_ids)]
             self.__logger.info(f'toggle_display_mode {tv_id}')
-            self.__display_mode.toggle_display_mode((tv_id))
+            self.__display_mode.toggle_display_mode((tv_id,))
         elif key_name == 'KEY_VOLUMEUP':
             new_volume_pct = self.__vol_controller.increment_vol_pct(inc = self.__VOLUME_INCREMENT)
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
