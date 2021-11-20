@@ -43,11 +43,17 @@ class Remote:
             # Socket data for multiple button presses can be received in a single recv call. Unfortunately
             # a fixed width protocol is not used, so we have to check for the presence of the expected line
             # ending character (newline).
-            data += self.__socket.recv(128)
-            self.__logger.debug(f"Received remote data ({len(data)}): {data}")
+            raw_data = self.__socket.recv(128)
+            data += raw_data
+            self.__logger.debug(f"Received remote data ({len(raw_data)}): {raw_data}")
+            if raw_data != data:
+                self.__logger.debug(f"Using remote data ({len(data)}): {data}")
             data_lines = data.decode('utf-8').split('\n')
             num_lines = len(data_lines)
-            line_to_use = None
+            full_lines = data_lines[:num_lines - 1]
+
+            # If we had a "partial read" of the remote data, ensure we read the rest of the data in the
+            # next iteration.
             if data_lines[num_lines - 1] == '':
                 """
                 This means we read some data like:
@@ -58,7 +64,6 @@ class Remote:
                 The lines we read ended with a newline. This means the most recent line we read was complete,
                 so we can use it.
                 """
-                line_to_use = data_lines[num_lines - 2]
                 data = b''
             else:
                 """
@@ -69,24 +74,32 @@ class Remote:
 
                 The lines we read did not end with a newline. This means it was a partial read of the last line,
                 so we can't use it.
+
+                Since the last line was a partial read, don't reset the `data` variable.
+                We'll read the remainder of the line in the next loop.
                 """
-                if num_lines >= 2:
-                    line_to_use = data_lines[num_lines - 2]
+                data = data_lines[num_lines - 1].encode()
 
-                # since the last line was a partial read, don't reset the `data` variable.
-                # We'll read the remainder of the line in the next loop.
+            # If we read data for multiple button presses in this iteration, only "use" one of those button
+            # presses. Here we have logic to determine which one to use. `sequence` is a hex digit that increments
+            # when you hold a button down on the remote. Use the 'first' button press (sequence == '00') whenever
+            # possible -- for most buttons we don't do anything special when you hold the button down, aside from
+            # the volume button. If there is no line with a sequence of '00', then use the last line.
+            sequence = key_name = remote = None
+            for line in full_lines:
+                try:
+                    ignore, sequence, key_name, remote = line.split(' ')
+                except Exception as e:
+                    self.__logger.warning(f'Got exception parsing remote data: {e}')
+                if sequence == '00':
+                    break
 
-            if not line_to_use:
+            if not sequence:
                 continue
-
-            try:
-                ignore, sequence, key_name, remote = line_to_use.split(' ')
-            except Exception as e:
-                self.__logger.warning(f'Got exception parsing remote data: {e}')
 
             self.__handle_input(sequence, key_name, remote)
 
-            # don't let reading remote input steal contorl from the main queue loop for too long
+            # don't let reading remote input steal control from the main queue loop for too long
             if (time.time() - start_time) > 0.5:
                 return
 
