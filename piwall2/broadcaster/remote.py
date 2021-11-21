@@ -170,10 +170,11 @@ class Remote:
 
     def __play_video_for_channel(self):
         channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
-        path_prefix = DirectoryUtils().root_dir + '/'
+        video_path = DirectoryUtils().root_dir + '/' + channel_data['video_path']
+        thumbnail_path = '/' + channel_data['thumbnail_path']
         self.__playlist.enqueue(
-            path_prefix + channel_data['video_path'], path_prefix + channel_data['thumbnail_path'],
-            channel_data['title'], channel_data['duration'], '', Playlist.TYPE_CHANNEL_VIDEO
+            video_path, thumbnail_path, channel_data['title'], channel_data['duration'], '',
+            Playlist.TYPE_CHANNEL_VIDEO
         )
 
         if self.__currently_playing_item:
