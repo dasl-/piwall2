@@ -49,7 +49,7 @@ class VideoBroadcaster:
         self.__download_and_convert_video_proc_pgid = None
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
-        # Access should go through self.__get_video_info() to populate it lazily
+        # Access should go through self.get_video_info() to populate it lazily
         self.__video_info = None
 
         # Bind multicast traffic to eth0. Otherwise it might send over wlan0 -- multicast doesn't work well over wifi.
@@ -98,7 +98,7 @@ class VideoBroadcaster:
         Ytdl takes couple of seconds to be invoked. Luckily, (2) and (3) happen in parallel
         (see self.__get_ffmpeg_input_clause). But that would still leave us with effectively two groups of ytdl
         invocations which are happening serially: the group consisting of "1" and the group consisting of "2 and 3".
-        Note that (1) happens in self.__get_video_info.
+        Note that (1) happens in self.get_video_info.
 
         By starting a separate process for "2 and 3", we can actually ensure that all three of these invocations
         happen in parallel. This separate process is started in self.__start_download_and_convert_video_proc.
@@ -120,7 +120,7 @@ class VideoBroadcaster:
         we wouldn't be able to enforce that we don't start broadcasting the video before knowing the dimensions.
         """
         download_and_convert_video_proc = self.start_download_and_convert_video_proc()
-        self.__get_video_info(assert_data_not_yet_loaded = True)
+        self.get_video_info(assert_data_not_yet_loaded = True)
         self.__start_receivers()
 
         """
@@ -234,8 +234,8 @@ class VideoBroadcaster:
     def __start_receivers(self):
         msg = {
             'log_uuid': Logger.get_uuid(),
-            'video_width': self.__get_video_info()['width'],
-            'video_height': self.__get_video_info()['height'],
+            'video_width': self.get_video_info()['width'],
+            'video_height': self.get_video_info()['height'],
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_INIT_VIDEO, msg)
         self.__logger.info(f"Sent {ControlMessageHelper.TYPE_INIT_VIDEO} control message.")
