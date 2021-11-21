@@ -2,16 +2,19 @@ import select
 import socket
 import time
 
+from piwall2.animator import Animator
+from piwall2.broadcaster.playlist import Playlist
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
-from piwall2.animator import Animator
+from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
 from piwall2.volumecontroller import VolumeController
 
 class Remote:
 
     __VOLUME_INCREMENT = 1
+    __CHANNEL_VIDEOS = None
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -27,8 +30,15 @@ class Remote:
         self.__socket.connect('/var/run/lirc/lircd')
         self.__logger.info("Connected!")
 
-    def check_for_input_and_handle(self):
+        self.__channel = None
+        self.__playlist = Playlist()
+        self.__currently_playing_item = None
+        if Remote.__CHANNEL_VIDEOS is None:
+            Remote.__CHANNEL_VIDEOS = list(self.__config_loader.get_raw_config().get('channel_videos', {}).values())
+
+    def check_for_input_and_handle(self, currently_playing_item):
         start_time = time.time()
+        self.__currently_playing_item = currently_playing_item
         data = b''
         while True:
             is_ready_to_read, ignore1, ignore2 = select.select([self.__socket], [], [], 0)
@@ -141,3 +151,31 @@ class Remote:
                 self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
             else:
                 self.__animator.set_animation_mode(Animator.ANIMATION_MODE_REPEAT)
+        elif (key_name == 'KEY_CHANNELUP' or key_name == 'KEY_CHANNELDOWN') and sequence == '00':
+            if len(Remote.__CHANNEL_VIDEOS) <= 0:
+                return
+
+            if self.__channel is None:
+                if key_name == 'KEY_CHANNELUP':
+                    self.__channel = 0
+                else:
+                    self.__channel = len(Remote.__CHANNEL_VIDEOS) - 1
+            else:
+                if key_name == 'KEY_CHANNELUP':
+                    self.__channel = (self.__channel + 1) % len(Remote.__CHANNEL_VIDEOS)
+                else:
+                    self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
+
+            self.__play_video_for_channel()
+
+    def __play_video_for_channel(self):
+        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
+        video_path = DirectoryUtils().root_dir + '/' + channel_data['video_path']
+        thumbnail_path = '/' + channel_data['thumbnail_path']
+        self.__playlist.enqueue(
+            video_path, thumbnail_path, channel_data['title'], channel_data['duration'], '',
+            Playlist.TYPE_CHANNEL_VIDEO
+        )
+
+        if self.__currently_playing_item:
+            self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])

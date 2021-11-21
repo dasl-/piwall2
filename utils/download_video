@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import time
+import urllib
 
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
@@ -24,10 +25,12 @@ def parseArgs():
     parser.add_argument('--url', dest='url', action='store', required = True,
         help='youtube video url')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--1080p', dest='video_quality', action='store_const', const='1080p')
-    group.add_argument('--720p', dest='video_quality', action='store_const', const='720p')
+    group.add_argument('--1080p', dest='video_quality', action='store_const', const='1080p', default='1080p')
+    group.add_argument('--720p', dest='video_quality', action='store_const', const='720p', default='1080p')
     parser.add_argument('--output-file', dest='output_file', action='store', required = True,
-        help='output file')
+        help='output file without file extension')
+    parser.add_argument('--with-thumbnail', dest='with_thumbnail', action='store_true', default=False,
+        help='Download thumbnail image as well')
     args = parser.parse_args()
     return args
 
@@ -45,7 +48,7 @@ else:
 
 download_and_convert_video_proc = broadcaster.start_download_and_convert_video_proc(ytdl_video_format = ytdl_video_format)
 write_output_proc = subprocess.Popen(
-    f'cat - >{args.output_file}', shell = True, executable = '/usr/bin/bash', start_new_session = True,
+    f'cat - >{args.output_file}.ts', shell = True, executable = '/usr/bin/bash', start_new_session = True,
     stdin = download_and_convert_video_proc.stdout
 )
 
@@ -55,3 +58,9 @@ while write_output_proc.poll() is None:
 if write_output_proc.returncode != 0:
     logger.error(f"Got non-zero exit code: {write_output_proc.returncode}")
     sys.exit(write_output_proc.returncode)
+
+if args.with_thumbnail:
+    video_id = broadcaster.get_video_info()['id']
+    thumbnail_url = f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg'
+    logger.info(f"Downloading thumbnail: {thumbnail_url}...")
+    urllib.urlretrieve(thumbnail_url, f'{args.output_file}.jpg')

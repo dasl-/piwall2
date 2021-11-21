@@ -21,7 +21,7 @@ class Database:
     __DB_PATH = DirectoryUtils().root_dir + '/piwall2.db'
 
     # Zero indexed schema_version (first version is v0).
-    __SCHEMA_VERSION = 1
+    __SCHEMA_VERSION = 2
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -64,6 +64,8 @@ class Database:
 
                 if i == 1:
                     self.__update_schema_to_v1()
+                elif i == 2:
+                    self.__update_schema_to_v2()
                 # When next schema change happens, do something like this:
                 # elif i == 2:
                 #     self.__update_schema_to_v2()
@@ -106,3 +108,8 @@ class Database:
     # Add new table for storing settings
     def __update_schema_to_v1(self):
         piwall2.broadcaster.settingsdb.SettingsDb().construct()
+
+    def __update_schema_to_v2(self):
+        self.get_cursor().execute("ALTER TABLE playlist_videos ADD COLUMN type VARCHAR(20) DEFAULT 'TYPE_VIDEO'")
+        self.get_cursor().execute("DROP INDEX IF EXISTS status_idx")
+        self.get_cursor().execute("CREATE INDEX status_type_idx ON playlist_videos (status, type ASC, playlist_video_id ASC)")

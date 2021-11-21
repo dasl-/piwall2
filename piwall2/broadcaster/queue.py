@@ -51,7 +51,7 @@ class Queue:
                 else:
                     self.__play_screensaver()
             self.__maybe_set_receiver_state()
-            self.__remote.check_for_input_and_handle()
+            self.__remote.check_for_input_and_handle(self.__playlist_item)
 
             time.sleep(0.050)
 
@@ -89,7 +89,7 @@ class Queue:
         else:
             options = screensavers_config['1080p']
         screensaver_data = random.choice(list(options.values()))
-        path = DirectoryUtils().root_dir + '/' + screensaver_data['path']
+        path = DirectoryUtils().root_dir + '/' + screensaver_data['video_path']
         self.__logger.info("Starting broadcast of screensaver...")
         self.__do_broadcast(path, log_uuid)
 
@@ -114,12 +114,11 @@ class Queue:
                 should_skip = self.__playlist.should_skip_video_id(self.__playlist_item['playlist_video_id'])
             except Exception as e:
                 self.__logger.info(f"Caught exception: {e}.")
-
-        if self.__is_screensaver_broadcast_in_progress():
+        elif self.__is_screensaver_broadcast_in_progress():
             should_skip = self.__playlist.get_next_playlist_item() is not None
 
         if should_skip:
-            self.__stop_broadcast_if_broadcasting()
+            self.__stop_broadcast_if_broadcasting(was_skipped = True)
             return True
 
         return False
@@ -127,7 +126,7 @@ class Queue:
     def __is_screensaver_broadcast_in_progress(self):
         return self.__is_broadcast_in_progress and self.__playlist_item is None
 
-    def __stop_broadcast_if_broadcasting(self):
+    def __stop_broadcast_if_broadcasting(self, was_skipped = False):
         if not self.__is_broadcast_in_progress:
             return
 
@@ -146,14 +145,40 @@ class Queue:
                 else:
                     self.__logger.error(f'Got non-zero exit_status for broadcast proc: {exit_status}')
 
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, {})
+
         if self.__playlist_item:
-            self.__playlist.end_video(self.__playlist_item["playlist_video_id"])
+            if self.__should_reenqueue_current_playlist_item(was_skipped):
+                self.__playlist.reenqueue(self.__playlist_item["playlist_video_id"])
+            else:
+                self.__playlist.end_video(self.__playlist_item["playlist_video_id"])
 
         self.__logger.info("Ended video broadcast.")
         Logger.set_uuid('')
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
+
+    """
+    Starting a channel video causes the currently playing video to immediately be skipped. Playing a lot of channel
+    videos in quick succession could therefore cause the playlist queue to become depleted without the videos even
+    having had a chance to play.
+
+    Thus, when we are skipping a video, we check if a channel video is the next item in the queue. If so, we
+    reenqueue the video so as not to deplete the queue when a lot of channel videos are being played.
+    """
+    def __should_reenqueue_current_playlist_item(self, was_current_playlist_item_skipped):
+        if self.__playlist_item["type"] != Playlist.TYPE_VIDEO:
+            return False
+
+        if not was_current_playlist_item_skipped:
+            return False
+
+        next_playlist_item = self.__playlist.get_next_playlist_item()
+        if next_playlist_item and next_playlist_item["type"] == Playlist.TYPE_CHANNEL_VIDEO:
+            return True
+
+        return False
 
     # Set all receiver state on an interval to ensure eventual consistency.
     # We already set all state from the server in response to user UI actions (adjusting volume, toggling display mode)
