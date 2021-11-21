@@ -64,6 +64,8 @@ class Database:
 
                 if i == 1:
                     self.__update_schema_to_v1()
+                elif i == 2:
+                    self.__update_schema_to_v2()
                 # When next schema change happens, do something like this:
                 # elif i == 2:
                 #     self.__update_schema_to_v2()
