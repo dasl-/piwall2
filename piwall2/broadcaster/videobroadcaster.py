@@ -314,7 +314,7 @@ class VideoBroadcaster:
 
     # Lazily populate video_info from youtube. This takes a couple seconds, as it invokes youtube-dl on the video.
     # Must return a dict containing the keys: width, height
-    def __get_video_info(self, assert_data_not_yet_loaded = False):
+    def get_video_info(self, assert_data_not_yet_loaded = False):
         if self.__video_info:
             if assert_data_not_yet_loaded:
                 raise Exception('Failed asserting that data was not yet loaded')

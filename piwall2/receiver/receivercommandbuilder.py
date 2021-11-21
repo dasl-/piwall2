@@ -84,7 +84,7 @@ class ReceiverCommandBuilder:
     def build_loading_screen_command_and_get_crop_args(
         self, volume_pct, display_mode, display_mode2, loading_screen_data
     ):
-        video_path = DirectoryUtils().root_dir + '/' + loading_screen_data['path']
+        video_path = DirectoryUtils().root_dir + '/' + loading_screen_data['video_path']
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
         crop_args, crop_args2 = self.__get_video_command_crop_args(loading_screen_data['width'], loading_screen_data['height'])

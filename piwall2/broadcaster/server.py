@@ -50,7 +50,7 @@ class Piwall2Api():
     def enqueue(self, post_data):
         self.__playlist.enqueue(
             post_data['url'], post_data['thumbnail'], post_data['title'],
-            post_data['duration'], ''
+            post_data['duration'], '', Playlist.TYPE_VIDEO
         )
         response_details = post_data
         response_details['success'] = True

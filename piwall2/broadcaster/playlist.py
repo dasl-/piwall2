@@ -8,6 +8,20 @@ class Playlist:
     STATUS_PLAYING = 'STATUS_PLAYING'
     STATUS_DONE = 'STATUS_DONE'
 
+    """
+    The Playlist DB holds a queue of playlist items to play. These items can be either regular videos or "channel"
+    videos, which are queued when the channel up / down buttons on the remote are pressed.
+    When a channel video is requested, we insert a new row in the playlist DB. This gets an autoincremented playlist_video_id,
+    and playlist_video_id is what we use to order the playlist queue. Thus, if we didn't do anything special, the
+    channel video would only start when the current queue of playlist items had been exhausted.
+
+    The behavior we actually want though is to skip the current video (if there is one) and immediately start playing
+    the requested channel video. Thus, we actually order the queue by a combination of `type` and `playlist_video_id`. Rows in the
+    DB with a `channel_video` type get precedence in the queue.
+    """
+    TYPE_VIDEO = 'TYPE_VIDEO'
+    TYPE_CHANNEL_VIDEO = 'TYPE_CHANNEL_VIDEO'
+
     def __init__(self):
         self.__cursor = piwall2.broadcaster.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -17,6 +31,7 @@ class Playlist:
         self.__cursor.execute("""
             CREATE TABLE playlist_videos (
                 playlist_video_id INTEGER PRIMARY KEY,
+                type VARCHAR(20) DEFAULT 'TYPE_VIDEO',
                 create_date DATETIME  DEFAULT CURRENT_TIMESTAMP,
                 url TEXT,
                 thumbnail TEXT,
@@ -27,17 +42,24 @@ class Playlist:
                 settings TEXT DEFAULT ''
             )""")
 
-        self.__cursor.execute("DROP INDEX IF EXISTS status_idx")
-        self.__cursor.execute("CREATE INDEX status_idx ON playlist_videos (status, playlist_video_id ASC)")
+        self.__cursor.execute("DROP INDEX IF EXISTS status_type_idx")
+        self.__cursor.execute("CREATE INDEX status_type_idx ON playlist_videos (status, type ASC, playlist_video_id ASC)")
 
-    def enqueue(self, url, thumbnail, title, duration, settings):
+    def enqueue(self, url, thumbnail, title, duration, settings, type):
         self.__cursor.execute(
             ("INSERT INTO playlist_videos " +
-                "(url, thumbnail, title, duration, status, settings) " +
-                "VALUES(?, ?, ?, ?, ?, ?)"),
-            [url, thumbnail, title, duration, self.STATUS_QUEUED, settings]
+                "(url, thumbnail, title, duration, status, settings, type) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?)"),
+            [url, thumbnail, title, duration, self.STATUS_QUEUED, settings, type]
         )
         return self.__cursor.lastrowid
+
+    def reenqueue(self, playlist_video_id):
+        self.__cursor.execute(
+            "UPDATE playlist_videos set status = ?, is_skip_requested = ? WHERE playlist_video_id = ?",
+            [self.STATUS_QUEUED, 0, playlist_video_id]
+        )
+        return self.__cursor.rowcount >= 1
 
     # Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the
     # video that the user intended to skip.
@@ -70,14 +92,14 @@ class Playlist:
 
     def get_next_playlist_item(self):
         self.__cursor.execute(
-            "SELECT * FROM playlist_videos WHERE status = ? order by playlist_video_id asc LIMIT 1",
+            "SELECT * FROM playlist_videos WHERE status = ? order by type asc, playlist_video_id asc LIMIT 1",
             [self.STATUS_QUEUED]
         )
         return self.__cursor.fetchone()
 
     def get_queue(self):
         self.__cursor.execute(
-            "SELECT * FROM playlist_videos WHERE status IN (?, ?) order by playlist_video_id asc",
+            "SELECT * FROM playlist_videos WHERE status IN (?, ?) order by type asc, playlist_video_id asc",
             [self.STATUS_PLAYING, self.STATUS_QUEUED]
         )
         return self.__cursor.fetchall()
