@@ -1,6 +1,6 @@
 import React from 'react';
 import { CSSTransition } from 'react-transition-group';
-import api from 'api';
+import { APIClient } from 'api';
 
 import Content from './content';
 
@@ -19,7 +19,7 @@ class App extends React.Component {
   constructor(props) {
     super(props);
 
-    this.apiClient = new api();
+    this.apiClient = new APIClient();
 
     var stored_results = [];
     try {
