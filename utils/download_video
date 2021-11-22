@@ -6,7 +6,7 @@ import shlex
 import subprocess
 import sys
 import time
-import urllib
+import urllib.request
 
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
@@ -64,4 +64,4 @@ if args.with_thumbnail:
     video_id = broadcaster.get_video_info()['id']
     thumbnail_url = f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg'
     logger.info(f"Downloading thumbnail: {thumbnail_url}...")
-    urllib.urlretrieve(thumbnail_url, f'{args.output_file}.jpg')
+    urllib.request.urlretrieve(thumbnail_url, f'{args.output_file}.jpg')
