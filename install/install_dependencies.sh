@@ -85,7 +85,7 @@ stopPiwallServices(){
 updateAndInstallAptPackages(){
     echo -e "\\nUpdating and installing apt packages..."
     sudo apt update
-    sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3
+    sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv
     sudo apt -y full-upgrade
     sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
 }
