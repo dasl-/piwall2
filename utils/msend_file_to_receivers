@@ -43,7 +43,13 @@ cmd_runner.run_dsh(cmd, include_broadcaster = False, wait_for_proc = False)
 time.sleep(2)
 
 logger.info("Sending file to receivers...")
-cmd = (f'{root_dir}/bin/msend_video --end-of-video-magic-bytes {VideoBroadcaster.END_OF_VIDEO_MAGIC_BYTES} ' +
+cmd = (f'{root_dir}/bin/msend_video --end-of-video-magic-bytes {VideoBroadcaster.END_OF_VIDEO_MAGIC_BYTES.decode()} ' +
     f'< {shlex.quote(args.input_file)}')
 cmd_runner.run_cmd_with_realtime_output(cmd)
+
+logger.info("Restarting receiver service on receivers...")
+cmd_runner = CmdRunner()
+cmd = 'sudo systemctl restart piwall2_receiver.service'
+cmd_runner.run_dsh(cmd, include_broadcaster = False)
+
 logger.info("Done sending file!")
