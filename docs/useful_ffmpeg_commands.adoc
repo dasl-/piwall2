@@ -1,0 +1,23 @@
+# Useful ffmpeg commands
+:toc:
+:toclevels: 5
+
+## Adjust volume
+....
+ffmpeg -i glitch_1080p.ts -af "volume=enable='between(t,4,100000)':volume=0.01'" -c:v copy glitch_1080p2.ts
+....
+See: https://stackoverflow.com/a/61381357/627663
+
+## Trim 
+....
+ffmpeg -ss 00:00:00 -to 00:14:00 -i weather.ts -c copy weather_14m.ts
+....
+See: https://stackoverflow.com/questions/18444194/cutting-the-videos-based-on-start-and-end-time-using-ffmpeg#comment81728762_42827058
+
+Note: this might cut off key frames if you use a start time that is not 00:00. If you need to preserve key frames from a non-zero start time, do something like this:
+
+....
+ffmpeg -i dialup.ts -ss 00:00:04.4 -to 00:00:34.5 -c:v libx264 -preset veryslow -crf 22 -c:a copy dialup_trimmed_final2.ts
+....
+
+Note: this time the `-ss` and `-to` flags go _after_ the `-i` flag.
