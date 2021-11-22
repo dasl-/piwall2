@@ -218,8 +218,14 @@ class VideoBroadcaster:
 
         # Mix the best audio with the video and send via multicast
         # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
+        #
+        # Use `pv` to rate limit how fast we send the video. This is especially important when playing back
+        # local files. Without `pv`, they may send as fast as network bandwidth permits, which would prevent
+        # control messages from being received in a timely manner. Without `pv` here, when playing local files,
+        # we observed that a control message could be sent over the network and received ~10 seconds later --
+        # a delay because the tubes were clogged.
         video_broadcast_cmd = ("set -o pipefail && export SHELLOPTS && " +
-            f"tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
+            f"pv --rate-limit 4M | tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {video_broadcast_cmd}")
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
