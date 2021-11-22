@@ -172,10 +172,21 @@ class Remote:
         channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
         video_path = DirectoryUtils().root_dir + '/' + channel_data['video_path']
         thumbnail_path = '/' + channel_data['thumbnail_path']
+
+        """
+        Why is this necessary? One might think the `skip` call below would be sufficient.
+
+        We could be reading multiple channel up / down button presses in here before returning
+        control back to the queue. If we didn't skip all videos with TYPE_CHANNEL_VIDEO, then for each channel up /
+        down button press we handle before returning control back to the queue, we'd be marking only the previously
+        playing video as skipped. That is, we wouldn't mark the previous channel video we had just enqueued for skip.
+        """
+        self.__playlist.skip_videos_of_type(Playlist.TYPE_CHANNEL_VIDEO)
+
+        if self.__currently_playing_item and self.__currently_playing_item['type'] != Playlist.TYPE_CHANNEL_VIDEO:
+            self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
+
         self.__playlist.enqueue(
             video_path, thumbnail_path, channel_data['title'], channel_data['duration'], '',
             Playlist.TYPE_CHANNEL_VIDEO
         )
-
-        if self.__currently_playing_item:
-            self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
