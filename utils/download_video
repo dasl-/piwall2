@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -48,7 +49,7 @@ else:
 
 download_and_convert_video_proc = broadcaster.start_download_and_convert_video_proc(ytdl_video_format = ytdl_video_format)
 write_output_proc = subprocess.Popen(
-    f'cat - >{args.output_file}.ts', shell = True, executable = '/usr/bin/bash', start_new_session = True,
+    f'cat - >{shlex.quote(args.output_file + ".ts")}', shell = True, executable = '/usr/bin/bash', start_new_session = True,
     stdin = download_and_convert_video_proc.stdout
 )
 

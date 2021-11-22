@@ -36,7 +36,7 @@ class CmdRunner:
         ):
             self.__broadcaster_and_receivers_list.insert(0, broadcaster_hostname)
 
-    def run_dsh(self, cmd, include_broadcaster = True, raise_on_failure = True):
+    def run_dsh(self, cmd, include_broadcaster = True, raise_on_failure = True, wait_for_proc = True):
         machines_list = self.__receivers_list
         if include_broadcaster:
             machines_list = self.__broadcaster_and_receivers_list
@@ -52,7 +52,10 @@ class CmdRunner:
             f'--remoteshellopt "{self.SSH_KEY_PATH_FLAG}" ' +
             f"--show-machine-names --machine {machines_string} {shlex.quote(cmd)}")
 
-        cmd_return_code = self.run_cmd_with_realtime_output(dsh_cmd, raise_on_failure)
+        cmd_return_code = self.run_cmd_with_realtime_output(dsh_cmd, raise_on_failure, wait_for_proc)
+        if not wait_for_proc:
+            return None
+
         if cmd_return_code != 0 and raise_on_failure:
             raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
                 f"{cmd_return_code}.")
@@ -73,11 +76,15 @@ class CmdRunner:
         )
         self.run_cmd_with_realtime_output(parallel_cmd)
 
-    def run_cmd_with_realtime_output(self, cmd, raise_on_failure = True):
+    def run_cmd_with_realtime_output(self, cmd, raise_on_failure = True, wait_for_proc = True):
         self.__logger.info(f"Running command: {cmd}")
         proc = subprocess.Popen(
             cmd, shell = True, executable = '/usr/bin/bash'
         )
+
+        if not wait_for_proc:
+            return None
+
         while proc.poll() is None:
             time.sleep(0.1)
         if proc.returncode != 0 and raise_on_failure:
