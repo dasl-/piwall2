@@ -145,6 +145,8 @@ class Queue:
                 else:
                     self.__logger.error(f'Got non-zero exit_status for broadcast proc: {exit_status}')
 
+        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, {})
+
         if self.__playlist_item:
             if self.__should_reenqueue_current_playlist_item(was_skipped):
                 self.__playlist.reenqueue(self.__playlist_item["playlist_video_id"])
