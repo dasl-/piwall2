@@ -1,11 +1,11 @@
 import React from 'react';
-import api from 'api';
+import { APIClient } from 'api';
 
 class Menu extends React.Component {
   constructor(props) {
     super(props);
 
-    this.apiClient = new api();
+    this.apiClient = new APIClient();
 
     this.state = {
       expanded: false

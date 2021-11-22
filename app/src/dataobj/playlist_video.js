@@ -1,9 +1,22 @@
+import { getApiHost } from 'api';
+
 class PlaylistVideo {
+
   fromProps(props) {
+    let thumbnail = props.thumbnail;
+    if (props.thumbnail.startsWith('/')) {
+      const api_host = getApiHost();
+      if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
+          // 'localhost' indicates we are probably running the npm development server on a laptop / desktop computer
+          // via `npm start --prefix app`
+          thumbnail = '//' + api_host + thumbnail;
+      }
+    }
+
     return {
       // Shared Data
       video_id: props.playlist_video_id,
-      thumbnail: props.thumbnail,
+      thumbnail: thumbnail,
       playlist_video_id: props.playlist_video_id,
       video_url: props.url,
       title: props.title,
