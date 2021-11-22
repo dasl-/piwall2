@@ -20,8 +20,7 @@ class PlaylistVideo {
     var videos = video_props.map((props) => {
       return PlaylistVideo.prototype.fromProps(props);
     });
-
-    return videos.sort((a, b) => {return a.playlist_video_id > b.playlist_video_id})
+    return videos;
   }
 }
 
