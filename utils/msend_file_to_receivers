@@ -38,7 +38,7 @@ cmd_runner.run_dsh(cmd, include_broadcaster = False)
 logger.info("Starting process to receive file on receivers...")
 cmd = (f"{root_dir}/bin/receive_and_play_video --command 'set -o pipefail && export SHELLOPTS && " +
     f"mbuffer -q -m {Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b > {shlex.quote(args.output_file)}'")
-cmd_runner.run_dsh(cmd, include_broadcaster = False, wait_for_proc = False)
+receive_file_proc = cmd_runner.run_dsh(cmd, include_broadcaster = False, wait_for_proc = False)
 
 time.sleep(2)
 
@@ -51,5 +51,10 @@ logger.info("Restarting receiver service on receivers...")
 cmd_runner = CmdRunner()
 cmd = 'sudo systemctl restart piwall2_receiver.service'
 cmd_runner.run_dsh(cmd, include_broadcaster = False)
+
+while receive_file_proc.poll() is None:
+    time.sleep(0.1)
+if receive_file_proc.returncode != 0:
+    raise Exception(f"The receive_file process exited non-zero: {receive_file_proc.returncode}.")
 
 logger.info("Done sending file!")

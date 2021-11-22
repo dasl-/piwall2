@@ -36,6 +36,8 @@ class CmdRunner:
         ):
             self.__broadcaster_and_receivers_list.insert(0, broadcaster_hostname)
 
+    # If wait_for_proc is True, returns the command's return code (integer)
+    # If wait_for_proc is False, returns the process object
     def run_dsh(self, cmd, include_broadcaster = True, raise_on_failure = True, wait_for_proc = True):
         machines_list = self.__receivers_list
         if include_broadcaster:
@@ -52,14 +54,14 @@ class CmdRunner:
             f'--remoteshellopt "{self.SSH_KEY_PATH_FLAG}" ' +
             f"--show-machine-names --machine {machines_string} {shlex.quote(cmd)}")
 
-        cmd_return_code = self.run_cmd_with_realtime_output(dsh_cmd, raise_on_failure, wait_for_proc)
+        cmd_return_code_or_proc = self.run_cmd_with_realtime_output(dsh_cmd, raise_on_failure, wait_for_proc)
         if not wait_for_proc:
-            return None
+            return cmd_return_code_or_proc
 
-        if cmd_return_code != 0 and raise_on_failure:
+        if cmd_return_code_or_proc != 0 and raise_on_failure:
             raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
-                f"{cmd_return_code}.")
-        return cmd_return_code
+                f"{cmd_return_code_or_proc}.")
+        return cmd_return_code_or_proc
 
     def run_parallel(self, cmd, include_broadcaster = True):
         machines_list = self.__receivers_list
@@ -76,6 +78,8 @@ class CmdRunner:
         )
         self.run_cmd_with_realtime_output(parallel_cmd)
 
+    # If wait_for_proc is True, returns the command's return code (integer)
+    # If wait_for_proc is False, returns the process object
     def run_cmd_with_realtime_output(self, cmd, raise_on_failure = True, wait_for_proc = True):
         self.__logger.info(f"Running command: {cmd}")
         proc = subprocess.Popen(
@@ -83,7 +87,7 @@ class CmdRunner:
         )
 
         if not wait_for_proc:
-            return None
+            return proc
 
         while proc.poll() is None:
             time.sleep(0.1)
