@@ -256,7 +256,10 @@ class VideoBroadcaster:
             pass # don't change anything, ffmpeg is pretty verbose by default
         else:
             log_opts += '-loglevel error'
-        return f"ffmpeg -hide_banner -xerror {log_opts} "
+
+        # Note: don't use ffmpeg's `-xerror` flag:
+        # https://gist.github.com/dasl-/1ad012f55f33f14b44393960f66c6b00
+        return f"ffmpeg -hide_banner {log_opts} "
 
     def __get_ffmpeg_input_clause(self, ytdl_video_format):
         video_url_type = self.__get_video_url_type()
