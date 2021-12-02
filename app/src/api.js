@@ -1,6 +1,8 @@
 import axios from 'axios';
 import gapi from 'gapi-client';
 
+import utils from 'utils';
+
 // By default, include the port i.e. 'piwall.tv:666' in the api host to
 // support running the piwall2 on a custom port
 function getApiHost() {
@@ -22,6 +24,26 @@ function getApiHost() {
   return api_host;
 }
 
+function getGoogleApiKey() {
+  const env = utils.getCookie('env');
+  if (env === 'dev') {
+    if (process.env.REACT_APP_GOOGLE_API_KEY_DEV === undefined) {
+      console.error("REACT_APP_GOOGLE_API_KEY_DEV environment variable was not set!");
+    }
+    return process.env.REACT_APP_GOOGLE_API_KEY_DEV;
+  } else if (env === 'test') {
+    if (process.env.REACT_APP_GOOGLE_API_KEY_TEST === undefined) {
+      console.error("REACT_APP_GOOGLE_API_KEY_TEST environment variable was not set!");
+    }
+    return process.env.REACT_APP_GOOGLE_API_KEY_TEST;
+  } else {
+    if (process.env.REACT_APP_GOOGLE_API_KEY === undefined) {
+      console.error("REACT_APP_GOOGLE_API_KEY environment variable was not set!");
+    }
+    return process.env.REACT_APP_GOOGLE_API_KEY;
+  }
+}
+
 const client = axios.create({
   baseURL: "//" + getApiHost() + "/api",
   json: true
@@ -33,7 +55,7 @@ gapi.load('client', initGoogleClient);
 // Initialize the API client library
 function initGoogleClient() {
   gapi.client.init({
-    apiKey: process.env.REACT_APP_GOOGLE_API_KEY,
+    apiKey: getGoogleApiKey(),
     discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
   });
 }
