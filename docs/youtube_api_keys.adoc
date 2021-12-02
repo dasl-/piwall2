@@ -1,0 +1,62 @@
+# Youtube API keys
+:toc:
+:toclevels: 5
+
+## What do we use youtube api keys for
+Youtube API keys are used to search for videos to play and display the metadata for each search result. Each search query in the web UI results in two youtube API calls: `search.list` and `videos.list`.
+
+### search.list
+The first API call that is executed is https://github.com/dasl-/piwall2/blob/7359049ab13f2d4d639470f74ce3315a08f43352/app/src/api.js#L87[`search.list`]. We use this to obtain the search results for the search query. This has an API quota cost of https://developers.google.com/youtube/v3/determine_quota_cost[100 points].
+
+### videos.list
+The second API call that is executed is https://github.com/dasl-/piwall2/blob/7359049ab13f2d4d639470f74ce3315a08f43352/app/src/api.js#L104[`videos.list`]. We use this to obtain metadata for each search result. This has an API quota cost of https://developers.google.com/youtube/v3/determine_quota_cost[1 point].
+
+### traffic by API method
+You can open up google's https://console.cloud.google.com/apis/api/youtube.googleapis.com/metrics[metrics dashboards] for the youtube API (note: you may need to select your google project at the dropdown at the top). View the graph "Traffic by API method".
+
+* `youtube.api.v3.V3DataSearchService.List` corresponds to `search.list`.
+* `youtube.api.v3.V3DataVideoService.List` corresponds to `videos.list`.
+* `google.discovery.Discovery.GetDiscoveryRest` does not appear to contribute to increasing your quota usage. I believe this is related to the JS google API client discovering what methods are available in the restful interface?
+
+## Quota
+We have a quota of https://developers.google.com/youtube/v3/getting-started#quota[10,000 units per day]. As detailed above, each search request uses 101 points of quota. Thus, we can perform 99 search queries per day. 
+
+Creating multiple API keys to increase quota is https://developers.google.com/youtube/terms/developer-policies-guide[not allowed], although you can have separate keys for dev, prod, and sandbox. https://www.reddit.com/r/webdev/comments/aqou5b/youtube_api_v3_quota_issues/ejyzmnv/[Some developers] have had success creating multiple API keys, but https://stackoverflow.com/questions/39239982/youtube-api-quota-multiple-accounts#comment107701159_43214052[other users] got their accounts suspended by doing similar things.
+
+You can view your https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas[quota usage here] (note: you may need to select your google project at the dropdown at the top). Specifically, look at the "Queries per day" graphs. A value for a given day (e.g. 1,212) means you have used that many of your quota points. Expect this to be a multiple of 101. This page calls out the time at which quotas reset for the day:
+
+____
+Daily quotas reset at midnight Pacific Time (PT). 
+____
+
+
+If you exceed quota for the day, the youtube API will return an error like this:
+....
+{
+  "result": {
+    "error": {
+      "code": 403,
+      "message": "The request cannot be completed because you have exceeded your <a href=\"/youtube/v3/getting-started#quota\">quota</a>.",
+      "errors": [
+        {
+          "message": "The request cannot be completed because you have exceeded your <a href=\"/youtube/v3/getting-started#quota\">quota</a>.",
+          "domain": "youtube.quota",
+          "reason": "quotaExceeded"
+        }
+      ]
+    }
+  },
+  "body": "{\n  \"error\": {\n    \"code\": 403,\n    \"message\": \"The request cannot be completed because you have exceeded your \\u003ca href=\\\"/youtube/v3/getting-started#quota\\\"\\u003equota\\u003c/a\\u003e.\",\n    \"errors\": [\n      {\n        \"message\": \"The request cannot be completed because you have exceeded your \\u003ca href=\\\"/youtube/v3/getting-started#quota\\\"\\u003equota\\u003c/a\\u003e.\",\n        \"domain\": \"youtube.quota\",\n        \"reason\": \"quotaExceeded\"\n      }\n    ]\n  }\n}\n",
+  "headers": {
+    "cache-control": "private",
+    "content-encoding": "gzip",
+    "content-length": "212",
+    "content-type": "application/json; charset=UTF-8",
+    "date": "Thu, 02 Dec 2021 06:30:32 GMT",
+    "server": "scaffolding on HTTPServer2",
+    "vary": "Origin, X-Origin, Referer"
+  },
+  "status": 403,
+  "statusText": "Forbidden"
+}
+....
