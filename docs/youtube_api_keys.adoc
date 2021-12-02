@@ -21,7 +21,7 @@ You can open up google's https://console.cloud.google.com/apis/api/youtube.googl
 ## Quota
 We have a quota of https://developers.google.com/youtube/v3/getting-started#quota[10,000 units per day]. As detailed above, each search request uses 101 points of quota. Thus, we can perform 99 search queries per day. 
 
-Creating multiple API keys to increase quota is https://developers.google.com/youtube/terms/developer-policies-guide[not allowed], although you can have separate keys for dev, prod, and sandbox. https://www.reddit.com/r/webdev/comments/aqou5b/youtube_api_v3_quota_issues/ejyzmnv/[Some developers] have had success creating multiple API keys, but https://stackoverflow.com/questions/39239982/youtube-api-quota-multiple-accounts#comment107701159_43214052[other users] got their accounts suspended by doing similar things.
+Creating multiple API keys to increase quota is https://developers.google.com/youtube/terms/developer-policies-guide#don%E2%80%99t_spread_api_access_across_multiple_or_unknown_projects[not allowed], although you can have separate keys for dev, prod, and sandbox. https://www.reddit.com/r/webdev/comments/aqou5b/youtube_api_v3_quota_issues/ejyzmnv/[Some developers] have had success creating multiple API keys, but https://stackoverflow.com/questions/39239982/youtube-api-quota-multiple-accounts#comment107701159_43214052[other users] got their accounts suspended by doing similar things.
 
 You can view your https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas[quota usage here] (note: you may need to select your google project at the dropdown at the top). Specifically, look at the "Queries per day" graphs. A value for a given day (e.g. 1,212) means you have used that many of your quota points. Expect this to be a multiple of 101. This page calls out the time at which quotas reset for the day:
 
@@ -60,3 +60,21 @@ If you exceed quota for the day, the youtube API will return an error like this:
   "statusText": "Forbidden"
 }
 ....
+
+## Environments
+https://developers.google.com/youtube/terms/developer-policies-guide#don%E2%80%99t_spread_api_access_across_multiple_or_unknown_projects[Google's docs] state that you can create multiple API keys per environment to have separate per environment quota:
+
+____
+An application’s developer team is allowed to have separate API keys for test, dev, and prod environments
+...
+It is acceptable to have a separate API Project for each different use case of your API service. Examples include ... One API project for a production server, one for a development server.
+____
+
+Thus, we support specifying up to three API keys via the `app/.env.development` and `app/.env.production` files. Example of what you might put in these files:
+....
+REACT_APP_GOOGLE_API_KEY=<your prod environment API key here>
+REACT_APP_GOOGLE_API_KEY_DEV=<your dev environment API key here>
+REACT_APP_GOOGLE_API_KEY_TEST=<your test environment API key here>
+....
+
+You can toggle between which environment is in use via appending url params, e.g. `http://piwall.tv/?dev`, `http://piwall.tv/?test`, or `http://piwall.tv/?prod`. Visiting the app with one of these URL params will set a cookie that persists your environment until you explicitly change it or clear your cookies. The default environment is prod.
