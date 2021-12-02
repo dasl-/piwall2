@@ -78,3 +78,5 @@ REACT_APP_GOOGLE_API_KEY_TEST=<your test environment API key here>
 ....
 
 You can toggle between which environment is in use via appending url params, e.g. `http://piwall.tv/?dev`, `http://piwall.tv/?test`, or `http://piwall.tv/?prod`. Visiting the app with one of these URL params will set a cookie that persists your environment until you explicitly change it or clear your cookies. The default environment is prod.
+
+If you create separate API keys per environment for reasons of separating quota, you will need to create each API key in a new google project, because API keys in the same google project share quota. You do not need a separate google account to create new API keys -- up to 25 google projects may be created per google account.
