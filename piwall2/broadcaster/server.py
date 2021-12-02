@@ -3,6 +3,7 @@ import io
 import json
 import traceback
 import urllib
+from urllib.parse import urljoin, urlparse
 
 from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
@@ -195,6 +196,7 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(resp.getvalue())
 
     def __serve_static_asset(self):
+        self.path = urlparse(self.path).path # get rid of query parameters e.g. `?foo=bar&baz=1`
         if self.path == '/':
             self.path = self.__root_dir + '/index.html'
         elif self.path.startswith('/assets/'):
