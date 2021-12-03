@@ -104,8 +104,8 @@ class Content extends React.Component {
           onExited={() => this.setPlaylistFullyContracted(true)}
           >
 
-          <div className="playlist-expander w-100 bg-primary">
-            <div className="d-block d-md-none h-100 w-100 bg-primary">
+          <div className="playlist-expander w-100">
+            <div className="d-block d-md-none h-100 w-100">
               <PlaylistExpanded
                 current_video={this.props.playlist_current_video}
                 videos={this.props.playlist_videos}

@@ -9,6 +9,7 @@ import Slider from 'rc-slider';
 import LoadWithVideo from '../util/load_with_video';
 import TvWall from '../tv_wall/tv_wall';
 import VfxButton from '../vfx_button/vfx_button';
+import SvgButton from '../vfx_button/svg_button';
 
 class CurrentlyPlayingVideo extends React.Component {
   constructor(props) {
@@ -36,12 +37,32 @@ class CurrentlyPlayingVideo extends React.Component {
             />
           </LoadWithVideo>
 
-          <div className='text-large text-center py-2'>
+          <h2 className='text-center py-2'>
             {(this.props.video)
               ? this.props.video.title
               : <span>&lt;Nothing&gt;</span>
             }
+          </h2>
+
+          <div className='container animation-container pt-1 px-0 mt-1'>
+          <div className='row d-flex justify-content-center'>
+            <SvgButton
+              button_animation_mode='ANIMATION_MODE_TILE'
+              setAnimationMode={this.props.setAnimationMode}
+              app_animation_mode={this.props.animation_mode}
+            />
+            <SvgButton
+              button_animation_mode='ANIMATION_MODE_REPEAT'
+              setAnimationMode={this.props.setAnimationMode}
+              app_animation_mode={this.props.animation_mode}
+            />
+            <SvgButton
+              button_animation_mode='ANIMATION_MODE_TILE_REPEAT'
+              setAnimationMode={this.props.setAnimationMode}
+              app_animation_mode={this.props.animation_mode}
+            />
           </div>
+        </div>
 
         <div className='row'>
           <div className='col-1 p-0 text-right'><span className='glyphicon glyphicon-volume-down bg-light-text vol-icon' aria-hidden='true' /></div>
@@ -55,82 +76,18 @@ class CurrentlyPlayingVideo extends React.Component {
               onChange={this.onVolChange}
               onAfterChange={this.markVolMutexReleasable}
               value={this.state.is_vol_locked ? this.state.vol_pct : this.props.vol_pct}
-              trackStyle={{
-                border: '1px solid #686E7B',
-                backgroundColor: '#686E7B',
-                height: 10
-              }}
-              railStyle={{
-                border: '1px solid #686E7B',
-                backgroundColor: 'transparent',
-                height: 10
-              }}
-              handleStyle={{
-                border: '1px solid #5cedf9',
-                boxShadow: '0px 0px 3.5px #52c6f3, 0px 0px 0px #6acef5',
-                height: 30,
-                width: 30,
-                marginLeft: -16,
-                marginTop: -9,
-                backgroundColor: '#2e3135',
-              }}
             />
           </div>
           <div className='col-1 p-0'><span className='glyphicon glyphicon-volume-up bg-light-text vol-icon' aria-hidden='true' /></div>
         </div>
 
-        <div className='container pt-1 px-0 mt-1'>
-          <div className='row d-flex justify-content-center'>
-            <VfxButton
-              button_class='glyphicon glyphicon-resize-full'
-              button_animation_mode='ANIMATION_MODE_TILE'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-            <VfxButton
-              button_class='glyphicon glyphicon-resize-small'
-              button_animation_mode='ANIMATION_MODE_REPEAT'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-            <VfxButton
-              button_class='glyphicon glyphicon-refresh'
-              button_animation_mode='ANIMATION_MODE_TILE_REPEAT'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-            <VfxButton
-              button_class='glyphicon glyphicon-arrow-right'
-              button_animation_mode='ANIMATION_MODE_RIGHT'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-            <VfxButton
-              button_class='glyphicon glyphicon-arrow-down'
-              button_animation_mode='ANIMATION_MODE_DOWN'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-            <VfxButton
-              button_class='glyphicon glyphicon-arrow-left'
-              button_animation_mode='ANIMATION_MODE_LEFT'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-            <VfxButton
-              button_class='glyphicon glyphicon-arrow-up'
-              button_animation_mode='ANIMATION_MODE_UP'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-          </div>
-        </div>
 
-        <div className='container pt-1 px-0 mt-1'>
-          <div className='row mr-0'>
-            <div className='col-8 px-2 pl-3 small-vertical-center'>
+
+        <div className='container pt-5 px-0 mt-1'>
+          <div className='row mr-0 pt-2 up-next'>
+            <h3 className='col-8 px-2 pl-3 small-vertical-center'>
                 Up Next
-            </div>
+            </h3>
             <div className='col-3 px-0'>
 
             </div>

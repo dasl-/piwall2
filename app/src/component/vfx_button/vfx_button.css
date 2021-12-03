@@ -1,17 +1,14 @@
 .vfx-button {
   font-size: 1.5rem;
-  border: 1px solid #2E3135;
+  border: 1px solid transparent;
   border-radius: 0.3em;
 }
 
 .vfx-button.selected {
-  text-stroke: 1px #5cedf9;
-  -webkit-text-stroke: 1px #5cedf9;
-  text-shadow: #52c6f3 0px 0px 3.5px;
-  box-shadow: #f84aad 0px 0px 6.5px;
-  background-color: #1C1E22 !important;
-  box-shadow: #f84aad 0px 0px 6.5px;
-  border: 1px solid #ef75bb;
+  text-stroke: 1px #421b0e;
+  -webkit-text-stroke: 1px #421b0e;
+  background-color: linear-gradient(180deg, #845414 0%, #cdb352 100%), url(/grain.png) !important;
+  border: 1px solid #f4ddb1;
 }
 
 /*# sourceMappingURL=vfx_button.css.map */

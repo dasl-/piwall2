@@ -5,7 +5,7 @@ class Logo extends React.Component {
     return (
       <div className='pt-2 pl-2 m-0 position-absolute logo-container'>
         <div className='logo-wrapper'>
-          <span className='badge badge-light neon80s logo'>piwall</span>
+          <span className='logo'>piwall</span>
         </div>
       </div>
     );

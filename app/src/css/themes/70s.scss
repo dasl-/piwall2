@@ -1,0 +1,33 @@
+$accent-color1: #845414;
+$accent-color2: #cdb352;
+$primary-light: #f4ddb1;
+$primary-dark: #421b0e;
+
+$header-font: ltc-globe-gothic, sans-serif;
+$body-font: century-old-style-std, serif;
+
+$background-primary: linear-gradient(180deg, $accent-color1 0%, $accent-color2 100%), url(/grain.png); // Splash and input background
+$background-light: transparent;   // Main background
+
+// logo shadow
+$logo-shadow-blur: 0;
+$logo-shadow: transparent;
+
+// icon shadow
+$icon-shadow: none;
+$icon-shadow-blur: 0;
+
+// title text and logo
+$text-title: $primary-light;
+
+// title text shadow
+$title-shadow-blur: 0;
+
+$text-main: $primary-dark;          // body text, video description
+$text-subtle: $primary-dark;        // video details
+
+// all borders
+$border: $primary-light;
+$border-shadow-blur: 0;  // div borders (like in playlist)
+$input-shadow-blur: 0;   // input borders
+

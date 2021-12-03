@@ -13,11 +13,11 @@ class SearchResult extends React.Component {
 
     return (
       <div key={video.video_id} className={row_class} onClick={(e) => this.onQueueVideo(e, video)}>
-        <div className="col-7 col-sm-5 col-md-4 small-vertical-center text-center m-0 p-2">
-          <div className="position-relative w-100 bg-dark">
+        <div className="col-5 col-sm-5 col-md-4 small-vertical-center text-center m-0 p-2">
+          <div className="thumbnail-container position-relative w-100">
             <img
               src={video.thumbnail}
-              className="img-responsive video-thumbnail w-100"
+              className="img-responsive video-thumbnail"
               alt={video.title}
               onLoad={this.props.setImageLoaded}
             />
@@ -27,12 +27,12 @@ class SearchResult extends React.Component {
           </div>
         </div>
 
-        <div className="col-5 col-sm-7 col-md-8 p-2 m-0">
+        <div className="col-7 col-sm-7 col-md-8 p-2 m-0">
           <h6 className="video-title">{video.title}</h6>
-          <div className="small pb-1 video-details">
+          <div className="pb-1 video-details">
           {video.channel} | {video.view_count} views | {video.published} ago
           </div>
-          <div className="small video-description d-none d-sm-block">{video.description}</div>
+          <div className="video-description d-none d-sm-block">{video.description}</div>
         </div>
       </div>
     );

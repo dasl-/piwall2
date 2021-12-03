@@ -10,7 +10,7 @@ class PlaylistVideo extends React.Component {
   }
 
   render() {
-    var row_class = 'container py-2 px-0 mt-2 '
+    var row_class = 'container px-0 my-0 '
       + (this.props.loading ? 'playlist-video-loading' : 'playlist-video');
 
     return (
@@ -24,8 +24,8 @@ class PlaylistVideo extends React.Component {
               onLoad={this.props.setImageLoaded}
             />
           </div>
-          <div className='col-7 px-2'>
-            <div className='small'>{this.props.video.title}</div>
+          <div className='col-7 py-2 px-2'>
+            <div className='small font-weight-bold'>{this.props.video.title}</div>
             <div className='small badge badge-secondary'>{this.props.video.duration}</div>
           </div>
           <div className='col-1 p-0 small-vertical-center'>

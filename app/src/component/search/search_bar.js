@@ -1,5 +1,5 @@
 import React from 'react';
-import Menu from './menu';
+import logo from '../../tv-logo.png';
 
 class SearchBar extends React.Component {
   constructor(props) {
@@ -13,18 +13,11 @@ class SearchBar extends React.Component {
   render() {
     return (
 
-      <form onSubmit={this.onSubmit} action='/' className='text-center px-2'>
+      <form onSubmit={this.onSubmit} action='/' className='search-container text-center px-2'>
+      <img src={logo} className='tv-logo' alt="PiWall" />
 
         <div className='input-group input-group-lg px-3'>
           <div className='input-group-wrapper'>
-            <div className='input-group-append'>
-              <span className='input-group-text input-left'>
-                <Menu
-                  is_screensaver_enabled={this.props.is_screensaver_enabled}
-                />
-
-              </span>
-            </div>
 
             <input disabled = {this.props.loading ? 'disabled' : ''}
               type='search' className='form-control' placeholder='Search YouTube...'

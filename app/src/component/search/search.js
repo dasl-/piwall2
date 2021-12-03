@@ -1,14 +1,12 @@
 import React from 'react';
 import SearchBar from './search_bar';
 import SearchResults from './search_results';
-import Logo from './logo';
 import './search.css';
 
 class Search extends React.Component {
   render() {
     return (
       <div>
-        <Logo />
         <section className="py-4 bg-light">
           <SearchBar
             loading={this.props.search_loading}

@@ -18,7 +18,7 @@ class TvWall extends React.Component {
   render() {
     var maybe_loading_class = (this.props.loading ? 'loading' : '');
     return (
-      <div className={"tv-wall-container bg-dark position-relative " + maybe_loading_class}>
+      <div className={"tv-wall-container position-relative " + maybe_loading_class}>
         <div className='loading-cover'><div className='dot-pulse'></div></div>
         <img
           src={this.props.src}

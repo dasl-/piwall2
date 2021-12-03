@@ -2,7 +2,7 @@ import React from 'react';
 
 class PlaylistMask extends React.Component {
   getMaskClass() {
-    var mask_class = 'd-md-none playlist-mask';
+    var mask_class = 'd-md-none playlist-mask bg-primary';
 
     if (!this.props.playlist_expanded) {
       mask_class += ' unmask';
