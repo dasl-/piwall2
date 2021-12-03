@@ -16,7 +16,7 @@ class SearchBar extends React.Component {
       <form onSubmit={this.onSubmit} action='/' className='search-container text-center px-2'>
       <img src={logo} className='tv-logo' alt="PiWall" />
 
-        <div className='input-group input-group-lg px-3'>
+        <div className='input-group input-group-lg pl-3 pr-2'>
           <div className='input-group-wrapper'>
 
             <input disabled = {this.props.loading ? 'disabled' : ''}

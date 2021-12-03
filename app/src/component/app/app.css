@@ -4,8 +4,8 @@
 }
 
 .content {
-  height: 100%;
-  max-width: 1200px;
+  height: 100vh;
+  max-width: 100vw;
   position: absolute;
   top: 0;
   overflow: auto;

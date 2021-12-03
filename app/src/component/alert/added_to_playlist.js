@@ -34,7 +34,7 @@ class SuccessAlert extends React.Component {
               </div>
             )}
           </div>
-          <div className="p-2 text-light">Added!</div>
+          <div className="p-2">Added!</div>
        </div>
      </div>
     );

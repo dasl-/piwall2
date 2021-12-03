@@ -83,7 +83,7 @@ class CurrentlyPlayingVideo extends React.Component {
 
 
 
-        <div className='container pt-5 px-0 mt-1'>
+        <div className='container pt-4 px-0 mt-1'>
           <div className='row mr-0 pt-2 up-next'>
             <h3 className='col-8 px-2 pl-3 small-vertical-center'>
                 Up Next
