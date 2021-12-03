@@ -24,24 +24,9 @@ function getApiHost() {
   return api_host;
 }
 
-function getGoogleApiKey() {
-  const env = utils.getCookie('env');
-  if (env === 'dev') {
-    if (process.env.REACT_APP_GOOGLE_API_KEY_DEV === undefined) {
-      console.error("REACT_APP_GOOGLE_API_KEY_DEV environment variable was not set!");
-    }
-    return process.env.REACT_APP_GOOGLE_API_KEY_DEV;
-  } else if (env === 'test') {
-    if (process.env.REACT_APP_GOOGLE_API_KEY_TEST === undefined) {
-      console.error("REACT_APP_GOOGLE_API_KEY_TEST environment variable was not set!");
-    }
-    return process.env.REACT_APP_GOOGLE_API_KEY_TEST;
-  } else {
-    if (process.env.REACT_APP_GOOGLE_API_KEY === undefined) {
-      console.error("REACT_APP_GOOGLE_API_KEY environment variable was not set!");
-    }
-    return process.env.REACT_APP_GOOGLE_API_KEY;
-  }
+function getYoutubeApiKey() {
+  const api_client = new APIClient();
+  return api_client.getYoutubeApiKey()['youtube_api_key'];
 }
 
 const client = axios.create({
@@ -55,7 +40,7 @@ gapi.load('client', initGoogleClient);
 // Initialize the API client library
 function initGoogleClient() {
   gapi.client.init({
-    apiKey: getGoogleApiKey(),
+    apiKey: getYoutubeApiKey(),
     discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
   });
 }
@@ -141,6 +126,10 @@ class APIClient {
 
   setAnimationMode(animation_mode) {
     return this.perform('post', '/animation_mode', {animation_mode: animation_mode});
+  }
+
+  getYoutubeApiKey() {
+    return this.perform('get', '/youtube_api_key');
   }
 
   async perform (method, resource, data) {

@@ -17,6 +17,9 @@ class SettingsDb:
     # This is a global setting. See: Animator
     SETTING_ANIMATION_MODE = 'animation_mode'
 
+    # This is a global setting.
+    SETTING_YOUTUBE_API_KEY = 'youtube_api_key'
+
     __SETTING_TV_ID_DELIM = '__'
 
     def __init__(self):

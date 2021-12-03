@@ -102,6 +102,12 @@ class Piwall2Api():
         success = self.__animator.set_animation_mode(animation_mode)
         return {'success': success}
 
+    def get_youtube_api_key(self):
+        return {
+            SettingsDb.SETTING_YOUTUBE_API_KEY: self.__settings_db.get(SettingsDb.SETTING_YOUTUBE_API_KEY),
+            'success': True,
+        }
+
 class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
@@ -149,6 +155,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.get_queue()
         elif parsed_path.path == 'vol_pct':
             response = self.__api.get_volume()
+        elif parsed_path.path == 'youtube_api_key':
+            response = self.__api.get_youtube_api_key()
         else:
             self.__do_404()
             return
