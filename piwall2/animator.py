@@ -1,4 +1,6 @@
 import math
+import time
+
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -34,6 +36,8 @@ class Animator:
         ANIMATION_MODE_RIGHT, ANIMATION_MODE_UP, ANIMATION_MODE_DOWN, ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
     PSEUDO_ANIMATION_MODES = (ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
 
+    __NUM_SECS_BTWN_DB_UPDATES = 2
+
     def __init__(self):
         self.__animation_mode = None
         self.__settings_db = SettingsDb()
@@ -41,6 +45,7 @@ class Animator:
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__ticks = None
         self.__display_mode_helper = DisplayMode()
+        self.__last_update_db_time = 0
 
     def set_animation_mode(self, animation_mode):
         if animation_mode in self.PSEUDO_ANIMATION_MODES:
@@ -119,7 +124,12 @@ class Animator:
             # eventual consistency of the DISPLAY_MODE
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
         else:
-            self.__display_mode_helper.set_display_mode(display_mode_by_tv_id)
+            # Updating the DB can be slow -- occasionally it takes ~2 seconds because the SD cards
+            # can be slow randomly. So don't do it too often.
+            should_update_db = False
+            if (time.time() - self.__last_update_db_time) > self.__NUM_SECS_BTWN_DB_UPDATES:
+                should_update_db = True
+            self.__display_mode_helper.set_display_mode(display_mode_by_tv_id, should_update_db)
 
     def __get_current_display_modes(self):
         display_mode_by_tv_id = {}
