@@ -5,7 +5,7 @@ import signal
 import subprocess
 import time
 
-from piwall2.animator import Animator
+import piwall2.animator
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.remote import Remote
 from piwall2.broadcaster.settingsdb import SettingsDb
@@ -32,7 +32,7 @@ class Queue:
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
-        self.__animator = Animator()
+        self.__animator = piwall2.animator.Animator()
         self.__remote = Remote()
 
         # house keeping
