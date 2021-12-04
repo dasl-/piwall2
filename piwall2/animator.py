@@ -183,7 +183,7 @@ class Animator:
         else:
             column_number = ((self.__ticks - 1) % num_columns)
             column_tv_ids = self.__config_loader.get_wall_columns()[column_number]
-            row_number = ((self.__ticks - 1) % num_rows)
+            row_number = (math.floor((self.__ticks - 1) / num_rows) % num_rows)
             row_tv_ids = self.__config_loader.get_wall_rows()[row_number]
             row_column_intersection_tv_ids = []
             for tv_id in column_tv_ids:
