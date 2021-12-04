@@ -24,11 +24,6 @@ function getApiHost() {
   return api_host;
 }
 
-function getYoutubeApiKey() {
-  const api_client = new APIClient();
-  return api_client.getYoutubeApiKey()['youtube_api_key'];
-}
-
 const client = axios.create({
   baseURL: "//" + getApiHost() + "/api",
   json: true
@@ -39,9 +34,14 @@ gapi.load('client', initGoogleClient);
 
 // Initialize the API client library
 function initGoogleClient() {
-  gapi.client.init({
-    apiKey: getYoutubeApiKey(),
-    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
+  const api_client = new APIClient();
+  api_client.getYoutubeApiKey().then((data) => {
+    if (data.success) {
+      gapi.client.init({
+        apiKey: data.youtube_api_key,
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
+      });
+    }
   });
 }
 
