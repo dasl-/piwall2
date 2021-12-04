@@ -4,6 +4,7 @@ import time
 
 import piwall2.animator
 from piwall2.broadcaster.playlist import Playlist
+import piwall2.broadcaster.queue
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
@@ -110,7 +111,7 @@ class Remote:
             self.__handle_input(sequence, key_name, remote)
 
             # don't let reading remote input steal control from the main queue loop for too long
-            if (time.time() - start_time) > 0.5:
+            if (time.time() - start_time) > ((1 / piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND) / 2):
                 return
 
     def __handle_input(self, sequence, key_name, remote):
@@ -139,18 +140,21 @@ class Remote:
             tv_id = tv_ids[key_num % len(tv_ids)]
             self.__logger.info(f'toggle_display_mode {tv_id}')
             self.__display_mode.toggle_display_mode((tv_id,))
-        elif key_name == 'KEY_VOLUMEUP':
-            new_volume_pct = self.__vol_controller.increment_vol_pct(inc = self.__VOLUME_INCREMENT)
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
-        elif key_name == 'KEY_VOLUMEDOWN':
-            new_volume_pct = self.__vol_controller.increment_vol_pct(inc = -self.__VOLUME_INCREMENT)
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
         elif key_name == 'KEY_SCREEN' and sequence == '00':
             animation_mode = self.__animator.get_animation_mode()
             if animation_mode == piwall2.animator.Animator.ANIMATION_MODE_REPEAT:
                 self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_TILE)
             else:
                 self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_REPEAT)
+        elif key_name == 'KEY_ENTER' and sequence == '00':
+            if self.__currently_playing_item:
+                self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
+        elif key_name == 'KEY_VOLUMEUP':
+            new_volume_pct = self.__vol_controller.increment_vol_pct(inc = self.__VOLUME_INCREMENT)
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
+        elif key_name == 'KEY_VOLUMEDOWN':
+            new_volume_pct = self.__vol_controller.increment_vol_pct(inc = -self.__VOLUME_INCREMENT)
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
         elif (key_name == 'KEY_CHANNELUP' or key_name == 'KEY_CHANNELDOWN') and sequence == '00':
             if len(Remote.__CHANNEL_VIDEOS) <= 0:
                 return
