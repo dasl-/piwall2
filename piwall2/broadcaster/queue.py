@@ -193,7 +193,7 @@ class Queue:
     # 3) A receiver process was restarted and thus lost its state.
     def __maybe_set_receiver_state(self):
         now = time.time()
-        if (now - self.__last_receiver_state_set_time) > (1 / self.TICKS_PER_SECOND):
+        if (now - self.__last_receiver_state_set_time) > (1 / self.__TICKS_PER_SECOND):
             # set volume
             vol_pct = self.__volume_controller.get_vol_pct()
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
