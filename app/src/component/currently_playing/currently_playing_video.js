@@ -59,6 +59,11 @@ class CurrentlyPlayingVideo extends React.Component {
               setAnimationMode={this.props.setAnimationMode}
               app_animation_mode={this.props.animation_mode}
             />
+            <SvgButton
+              button_animation_mode='ANIMATION_MODE_SPIRAL'
+              setAnimationMode={this.props.setAnimationMode}
+              app_animation_mode={this.props.animation_mode}
+            />
           </div>
         </div>
 
