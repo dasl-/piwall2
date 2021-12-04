@@ -145,6 +145,8 @@ class Animator:
             self.__display_mode_helper.set_display_mode(display_mode_by_tv_id, should_update_db)
 
     # When update_every_N_seconds == 0, we update every tick.
+    # Be less spamy updating state on receivers. Spamming them with the same state rapidly mqakes it more likely
+    # that they will be busy when you actually DO want to update the state with a new state.
     def __should_update(self, update_every_N_seconds):
         if update_every_N_seconds <= 0:
             return True
