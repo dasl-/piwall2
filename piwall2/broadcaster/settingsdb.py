@@ -47,6 +47,9 @@ class SettingsDb:
 
     # returns boolean success
     def set_multi(self, kv_dict):
+        if not kv_dict:
+            return
+
         placeholders = ''
         params = []
         for key, value in kv_dict.items():

@@ -1,4 +1,6 @@
 import math
+import time
+
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -14,6 +16,7 @@ class Animator:
     ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'    
 
     ANIMATION_MODE_RAIN = 'ANIMATION_MODE_RAIN'
+    ANIMATION_MODE_SPIRAL = 'ANIMATION_MODE_SPIRAL'
 
     # Toggle display_modes one column at a time
     ANIMATION_MODE_LEFT = 'ANIMATION_MODE_LEFT'
@@ -30,8 +33,11 @@ class Animator:
     ANIMATION_MODE_REPEAT = 'ANIMATION_MODE_REPEAT'
 
     ANIMATION_MODES = (ANIMATION_MODE_NONE, ANIMATION_MODE_TILE_REPEAT, ANIMATION_MODE_LEFT,
-        ANIMATION_MODE_RIGHT, ANIMATION_MODE_UP, ANIMATION_MODE_DOWN, ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
+        ANIMATION_MODE_RIGHT, ANIMATION_MODE_UP, ANIMATION_MODE_DOWN, ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT,
+        ANIMATION_MODE_RAIN, ANIMATION_MODE_SPIRAL)
     PSEUDO_ANIMATION_MODES = (ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
+
+    __NUM_SECS_BTWN_DB_UPDATES = 2
 
     def __init__(self):
         self.__animation_mode = None
@@ -40,6 +46,7 @@ class Animator:
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__ticks = None
         self.__display_mode_helper = DisplayMode()
+        self.__last_update_db_time = 0
 
     def set_animation_mode(self, animation_mode):
         if animation_mode in self.PSEUDO_ANIMATION_MODES:
@@ -110,13 +117,22 @@ class Animator:
             display_mode_by_tv_id = self.__get_display_modes_for_direction()
         elif self.__animation_mode == self.ANIMATION_MODE_RAIN:
             display_mode_by_tv_id = self.__get_display_modes_for_rain()
+        elif self.__animation_mode == self.ANIMATION_MODE_SPIRAL:
+            display_mode_by_tv_id = self.__get_display_modes_for_spiral()
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
             # send the DISPLAY_MODE control message even if we're using ANIMATION_MODE_NONE to ensure
             # eventual consistency of the DISPLAY_MODE
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
         else:
-            self.__display_mode_helper.set_display_mode(display_mode_by_tv_id)
+            # Updating the DB can be slow -- occasionally it takes ~2 seconds because the SD cards
+            # can be slow randomly. So don't do it too often.
+            should_update_db = False
+            now = time.time()
+            if (now - self.__last_update_db_time) > self.__NUM_SECS_BTWN_DB_UPDATES:
+                should_update_db = True
+                self.__last_update_db_time = now
+            self.__display_mode_helper.set_display_mode(display_mode_by_tv_id, should_update_db)
 
     def __get_current_display_modes(self):
         display_mode_by_tv_id = {}
@@ -179,21 +195,59 @@ class Animator:
 
         if self.__ticks == 0:
             tv_ids = self.__config_loader.get_tv_ids_list()
-
         else:
             column_number = (math.floor((self.__ticks - 1) / num_columns) % num_columns)
-            column_tv_ids = self.__config_loader.get_wall_columns()[column_number]
             row_number = ((self.__ticks - 1) % num_rows)
-            row_tv_ids = self.__config_loader.get_wall_rows()[row_number]
-            row_column_intersection_tv_ids = []
-            for tv_id in column_tv_ids:
-                if tv_id in row_tv_ids:
-                    row_column_intersection_tv_ids.append(tv_id)
-            tv_ids = row_column_intersection_tv_ids
+            tv_ids = self.__get_tv_ids_in_row_column_intersection(row_number, column_number)
 
         if self.__ticks == 0:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
         elif math.floor((self.__ticks - 1) / (num_rows * num_columns)) % 2 == 0:
+            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+        else:
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
+
+        display_mode_by_tv_id = {}
+        for tv_id in tv_ids:
+            display_mode_by_tv_id[tv_id] = display_mode
+        return display_mode_by_tv_id
+
+    # TODO use formula for spiral instead of hardcoding.
+    def __get_display_modes_for_spiral(self):
+        num_rows = self.__config_loader.get_num_wall_rows()
+        num_columns = self.__config_loader.get_num_wall_columns()
+
+        if self.__ticks == 0:
+            tv_ids = self.__config_loader.get_tv_ids_list()
+        else:
+            # pause for N seconds after each spiral cycle completes
+            num_ticks_to_pause_at_cycle_end = piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND * 1
+            ticks_per_cycle = (num_rows * num_columns + num_ticks_to_pause_at_cycle_end)
+            adjusted_tick = (self.__ticks - 1)
+            if adjusted_tick % ticks_per_cycle == 0:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 0)
+            elif adjusted_tick % ticks_per_cycle == 1:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 1)
+            elif adjusted_tick % ticks_per_cycle == 2:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 2)
+            elif adjusted_tick % ticks_per_cycle == 3:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 2)
+            elif adjusted_tick % ticks_per_cycle == 4:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 2)
+            elif adjusted_tick % ticks_per_cycle == 5:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 1)
+            elif adjusted_tick % ticks_per_cycle == 6:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 0)
+            elif adjusted_tick % ticks_per_cycle == 7:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 0)
+            elif adjusted_tick % ticks_per_cycle == 8:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 1)
+            else:
+                tv_ids = [] # pause at end of cycle
+
+        if self.__ticks == 0:
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
+        elif math.floor(adjusted_tick / ticks_per_cycle) % 2 == 0:
             display_mode = DisplayMode.DISPLAY_MODE_REPEAT
         else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
@@ -209,3 +263,12 @@ class Animator:
             return round(seconds_elapsed)
         else:
             return seconds_elapsed
+
+    def __get_tv_ids_in_row_column_intersection(self, row_number, column_number):
+        column_tv_ids = self.__config_loader.get_wall_columns()[column_number]
+        row_tv_ids = self.__config_loader.get_wall_rows()[row_number]
+        row_column_intersection_tv_ids = []
+        for tv_id in column_tv_ids:
+            if tv_id in row_tv_ids:
+                row_column_intersection_tv_ids.append(tv_id)
+        return row_column_intersection_tv_ids

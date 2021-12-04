@@ -17,8 +17,13 @@ class DisplayMode:
         self.__config_loader = ConfigLoader()
 
     # send display_mode control message to receivers and update DB
-    def set_display_mode(self, display_mode_by_tv_id):
+    # Updating the DB can be slow -- occasionally it takes ~2 seconds because the SD cards
+    # can be slow randomly. So don't do it too often. Hence the `should_update_db` parameter.
+    def set_display_mode(self, display_mode_by_tv_id, should_update_db = True):
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_DISPLAY_MODE, display_mode_by_tv_id)
+
+        if not should_update_db:
+            return True
 
         db_data = {}
         for tv_id, display_mode in display_mode_by_tv_id.items():
