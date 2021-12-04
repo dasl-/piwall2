@@ -14,6 +14,7 @@ class Animator:
     ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'    
 
     ANIMATION_MODE_RAIN = 'ANIMATION_MODE_RAIN'
+    ANIMATION_MODE_SPIRAL = 'ANIMATION_MODE_SPIRAL'
 
     # Toggle display_modes one column at a time
     ANIMATION_MODE_LEFT = 'ANIMATION_MODE_LEFT'
@@ -110,6 +111,8 @@ class Animator:
             display_mode_by_tv_id = self.__get_display_modes_for_direction()
         elif self.__animation_mode == self.ANIMATION_MODE_RAIN:
             display_mode_by_tv_id = self.__get_display_modes_for_rain()
+        elif self.__animation_mode == self.ANIMATION_MODE_SPIRAL:
+            display_mode_by_tv_id = self.__get_display_modes_for_spiral()
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
             # send the DISPLAY_MODE control message even if we're using ANIMATION_MODE_NONE to ensure
@@ -179,17 +182,48 @@ class Animator:
 
         if self.__ticks == 0:
             tv_ids = self.__config_loader.get_tv_ids_list()
-
         else:
             column_number = (math.floor((self.__ticks - 1) / num_columns) % num_columns)
-            column_tv_ids = self.__config_loader.get_wall_columns()[column_number]
             row_number = ((self.__ticks - 1) % num_rows)
-            row_tv_ids = self.__config_loader.get_wall_rows()[row_number]
-            row_column_intersection_tv_ids = []
-            for tv_id in column_tv_ids:
-                if tv_id in row_tv_ids:
-                    row_column_intersection_tv_ids.append(tv_id)
-            tv_ids = row_column_intersection_tv_ids
+            tv_ids = self.__get_tv_ids_in_row_column_intersection(row_number, column_number)
+
+        if self.__ticks == 0:
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
+        elif math.floor((self.__ticks - 1) / (num_rows * num_columns)) % 2 == 0:
+            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+        else:
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
+
+        display_mode_by_tv_id = {}
+        for tv_id in tv_ids:
+            display_mode_by_tv_id[tv_id] = display_mode
+        return display_mode_by_tv_id
+
+    def __get_display_modes_for_spiral(self):
+        num_rows = self.__config_loader.get_num_wall_rows()
+        num_columns = self.__config_loader.get_num_wall_columns()
+
+        if self.__ticks == 0:
+            tv_ids = self.__config_loader.get_tv_ids_list()
+        else:
+            if (self.__ticks - 1) % 9 == 0:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 0)
+            elif (self.__ticks - 1) % 9 == 1:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 1)
+            elif (self.__ticks - 1) % 9 == 2:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 2)
+            elif (self.__ticks - 1) % 9 == 3:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 2)
+            elif (self.__ticks - 1) % 9 == 4:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 2)
+            elif (self.__ticks - 1) % 9 == 5:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 1)
+            elif (self.__ticks - 1) % 9 == 6:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 0)
+            elif (self.__ticks - 1) % 9 == 7:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 0)
+            elif (self.__ticks - 1) % 9 == 8:
+                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 1)
 
         if self.__ticks == 0:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
@@ -209,3 +243,12 @@ class Animator:
             return round(seconds_elapsed)
         else:
             return seconds_elapsed
+
+    def __get_tv_ids_in_row_column_intersection(self, row_number, column_number):
+        column_tv_ids = self.__config_loader.get_wall_columns()[column_number]
+        row_tv_ids = self.__config_loader.get_wall_rows()[row_number]
+        row_column_intersection_tv_ids = []
+        for tv_id in column_tv_ids:
+            if tv_id in row_tv_ids:
+                row_column_intersection_tv_ids.append(tv_id)
+        return row_column_intersection_tv_ids
