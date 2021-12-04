@@ -41,6 +41,13 @@ class Piwall2Api():
         }
         return response_details
 
+    def get_title(self):
+        current_video = self.__playlist.get_current_video()
+        if current_video:
+            return current_video['title']
+        else:
+            return ''
+
     def get_volume(self):
         response_details = {
             'vol_pct': self.__vol_controller.get_vol_pct(),
@@ -157,6 +164,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.get_volume()
         elif parsed_path.path == 'youtube_api_key':
             response = self.__api.get_youtube_api_key()
+        elif parsed_path.path == 'title':
+            response = self.__api.get_title()
         else:
             self.__do_404()
             return
