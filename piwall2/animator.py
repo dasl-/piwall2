@@ -5,14 +5,15 @@ from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
+from piwall2.logger import Logger
 
 class Animator:
-    
+
     # No animation
     ANIMATION_MODE_NONE = 'ANIMATION_MODE_NONE'
 
     # Cycles between switching all TVs to DISPLAY_MODE_TILE and DISPLAY_MODE_REPEAT
-    ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'    
+    ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'
 
     ANIMATION_MODE_RAIN = 'ANIMATION_MODE_RAIN'
     ANIMATION_MODE_SPIRAL = 'ANIMATION_MODE_SPIRAL'
@@ -39,6 +40,7 @@ class Animator:
     __NUM_SECS_BTWN_DB_UPDATES = 2
 
     def __init__(self, ticks_per_second = 1):
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__animation_mode = None
         self.__settings_db = SettingsDb()
         self.__config_loader = ConfigLoader()
@@ -153,6 +155,7 @@ class Animator:
         num_ticks_before_changing = self.__ticks_per_second * update_every_N_seconds
         if self.__ticks % num_ticks_before_changing != 0:
             return False
+        return True
 
     def __get_current_display_modes(self):
         display_mode_by_tv_id = {}

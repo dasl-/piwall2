@@ -19,6 +19,7 @@ from piwall2.volumecontroller import VolumeController
 class Queue:
 
     __TICKS_PER_SECOND = 10
+    __RECEIVER_VOLUME_SETS_PER_SECOND = 0.5
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -28,7 +29,8 @@ class Queue:
         self.__settings_db = SettingsDb()
         self.__volume_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
-        self.__last_receiver_state_set_time = 0
+        self.__last_tick_time = 0
+        self.__last_set_receiver_vol_time = 0
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
@@ -52,7 +54,7 @@ class Queue:
                     self.__play_playlist_item(next_item)
                 else:
                     self.__play_screensaver()
-            self.__maybe_set_receiver_state()
+            self.__tick_animation_and_set_receiver_state()
             self.__remote.check_for_input_and_handle(self.__playlist_item)
 
             time.sleep(0.050)
@@ -191,13 +193,15 @@ class Queue:
     # 2) We ignored setting state the first time due to throttling to avoid being overwhelmed with user state modification.
     #   See: OmxplayerController.__MAX_IN_FLIGHT_PROCS
     # 3) A receiver process was restarted and thus lost its state.
-    def __maybe_set_receiver_state(self):
+    def __tick_animation_and_set_receiver_state(self):
         now = time.time()
-        if (now - self.__last_receiver_state_set_time) > (1 / self.__TICKS_PER_SECOND):
-            # set volume
-            vol_pct = self.__volume_controller.get_vol_pct()
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
-
+        if (now - self.__last_tick_time) > (1 / self.__TICKS_PER_SECOND):
             # sets the display_mode of the TVs
             self.__animator.tick()
-            self.__last_receiver_state_set_time = now
+            self.__last_tick_time = now
+
+        # maybe set volume
+        if (now - self.__last_set_receiver_vol_time) > (1 / self.__RECEIVER_VOLUME_SETS_PER_SECOND):
+            vol_pct = self.__volume_controller.get_vol_pct()
+            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
+            self.__last_set_receiver_vol_time = now
