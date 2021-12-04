@@ -221,30 +221,32 @@ class Animator:
         else:
             # pause for 2 seconds after each spiral cycle completes
             num_ticks_to_pause_at_cycle_end = piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND * 2
-            num_cycles = math.floor(self.__ticks / (num_rows * num_columns + num_ticks_to_pause_at_cycle_end))
-            adjusted_tick = (self.__ticks - 1) - (num_cycles * num_ticks_to_pause_at_cycle_end)
-            if adjusted_tick % 9 == 0:
+            ticks_per_cycle = (num_rows * num_columns + num_ticks_to_pause_at_cycle_end)
+            adjusted_tick = (self.__ticks - 1)
+            if adjusted_tick % ticks_per_cycle == 0:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 0)
-            elif adjusted_tick % 9 == 1:
+            elif adjusted_tick % ticks_per_cycle == 1:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 1)
-            elif adjusted_tick % 9 == 2:
+            elif adjusted_tick % ticks_per_cycle == 2:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 2)
-            elif adjusted_tick % 9 == 3:
+            elif adjusted_tick % ticks_per_cycle == 3:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 2)
-            elif adjusted_tick % 9 == 4:
+            elif adjusted_tick % ticks_per_cycle == 4:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 2)
-            elif adjusted_tick % 9 == 5:
+            elif adjusted_tick % ticks_per_cycle == 5:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 1)
-            elif adjusted_tick % 9 == 6:
+            elif adjusted_tick % ticks_per_cycle == 6:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 0)
-            elif adjusted_tick % 9 == 7:
+            elif adjusted_tick % ticks_per_cycle == 7:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 0)
-            elif adjusted_tick % 9 == 8:
+            elif adjusted_tick % ticks_per_cycle == 8:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 1)
+            else:
+                tv_ids = [] # pause at end of cycle
 
         if self.__ticks == 0:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
-        elif math.floor(adjusted_tick / (num_rows * num_columns)) % 2 == 0:
+        elif math.floor(adjusted_tick / ticks_per_cycle) % 2 == 0:
             display_mode = DisplayMode.DISPLAY_MODE_REPEAT
         else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
