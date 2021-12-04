@@ -132,6 +132,9 @@ class Animator:
                 return
             display_mode_by_tv_id = self.__get_display_modes_for_spiral()
 
+        if not display_mode_by_tv_id:
+            return
+
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
             # send the DISPLAY_MODE control message even if we're using ANIMATION_MODE_NONE to ensure
             # eventual consistency of the DISPLAY_MODE
