@@ -3,6 +3,7 @@ from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
+import piwall2.broadcaster.queue
 
 class Animator:
     
@@ -11,6 +12,8 @@ class Animator:
 
     # Cycles between switching all TVs to DISPLAY_MODE_TILE and DISPLAY_MODE_REPEAT
     ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'    
+
+    ANIMATION_MODE_RAIN = 'ANIMATION_MODE_RAIN'
 
     # Toggle display_modes one column at a time
     ANIMATION_MODE_LEFT = 'ANIMATION_MODE_LEFT'
@@ -105,6 +108,8 @@ class Animator:
             )
         ):
             display_mode_by_tv_id = self.__get_display_modes_for_direction()
+        elif self.__animation_mode == self.ANIMATION_MODE_RAIN:
+            display_mode_by_tv_id = self.__get_display_modes_for_rain()
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
             # send the DISPLAY_MODE control message even if we're using ANIMATION_MODE_NONE to ensure
@@ -120,7 +125,7 @@ class Animator:
         return display_mode_by_tv_id
 
     def __get_display_modes_for_tile_repeat(self):
-        if self.__ticks % 2 == 0:
+        if self.__get_seconds_elapsed_in_animation_mode(as_int = True) % 2 == 0:
             display_mode = DisplayMode.DISPLAY_MODE_REPEAT
         else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
@@ -167,3 +172,40 @@ class Animator:
         for tv_id in tv_ids:
             display_mode_by_tv_id[tv_id] = display_mode
         return display_mode_by_tv_id
+
+    def __get_display_modes_for_rain(self):
+        num_rows = self.__config_loader.get_num_wall_rows()
+        num_columns = self.__config_loader.get_num_wall_columns()
+
+        if self.__ticks == 0:
+            tv_ids = self.__config_loader.get_tv_ids_list()
+
+        else:
+            column_number = (math.floor((self.__ticks - 1) / num_columns) % num_columns)
+            column_tv_ids = self.__config_loader.get_wall_columns()[column_number]
+            row_number = ((self.__ticks - 1) % num_rows)
+            row_tv_ids = self.__config_loader.get_wall_rows()[row_number]
+            row_column_intersection_tv_ids = []
+            for tv_id in column_tv_ids:
+                if tv_id in row_tv_ids:
+                    row_column_intersection_tv_ids.append(tv_id)
+            tv_ids = row_column_intersection_tv_ids
+
+        if self.__ticks == 0:
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
+        elif math.floor((self.__ticks - 1) / (num_rows * num_columns)) % 2 == 0:
+            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+        else:
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
+
+        display_mode_by_tv_id = {}
+        for tv_id in tv_ids:
+            display_mode_by_tv_id[tv_id] = display_mode
+        return display_mode_by_tv_id
+
+    def __get_seconds_elapsed_in_animation_mode(self, as_int = False):
+        seconds_elapsed = self.__ticks / piwall2.broadcaster.queueQueue.TICKS_PER_SECOND
+        if as_int:
+            return round(seconds_elapsed)
+        else:
+            return seconds_elapsed

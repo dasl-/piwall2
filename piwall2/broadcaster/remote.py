@@ -2,7 +2,7 @@ import select
 import socket
 import time
 
-from piwall2.animator import Animator
+import piwall2.animator
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -20,7 +20,7 @@ class Remote:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__display_mode = DisplayMode()
-        self.__animator = Animator()
+        self.__animator = piwall2.animator.Animator()
         self.__vol_controller = VolumeController()
         self.__unmute_vol_pct = None
         self.__config_loader = ConfigLoader()
@@ -147,10 +147,10 @@ class Remote:
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
         elif key_name == 'KEY_SCREEN' and sequence == '00':
             animation_mode = self.__animator.get_animation_mode()
-            if animation_mode == Animator.ANIMATION_MODE_REPEAT:
-                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
+            if animation_mode == piwall2.animator.Animator.ANIMATION_MODE_REPEAT:
+                self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_TILE)
             else:
-                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_REPEAT)
+                self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_REPEAT)
         elif (key_name == 'KEY_CHANNELUP' or key_name == 'KEY_CHANNELDOWN') and sequence == '00':
             if len(Remote.__CHANNEL_VIDEOS) <= 0:
                 return
