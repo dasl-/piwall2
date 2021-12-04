@@ -105,8 +105,12 @@ class Animator:
             self.__ticks += 1
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
+            if not self.__should_update(2):
+                return
             display_mode_by_tv_id = self.__get_current_display_modes()
         elif self.__animation_mode == self.ANIMATION_MODE_TILE_REPEAT:
+            if not self.__should_update(2):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_tile_repeat()
         elif (
             self.__animation_mode in (
@@ -114,10 +118,16 @@ class Animator:
                 self.ANIMATION_MODE_UP, self.ANIMATION_MODE_DOWN
             )
         ):
+            if not self.__should_update(2):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_direction()
         elif self.__animation_mode == self.ANIMATION_MODE_RAIN:
+            if not self.__should_update(0):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_rain()
         elif self.__animation_mode == self.ANIMATION_MODE_SPIRAL:
+            if not self.__should_update(0):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_spiral()
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
@@ -133,6 +143,14 @@ class Animator:
                 should_update_db = True
                 self.__last_update_db_time = now
             self.__display_mode_helper.set_display_mode(display_mode_by_tv_id, should_update_db)
+
+    # When update_every_N_seconds == 0, we update every tick.
+    def __should_update(self, update_every_N_seconds):
+        if update_every_N_seconds <= 0:
+            return True
+        num_ticks_before_changing = self.__ticks_per_second * update_every_N_seconds
+        if self.__ticks % num_ticks_before_changing != 0:
+            return False
 
     def __get_current_display_modes(self):
         display_mode_by_tv_id = {}
