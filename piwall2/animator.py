@@ -221,43 +221,87 @@ class Animator:
         num_columns = self.__config_loader.get_num_wall_columns()
 
         if self.__ticks == 0:
-            tv_ids = self.__config_loader.get_tv_ids_list()
+            spiral_tv_ids = self.__config_loader.get_tv_ids_list()
         else:
             # pause for N seconds after each spiral cycle completes
             num_ticks_to_pause_at_cycle_end = self.__ticks_per_second * 1
             ticks_per_cycle = (num_rows * num_columns + num_ticks_to_pause_at_cycle_end)
             adjusted_tick = (self.__ticks - 1)
             if adjusted_tick % ticks_per_cycle == 0:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 0)
+                spiral_tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 0)
             elif adjusted_tick % ticks_per_cycle == 1:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 1)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1)))
             elif adjusted_tick % ticks_per_cycle == 2:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 2)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2)))
             elif adjusted_tick % ticks_per_cycle == 3:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 2)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2)))
             elif adjusted_tick % ticks_per_cycle == 4:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 2)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2)))
             elif adjusted_tick % ticks_per_cycle == 5:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 1)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1)))
             elif adjusted_tick % ticks_per_cycle == 6:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 0)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 0)))
             elif adjusted_tick % ticks_per_cycle == 7:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 0)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 0))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 0)))
             elif adjusted_tick % ticks_per_cycle == 8:
-                tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 1)
+                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 0))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 0))
+                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 1)))
             else:
-                tv_ids = [] # pause at end of cycle
+                spiral_tv_ids = self.__config_loader.get_tv_ids_list() # pause at end of cycle
 
         if self.__ticks == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_TILE
+            spiral_display_mode = DisplayMode.DISPLAY_MODE_TILE
         elif math.floor(adjusted_tick / ticks_per_cycle) % 2 == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+            spiral_display_mode = DisplayMode.DISPLAY_MODE_REPEAT
         else:
-            display_mode = DisplayMode.DISPLAY_MODE_TILE
+            spiral_display_mode = DisplayMode.DISPLAY_MODE_TILE
+
+        if spiral_display_mode == DisplayMode.DISPLAY_MODE_TILE:
+            background_display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+        else:
+            background_display_mode = DisplayMode.DISPLAY_MODE_TILE
 
         display_mode_by_tv_id = {}
-        for tv_id in tv_ids:
-            display_mode_by_tv_id[tv_id] = display_mode
+        for tv_id in self.__config_loader.get_tv_ids_list():
+            if tv_id in spiral_tv_ids:
+                display_mode_by_tv_id[tv_id] = spiral_display_mode
+            else:
+                display_mode_by_tv_id[tv_id] = background_display_mode
         return display_mode_by_tv_id
 
     def __get_tv_ids_in_row_column_intersection(self, row_number, column_number):
