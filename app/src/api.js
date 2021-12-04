@@ -96,28 +96,47 @@ class APIClient {
       "maxResults": 25,
       "q": query
     })
-    .then(function(response) {
-      var videos = response.result.items;
-      var video_ids = '';
-      for (var i in videos) {
-        var video = videos[i];
-        if (video.snippet.liveBroadcastContent === 'none') {
-          // Exclude live videos, which we cannot play via youtube-dl
-          // See: https://stackoverflow.com/a/66070785/627663
-          video_ids += video.id.videoId + ",";
+    .then(
+      function(response) {
+        var videos = response.result.items;
+        var video_ids = '';
+        for (var i in videos) {
+          var video = videos[i];
+          if (video.snippet.liveBroadcastContent === 'none') {
+            // Exclude live videos, which we cannot play via youtube-dl
+            // See: https://stackoverflow.com/a/66070785/627663
+            video_ids += video.id.videoId + ",";
+          }
+        }
+
+        return gapi.client.youtube.videos.list({
+          "part": "snippet,contentDetails,statistics",
+          "id": video_ids
+        })
+        .then(
+          function(response) {
+            return response.result.items;
+          },
+          function(err) {
+            console.error("Execute error", err);
+          }
+        );
+      },
+      function(err) {
+        console.error("Execute error", err);
+        if (
+          "result" in err &&
+          "error" in err["result"] &&
+          "code" in err["result"]["error"] &&
+          err["result"]["error"]["code"] === 403
+        ) {
+          // youtube api quota exceeded. Reload the page to see if the API key we are supposed to use changed
+          // on the server side
+          // See: https://github.com/dasl-/piwall2/blob/main/docs/youtube_api_keys.adoc#quota
+          window.location.reload();
         }
       }
-
-      return gapi.client.youtube.videos.list({
-        "part": "snippet,contentDetails,statistics",
-        "id": video_ids
-      })
-      .then(function(response) {
-        return response.result.items;
-      },
-      function(err) { console.error("Execute error", err); });
-    },
-    function(err) { console.error("Execute error", err); });
+    );
   }
 
   setDisplayMode(display_mode_by_tv_id) {
