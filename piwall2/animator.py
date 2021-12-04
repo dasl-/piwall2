@@ -219,8 +219,8 @@ class Animator:
         if self.__ticks == 0:
             tv_ids = self.__config_loader.get_tv_ids_list()
         else:
-            # pause for 2 seconds after each spiral cycle completes
-            num_ticks_to_pause_at_cycle_end = piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND * 2
+            # pause for N seconds after each spiral cycle completes
+            num_ticks_to_pause_at_cycle_end = piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND * 1
             ticks_per_cycle = (num_rows * num_columns + num_ticks_to_pause_at_cycle_end)
             adjusted_tick = (self.__ticks - 1)
             if adjusted_tick % ticks_per_cycle == 0:
