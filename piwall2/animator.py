@@ -142,9 +142,9 @@ class Animator:
 
     def __get_display_modes_for_tile_repeat(self):
         if self.__get_seconds_elapsed_in_animation_mode(as_int = True) % 2 == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
-        else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
+        else:
+            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
 
         tv_ids = self.__config_loader.get_tv_ids_list()
         display_mode_by_tv_id = {}

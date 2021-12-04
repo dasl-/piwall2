@@ -185,12 +185,16 @@ class Remote:
             try:
                 old_animation_index = self.__ANIMATION_MODES.index(old_animation_mode)
             except Exception:
-                self.__logger.info(f"Unable to find animation mode {old_animation_mode} in expected animation modes.")
-                return
-            increment = 1
-            if key_name == 'KEY_BRIGHTNESSDOWN':
-                increment = -1
-            new_animation_index = (old_animation_index + increment) % len(self.__ANIMATION_MODES)
+                # unknown animation mode, or could also be ANIMATION_MODE_NONE
+                old_animation_index = None
+
+            if old_animation_index is None:
+                new_animation_index = 0
+            else:
+                increment = 1
+                if key_name == 'KEY_BRIGHTNESSDOWN':
+                    increment = -1
+                new_animation_index = (old_animation_index + increment) % len(self.__ANIMATION_MODES)
             self.__animator.set_animation_mode(self.__ANIMATION_MODES[new_animation_index])
 
     def __play_video_for_channel(self):
