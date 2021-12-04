@@ -211,6 +211,7 @@ class Animator:
             display_mode_by_tv_id[tv_id] = display_mode
         return display_mode_by_tv_id
 
+    # TODO use formula for spiral instead of hardcoding.
     def __get_display_modes_for_spiral(self):
         num_rows = self.__config_loader.get_num_wall_rows()
         num_columns = self.__config_loader.get_num_wall_columns()
@@ -218,28 +219,32 @@ class Animator:
         if self.__ticks == 0:
             tv_ids = self.__config_loader.get_tv_ids_list()
         else:
-            if (self.__ticks - 1) % 9 == 0:
+            # pause for 2 seconds after each spiral cycle completes
+            num_ticks_to_pause_at_cycle_end = piwall2.broadcaster.queueQueue.TICKS_PER_SECOND * 2
+            num_cycles = math.floor(self.__ticks / (num_rows * num_columns + num_ticks_to_pause_at_cycle_end))
+            adjusted_tick = (self.__ticks - 1) - (num_cycles * num_ticks_to_pause_at_cycle_end)
+            if adjusted_tick % 9 == 0:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 0)
-            elif (self.__ticks - 1) % 9 == 1:
+            elif adjusted_tick % 9 == 1:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 1)
-            elif (self.__ticks - 1) % 9 == 2:
+            elif adjusted_tick % 9 == 2:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 2)
-            elif (self.__ticks - 1) % 9 == 3:
+            elif adjusted_tick % 9 == 3:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 2)
-            elif (self.__ticks - 1) % 9 == 4:
+            elif adjusted_tick % 9 == 4:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 2)
-            elif (self.__ticks - 1) % 9 == 5:
+            elif adjusted_tick % 9 == 5:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 1)
-            elif (self.__ticks - 1) % 9 == 6:
+            elif adjusted_tick % 9 == 6:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(2, 0)
-            elif (self.__ticks - 1) % 9 == 7:
+            elif adjusted_tick % 9 == 7:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 0)
-            elif (self.__ticks - 1) % 9 == 8:
+            elif adjusted_tick % 9 == 8:
                 tv_ids = self.__get_tv_ids_in_row_column_intersection(1, 1)
 
         if self.__ticks == 0:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
-        elif math.floor((self.__ticks - 1) / (num_rows * num_columns)) % 2 == 0:
+        elif math.floor(adjusted_tick / (num_rows * num_columns)) % 2 == 0:
             display_mode = DisplayMode.DISPLAY_MODE_REPEAT
         else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
