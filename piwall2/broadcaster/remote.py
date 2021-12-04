@@ -4,7 +4,6 @@ import time
 
 from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
-import piwall2.broadcaster.queue
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
@@ -26,8 +25,9 @@ class Remote:
         Animator.ANIMATION_MODE_SPIRAL,
     )
 
-    def __init__(self):
+    def __init__(self, ticks_per_second):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__ticks_per_second = ticks_per_second
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__display_mode = DisplayMode()
         self.__animator = Animator()
@@ -120,7 +120,7 @@ class Remote:
             self.__handle_input(sequence, key_name, remote)
 
             # don't let reading remote input steal control from the main queue loop for too long
-            if (time.time() - start_time) > ((1 / piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND) / 2):
+            if (time.time() - start_time) > ((1 / self.__ticks_per_second) / 2):
                 return
 
     def __handle_input(self, sequence, key_name, remote):

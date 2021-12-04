@@ -24,7 +24,7 @@ class Piwall2Api():
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__display_mode_helper = DisplayMode()
-        self.__animator = piwall2.animator.Animator()
+        self.__animator = Animator()
 
     # get all the data that we poll for every second in the piwall2
     def get_queue(self):
@@ -97,7 +97,7 @@ class Piwall2Api():
 
     def set_animation_mode(self, post_data):
         animation_mode = post_data[SettingsDb.SETTING_ANIMATION_MODE]
-        if animation_mode not in piwall2.animator.Animator.ANIMATION_MODES:
+        if animation_mode not in Animator.ANIMATION_MODES:
             return {'success': False}
         success = self.__animator.set_animation_mode(animation_mode)
         return {'success': success}
