@@ -1,8 +1,6 @@
 import axios from 'axios';
 import gapi from 'gapi-client';
 
-import utils from 'utils';
-
 // By default, include the port i.e. 'piwall.tv:666' in the api host to
 // support running the piwall2 on a custom port
 function getApiHost() {

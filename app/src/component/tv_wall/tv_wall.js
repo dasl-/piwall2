@@ -132,7 +132,7 @@ class TvWall extends React.Component {
       let displayModeRepeatBgPos = null;
       if (video_aspect_ratio >= tv_aspect_ratio) {
         const x_offset = scale * ((video_width - displayableBgWidth) / 2);
-        displayModeRepeatBgPos = '-' + x_offset + 'px ' + '0px';
+        displayModeRepeatBgPos = '-' + x_offset + 'px 0px';
       } else {
         const y_offset = scale * ((video_height - displayableBgHeight) / 2);
         displayModeRepeatBgPos = '0px -' + y_offset + 'px';

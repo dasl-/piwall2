@@ -1,5 +1,4 @@
 import React from 'react';
-import TvWall from './tv_wall.js';
 import './tv_wall.css';
 
 class Tv extends React.Component {

@@ -1,5 +1,4 @@
 import React from 'react';
-import tv_config from 'tv_config.json';
 import {ReactComponent as TileIcon} from '../../tile-icon.svg';
 import {ReactComponent as RepeatIcon} from '../../repeat-icon.svg';
 import {ReactComponent as TileRepeatIcon} from '../../tile-repeat-icon.svg';
@@ -12,7 +11,6 @@ class SvgButton extends React.Component {
   }
 
   renderButton() {
-    let icon
     const selected_class = this.isSelected() ? ' selected ' : '';
     const classes = 'svg-icon' + selected_class;
     switch(this.props.button_animation_mode) {

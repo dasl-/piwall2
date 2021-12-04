@@ -1,6 +1,5 @@
 import './currently_playing.css';
 import App from '../app/app';
-import api from 'api';
 
 import 'rc-slider/assets/index.css';
 import React from 'react';
@@ -8,7 +7,6 @@ import Slider from 'rc-slider';
 
 import LoadWithVideo from '../util/load_with_video';
 import TvWall from '../tv_wall/tv_wall';
-import VfxButton from '../vfx_button/vfx_button';
 import SvgButton from '../vfx_button/svg_button';
 
 class CurrentlyPlayingVideo extends React.Component {
