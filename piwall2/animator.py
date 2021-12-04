@@ -127,8 +127,10 @@ class Animator:
             # Updating the DB can be slow -- occasionally it takes ~2 seconds because the SD cards
             # can be slow randomly. So don't do it too often.
             should_update_db = False
-            if (time.time() - self.__last_update_db_time) > self.__NUM_SECS_BTWN_DB_UPDATES:
+            now = time.time()
+            if (now - self.__last_update_db_time) > self.__NUM_SECS_BTWN_DB_UPDATES:
                 should_update_db = True
+                self.__last_update_db_time = now
             self.__display_mode_helper.set_display_mode(display_mode_by_tv_id, should_update_db)
 
     def __get_current_display_modes(self):
