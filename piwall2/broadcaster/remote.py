@@ -2,7 +2,7 @@ import select
 import socket
 import time
 
-import piwall2.animator
+from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
 import piwall2.broadcaster.queue
 from piwall2.configloader import ConfigLoader
@@ -20,17 +20,17 @@ class Remote:
     # This defines the order in which we will cycle through the animation modes by pressing
     # the KEY_BRIGHTNESSUP / KEY_BRIGHTNESSDOWN buttons
     __ANIMATION_MODES = (
-        piwall2.animator.Animator.ANIMATION_MODE_TILE,
-        piwall2.animator.Animator.ANIMATION_MODE_REPEAT,
-        piwall2.animator.Animator.ANIMATION_MODE_TILE_REPEAT,
-        piwall2.animator.Animator.ANIMATION_MODE_SPIRAL,
+        Animator.ANIMATION_MODE_TILE,
+        Animator.ANIMATION_MODE_REPEAT,
+        Animator.ANIMATION_MODE_TILE_REPEAT,
+        Animator.ANIMATION_MODE_SPIRAL,
     )
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__display_mode = DisplayMode()
-        self.__animator = piwall2.animator.Animator()
+        self.__animator = Animator()
         self.__vol_controller = VolumeController()
         self.__unmute_vol_pct = None
         self.__config_loader = ConfigLoader()
@@ -151,10 +151,10 @@ class Remote:
             self.__display_mode.toggle_display_mode((tv_id,))
         elif key_name == 'KEY_SCREEN' and sequence == '00':
             animation_mode = self.__animator.get_animation_mode()
-            if animation_mode == piwall2.animator.Animator.ANIMATION_MODE_REPEAT:
-                self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_TILE)
+            if animation_mode == Animator.ANIMATION_MODE_REPEAT:
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
             else:
-                self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_REPEAT)
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_REPEAT)
         elif key_name == 'KEY_ENTER' and sequence == '00':
             if self.__currently_playing_item:
                 self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
