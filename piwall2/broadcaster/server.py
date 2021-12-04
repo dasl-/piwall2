@@ -5,7 +5,7 @@ import traceback
 import urllib
 from urllib.parse import urljoin, urlparse
 
-import piwall2.animator
+from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
