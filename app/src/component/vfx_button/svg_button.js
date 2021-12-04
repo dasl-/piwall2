@@ -16,16 +16,20 @@ class SvgButton extends React.Component {
     switch(this.props.button_animation_mode) {
       case 'ANIMATION_MODE_TILE':
         return <span className='position-relative'>
-        <TileIcon className={classes} aria-hidden='true'onClick={this.setAnimationMode} />
+        <TileIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
           <span class="icon-tooltip">Fullscreen</span></span>
       case 'ANIMATION_MODE_REPEAT':
         return <span className='position-relative'>
-          <RepeatIcon className={classes} aria-hidden='true'onClick={this.setAnimationMode} />
+          <RepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
           <span class="icon-tooltip">Tile</span></span>
       case 'ANIMATION_MODE_TILE_REPEAT':
         return <span className='position-relative'>
-          <TileRepeatIcon className={classes} aria-hidden='true'onClick={this.setAnimationMode} />
+          <TileRepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
           <span class="icon-tooltip">Alternate</span></span>
+      case 'ANIMATION_MODE_SPIRAL': // TODO: change the spiral icon
+        return <span className='position-relative'>
+          <TileRepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
+          <span class="icon-tooltip">Spiral</span></span>
       default:
         return <TileRepeatIcon className={classes} aria-hidden='true'onClick={this.setAnimationMode} />
     }
