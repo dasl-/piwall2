@@ -17,6 +17,15 @@ class Remote:
     __VOLUME_INCREMENT = 1
     __CHANNEL_VIDEOS = None
 
+    # This defines the order in which we will cycle through the animation modes by pressing
+    # the KEY_BRIGHTNESSUP / KEY_BRIGHTNESSDOWN buttons
+    __ANIMATION_MODES = (
+        piwall2.animator.Animator.ANIMATION_MODE_TILE,
+        piwall2.animator.Animator.ANIMATION_MODE_REPEAT,
+        piwall2.animator.Animator.ANIMATION_MODE_TILE_REPEAT,
+        piwall2.animator.Animator.ANIMATION_MODE_SPIRAL,
+    )
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
@@ -171,6 +180,18 @@ class Remote:
                     self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
 
             self.__play_video_for_channel()
+        elif (key_name == 'KEY_BRIGHTNESSUP' or key_name == 'KEY_BRIGHTNESSDOWN') and sequence == '00':
+            old_animation_mode = self.__animator.get_animation_mode()
+            try:
+                old_animation_index = self.__ANIMATION_MODES.index(old_animation_mode)
+            except Exception:
+                self.__logger.info(f"Unable to find animation mode {old_animation_mode} in expected animation modes.")
+                return
+            increment = 1
+            if key_name == 'KEY_BRIGHTNESSDOWN':
+                increment = -1
+            new_animation_index = (old_animation_index + increment) % len(self.__ANIMATION_MODES)
+            self.__animator.set_animation_mode(self.__ANIMATION_MODES[new_animation_index])
 
     def __play_video_for_channel(self):
         channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
