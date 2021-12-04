@@ -141,7 +141,10 @@ class Animator:
         return display_mode_by_tv_id
 
     def __get_display_modes_for_tile_repeat(self):
-        if self.__get_seconds_elapsed_in_animation_mode(as_int = True) % 2 == 0:
+        # Change modes every N seconds
+        num_ticks_before_changing = self.__ticks_per_second * 2
+        adjusted_tick = math.floor(self.__ticks / num_ticks_before_changing)
+        if adjusted_tick % 2 == 0:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
         else:
             display_mode = DisplayMode.DISPLAY_MODE_REPEAT
@@ -256,13 +259,6 @@ class Animator:
         for tv_id in tv_ids:
             display_mode_by_tv_id[tv_id] = display_mode
         return display_mode_by_tv_id
-
-    def __get_seconds_elapsed_in_animation_mode(self, as_int = False):
-        seconds_elapsed = self.__ticks / self.__ticks_per_second
-        if as_int:
-            return round(seconds_elapsed)
-        else:
-            return seconds_elapsed
 
     def __get_tv_ids_in_row_column_intersection(self, row_number, column_number):
         column_tv_ids = self.__config_loader.get_wall_columns()[column_number]
