@@ -18,6 +18,8 @@ from piwall2.volumecontroller import VolumeController
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
 
+    TICKS_PER_SECOND = 10
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Starting queue...")
@@ -190,9 +192,8 @@ class Queue:
     #   See: OmxplayerController.__MAX_IN_FLIGHT_PROCS
     # 3) A receiver process was restarted and thus lost its state.
     def __maybe_set_receiver_state(self):
-        num_seconds_between_setting_state = 2
         now = time.time()
-        if (now - self.__last_receiver_state_set_time) > num_seconds_between_setting_state:
+        if (now - self.__last_receiver_state_set_time) > (1 / self.TICKS_PER_SECOND):
             # set volume
             vol_pct = self.__volume_controller.get_vol_pct()
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)
