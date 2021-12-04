@@ -5,14 +5,15 @@ from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
+from piwall2.logger import Logger
 
 class Animator:
-    
+
     # No animation
     ANIMATION_MODE_NONE = 'ANIMATION_MODE_NONE'
 
     # Cycles between switching all TVs to DISPLAY_MODE_TILE and DISPLAY_MODE_REPEAT
-    ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'    
+    ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'
 
     ANIMATION_MODE_RAIN = 'ANIMATION_MODE_RAIN'
     ANIMATION_MODE_SPIRAL = 'ANIMATION_MODE_SPIRAL'
@@ -39,6 +40,7 @@ class Animator:
     __NUM_SECS_BTWN_DB_UPDATES = 2
 
     def __init__(self, ticks_per_second = 1):
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__animation_mode = None
         self.__settings_db = SettingsDb()
         self.__config_loader = ConfigLoader()
@@ -105,8 +107,12 @@ class Animator:
             self.__ticks += 1
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
+            if not self.__should_update(2):
+                return
             display_mode_by_tv_id = self.__get_current_display_modes()
         elif self.__animation_mode == self.ANIMATION_MODE_TILE_REPEAT:
+            if not self.__should_update(2):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_tile_repeat()
         elif (
             self.__animation_mode in (
@@ -114,11 +120,20 @@ class Animator:
                 self.ANIMATION_MODE_UP, self.ANIMATION_MODE_DOWN
             )
         ):
+            if not self.__should_update(2):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_direction()
         elif self.__animation_mode == self.ANIMATION_MODE_RAIN:
+            if not self.__should_update(0):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_rain()
         elif self.__animation_mode == self.ANIMATION_MODE_SPIRAL:
+            if not self.__should_update(0):
+                return
             display_mode_by_tv_id = self.__get_display_modes_for_spiral()
+
+        if not display_mode_by_tv_id:
+            return
 
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
             # send the DISPLAY_MODE control message even if we're using ANIMATION_MODE_NONE to ensure
@@ -133,6 +148,17 @@ class Animator:
                 should_update_db = True
                 self.__last_update_db_time = now
             self.__display_mode_helper.set_display_mode(display_mode_by_tv_id, should_update_db)
+
+    # When update_every_N_seconds == 0, we update every tick.
+    # Be less spamy updating state on receivers. Spamming them with the same state rapidly mqakes it more likely
+    # that they will be busy when you actually DO want to update the state with a new state.
+    def __should_update(self, update_every_N_seconds):
+        if update_every_N_seconds <= 0:
+            return True
+        num_ticks_before_changing = self.__ticks_per_second * update_every_N_seconds
+        if self.__ticks % num_ticks_before_changing != 0:
+            return False
+        return True
 
     def __get_current_display_modes(self):
         display_mode_by_tv_id = {}
