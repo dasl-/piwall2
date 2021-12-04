@@ -2,9 +2,8 @@ import select
 import socket
 import time
 
-import piwall2.animator
+from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
-import piwall2.broadcaster.queue
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
@@ -17,11 +16,21 @@ class Remote:
     __VOLUME_INCREMENT = 1
     __CHANNEL_VIDEOS = None
 
-    def __init__(self):
+    # This defines the order in which we will cycle through the animation modes by pressing
+    # the KEY_BRIGHTNESSUP / KEY_BRIGHTNESSDOWN buttons
+    __ANIMATION_MODES = (
+        Animator.ANIMATION_MODE_TILE,
+        Animator.ANIMATION_MODE_REPEAT,
+        Animator.ANIMATION_MODE_TILE_REPEAT,
+        Animator.ANIMATION_MODE_SPIRAL,
+    )
+
+    def __init__(self, ticks_per_second):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__ticks_per_second = ticks_per_second
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__display_mode = DisplayMode()
-        self.__animator = piwall2.animator.Animator()
+        self.__animator = Animator()
         self.__vol_controller = VolumeController()
         self.__unmute_vol_pct = None
         self.__config_loader = ConfigLoader()
@@ -111,7 +120,7 @@ class Remote:
             self.__handle_input(sequence, key_name, remote)
 
             # don't let reading remote input steal control from the main queue loop for too long
-            if (time.time() - start_time) > ((1 / piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND) / 2):
+            if (time.time() - start_time) > ((1 / self.__ticks_per_second) / 2):
                 return
 
     def __handle_input(self, sequence, key_name, remote):
@@ -142,10 +151,10 @@ class Remote:
             self.__display_mode.toggle_display_mode((tv_id,))
         elif key_name == 'KEY_SCREEN' and sequence == '00':
             animation_mode = self.__animator.get_animation_mode()
-            if animation_mode == piwall2.animator.Animator.ANIMATION_MODE_REPEAT:
-                self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_TILE)
+            if animation_mode == Animator.ANIMATION_MODE_REPEAT:
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
             else:
-                self.__animator.set_animation_mode(piwall2.animator.Animator.ANIMATION_MODE_REPEAT)
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_REPEAT)
         elif key_name == 'KEY_ENTER' and sequence == '00':
             if self.__currently_playing_item:
                 self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
@@ -171,6 +180,22 @@ class Remote:
                     self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
 
             self.__play_video_for_channel()
+        elif (key_name == 'KEY_BRIGHTNESSUP' or key_name == 'KEY_BRIGHTNESSDOWN') and sequence == '00':
+            old_animation_mode = self.__animator.get_animation_mode()
+            try:
+                old_animation_index = self.__ANIMATION_MODES.index(old_animation_mode)
+            except Exception:
+                # unknown animation mode, or could also be ANIMATION_MODE_NONE
+                old_animation_index = None
+
+            if old_animation_index is None:
+                new_animation_index = 0
+            else:
+                increment = 1
+                if key_name == 'KEY_BRIGHTNESSDOWN':
+                    increment = -1
+                new_animation_index = (old_animation_index + increment) % len(self.__ANIMATION_MODES)
+            self.__animator.set_animation_mode(self.__ANIMATION_MODES[new_animation_index])
 
     def __play_video_for_channel(self):
         channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]

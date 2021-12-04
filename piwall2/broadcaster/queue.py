@@ -5,9 +5,9 @@ import signal
 import subprocess
 import time
 
-import piwall2.animator
+from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
-import piwall2.broadcaster.remote
+from piwall2.broadcaster.remote import Remote
 from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -18,7 +18,7 @@ from piwall2.volumecontroller import VolumeController
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
 
-    TICKS_PER_SECOND = 10
+    __TICKS_PER_SECOND = 10
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -32,8 +32,8 @@ class Queue:
         self.__broadcast_proc = None
         self.__playlist_item = None
         self.__is_broadcast_in_progress = False
-        self.__animator = piwall2.animator.Animator()
-        self.__remote = piwall2.broadcaster.remote.Remote()
+        self.__animator = Animator(self.__TICKS_PER_SECOND)
+        self.__remote = Remote(self.__TICKS_PER_SECOND)
 
         # house keeping
         self.__volume_controller.set_vol_pct(50)
@@ -193,7 +193,7 @@ class Queue:
     # 3) A receiver process was restarted and thus lost its state.
     def __maybe_set_receiver_state(self):
         now = time.time()
-        if (now - self.__last_receiver_state_set_time) > (1 / self.TICKS_PER_SECOND):
+        if (now - self.__last_receiver_state_set_time) > (1 / self.__TICKS_PER_SECOND):
             # set volume
             vol_pct = self.__volume_controller.get_vol_pct()
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, vol_pct)

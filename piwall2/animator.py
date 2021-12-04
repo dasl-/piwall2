@@ -5,7 +5,6 @@ from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
-import piwall2.broadcaster.queue
 
 class Animator:
     
@@ -39,7 +38,7 @@ class Animator:
 
     __NUM_SECS_BTWN_DB_UPDATES = 2
 
-    def __init__(self):
+    def __init__(self, ticks_per_second = 1):
         self.__animation_mode = None
         self.__settings_db = SettingsDb()
         self.__config_loader = ConfigLoader()
@@ -47,6 +46,7 @@ class Animator:
         self.__ticks = None
         self.__display_mode_helper = DisplayMode()
         self.__last_update_db_time = 0
+        self.__ticks_per_second = ticks_per_second
 
     def set_animation_mode(self, animation_mode):
         if animation_mode in self.PSEUDO_ANIMATION_MODES:
@@ -142,9 +142,9 @@ class Animator:
 
     def __get_display_modes_for_tile_repeat(self):
         if self.__get_seconds_elapsed_in_animation_mode(as_int = True) % 2 == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
-        else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
+        else:
+            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
 
         tv_ids = self.__config_loader.get_tv_ids_list()
         display_mode_by_tv_id = {}
@@ -221,7 +221,7 @@ class Animator:
             tv_ids = self.__config_loader.get_tv_ids_list()
         else:
             # pause for N seconds after each spiral cycle completes
-            num_ticks_to_pause_at_cycle_end = piwall2.broadcaster.queue.Queue.TICKS_PER_SECOND * 1
+            num_ticks_to_pause_at_cycle_end = self.__ticks_per_second * 1
             ticks_per_cycle = (num_rows * num_columns + num_ticks_to_pause_at_cycle_end)
             adjusted_tick = (self.__ticks - 1)
             if adjusted_tick % ticks_per_cycle == 0:
@@ -258,7 +258,7 @@ class Animator:
         return display_mode_by_tv_id
 
     def __get_seconds_elapsed_in_animation_mode(self, as_int = False):
-        seconds_elapsed = self.__ticks / piwall2.broadcaster.queueQueue.TICKS_PER_SECOND
+        seconds_elapsed = self.__ticks / self.__ticks_per_second
         if as_int:
             return round(seconds_elapsed)
         else:
