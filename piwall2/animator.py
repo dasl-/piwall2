@@ -230,57 +230,73 @@ class Animator:
             if adjusted_tick % ticks_per_cycle == 0:
                 spiral_tv_ids = self.__get_tv_ids_in_row_column_intersection(0, 0)
             elif adjusted_tick % ticks_per_cycle == 1:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1)
+                )
             elif adjusted_tick % ticks_per_cycle == 2:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 2)
+                )
             elif adjusted_tick % ticks_per_cycle == 3:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 2)
+                )
             elif adjusted_tick % ticks_per_cycle == 4:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 2)
+                )
             elif adjusted_tick % ticks_per_cycle == 5:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 1)
+                )
             elif adjusted_tick % ticks_per_cycle == 6:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 0)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 0)
+                )
             elif adjusted_tick % ticks_per_cycle == 7:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 0))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 0)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 0)
+                )
             elif adjusted_tick % ticks_per_cycle == 8:
-                spiral_tv_ids = (self.__get_tv_ids_in_row_column_intersection(0, 0)
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(0, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 2))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 1))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(2, 0))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 0))
-                    .extend(self.__get_tv_ids_in_row_column_intersection(1, 1)))
+                spiral_tv_ids = (
+                    self.__get_tv_ids_in_row_column_intersection(0, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(0, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 2) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 1) +
+                    self.__get_tv_ids_in_row_column_intersection(2, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 0) +
+                    self.__get_tv_ids_in_row_column_intersection(1, 1)
+                )
             else:
                 spiral_tv_ids = self.__config_loader.get_tv_ids_list() # pause at end of cycle
 
