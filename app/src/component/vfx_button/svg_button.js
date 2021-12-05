@@ -2,6 +2,7 @@ import React from 'react';
 import {ReactComponent as TileIcon} from '../../tile-icon.svg';
 import {ReactComponent as RepeatIcon} from '../../repeat-icon.svg';
 import {ReactComponent as TileRepeatIcon} from '../../tile-repeat-icon.svg';
+import {ReactComponent as SpiralIcon} from '../../spiral-icon.svg';
 
 class SvgButton extends React.Component {
   constructor(props) {
@@ -28,7 +29,7 @@ class SvgButton extends React.Component {
           <span class="icon-tooltip">Alternate</span></span>
       case 'ANIMATION_MODE_SPIRAL': // TODO: change the spiral icon
         return <span className='position-relative'>
-          <TileRepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
+          <SpiralIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
           <span class="icon-tooltip">Spiral</span></span>
       default:
         return <TileRepeatIcon className={classes} aria-hidden='true'onClick={this.setAnimationMode} />
