@@ -158,7 +158,7 @@ pi@piwall6.local:   Cannot initiate the connection to raspbian.raspberrypi.org:8
 ....
 This is likely a transient failure for the raspbian package servers. Try again.
 
-## Video playback freezes
+## Video playback freezes: cause 1
 Playback will freeze on a single TV, while the other TVs in the TV wall continue playback normally. Not totally sure what's going on here yet. I notice freezing is more common when playing the https://www.youtube.com/watch?v=-pdVUsCqd2U[dvd bounce screensaver]. Sometimes restarting the receiver service fixes things (only for playback to freeze again later), but sometimes not. Restarting always fixes the problem, only for it to recur later. Sometimes I am able to reliably reproduce the problem with every play of the DVD bounce video.
 
 The problem appears specific to a given TV or raspberry pi -- generally two of my TVs have this problem, one more often than the other. I have tried swapping the hardware out to determine if it's the hardware. This gave conflicting results. In one test, I swapped a plugged a "defective" pi into a different TV (keeping the SD card, but using different cables). The problem recurred, seeming to isolate the problem to the pi hardware or the SD card. But in another round of testing, I replaced "good" pis with the "defective" pi, using the "good" pi's SD card inserted into the bad pi. I noticed no playback freezing, indicating that the pi hardware itself was not the cause of the freezing. That leaves the SD card. I plugged the "defective" SD card into a good pi, and that resulted in no freezing. So I'm not sure wtf is going on.
@@ -182,3 +182,8 @@ futex(0x3a6804, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 1, NULL, FUTEX_B
 But this is actual normal strace output for a functioning omxplayer instance.
 
 In a final note about this issue, after swapping the "defective" raspberry pi around to a bunch of TVs, I finally restored it to its original TV location (i.e. original defective pi, simcard, and cables). Previously to moving it around, I had been able to reproduce the freezing issue with virtually every playback of the dvd bounce issues. But after returning it here, I was unable to reproduce the issue at all after two full playthroughs of the dvd bounce video. So maybe this does mean it's related to physical positioning of the pi, interference, electrical contact, etc?
+
+UPDATE: this has mostly been solved by rate limiting how fast we send: https://github.com/dasl-/piwall2/commit/b7e3a21efc9b3a493b254160bf0b108ab69f1345 The problem still happens sometimes, but it seems to happen less often.
+
+## Video playback freezes and ssh becomes slow
+In this failure mode, not only does video playback freeze, but if you try to ssh onto any / all of the pis, it will take a while to complete the ssh connection. In debugging this issue, I noticed that via `dsh`, I could eventually ssh onto all of the pis (albeit slowly, might take ~5 minutes) except for one! I decided to touch the raspberry pis to feel how hot they were. I noticed that the one pi that I could not ssh onto was very hot -- it would hurt to touch the CPU on it. Whereas the other raspberry pis were not nearly as hot as the one that I could not ssh onto. Unplugging the ethernet cable from this one "bad apple" pi immediately resolved the slow ssh / video playback problem. In my case, the "bad apple" pi was piwall2.local.
