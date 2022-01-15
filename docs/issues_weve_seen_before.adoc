@@ -192,6 +192,7 @@ Some more notes on the issue:
 * I am semi-sure that reproducing this bug requires that we are sending dbus commands before / while the video is starting up.
 ** If the above diff is applied, the bug can be reproduced by sending dbus commands in a loop: https://gist.githubusercontent.com/dasl-/9aa90e723967d3008b97a7c4c0a3e4f8/raw/79d00a963a2ecb23af295ea49bd9210317e3301d/gistfile1.txt
 ** But the loop must be started BEFORE the video starts to play
+** A list of dbus commands that can be useful for playing around: https://gist.githubusercontent.com/dasl-/e0a5b3297bd360025151f53d84322a6d/raw/02cb912331c956431ac3aaf2ce3486d46f3e2461/gistfile1.txt
 * if stracing the omxplayer process, the bug does not seem occur: `sudo strace -p $(pidof omxplayer.bin) -y -Ttt`
 ** wtf no idea what this means...? https://unix.stackexchange.com/questions/148333/can-strace-ptrace-cause-a-program-to-crash
 ** once, while stracing the omxplayer process, I stopped stracing. Immediately after strace detached from the process, the video hung!
