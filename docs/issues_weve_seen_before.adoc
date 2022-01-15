@@ -185,5 +185,24 @@ In a final note about this issue, after swapping the "defective" raspberry pi ar
 
 UPDATE: this has mostly been solved by rate limiting how fast we send: https://github.com/dasl-/piwall2/commit/b7e3a21efc9b3a493b254160bf0b108ab69f1345 The problem still happens sometimes, but it seems to happen less often.
 
+Some more notes on the issue:
+
+* if i get rid of the dbus commands that set volume and crop mode, i cannot reproduce the bug: https://gist.github.com/dasl-/af2962657bd22d35c6c176d4f8befdcd
+** getting rid of only one of the volume or crop mode dbus commands does not prevent the bug. both must be removed
+* I am semi-sure that reproducing this bug requires that we are sending dbus commands before / while the video is starting up.
+** If the above diff is applied, the bug can be reproduced by sending dbus commands in a loop: https://gist.githubusercontent.com/dasl-/9aa90e723967d3008b97a7c4c0a3e4f8/raw/79d00a963a2ecb23af295ea49bd9210317e3301d/gistfile1.txt
+** But the loop must be started BEFORE the video starts to play
+* if stracing the omxplayer process, the bug does not seem occur: `sudo strace -p $(pidof omxplayer.bin) -y -Ttt`
+** wtf no idea what this means...? https://unix.stackexchange.com/questions/148333/can-strace-ptrace-cause-a-program-to-crash
+** once, while stracing the omxplayer process, I stopped stracing. Immediately after strace detached from the process, the video hung!
+* once the bug starts to occur, it commonly recurs, but it might take a while to get the first occurence of the bug
+* maybe it only happens in the evening?
+* omxplayer logs via `--genlog` don't have any useful info
+* attaching to omxplayer with strace AFTER it has frozen is not helpful -- it shows normal execution syscalls as if nothing is frozen.
+* nothing in `dmesg`, the pi is not overheating nor undervoltage.
+** `vcgencmd get_throttled` returns that everything is fine: `throttled=0x0`
+* this bug used to happen a lot on piwall7. I replaced the hardware (just the pi itself) and now it's not happening
+* this bug has been observed to happen VERY rarely on piwall9. Last observed on 2022-01-15
+
 ## Video playback freezes and ssh becomes slow
 In this failure mode, not only does video playback freeze, but if you try to ssh onto any / all of the pis, it will take a while to complete the ssh connection. In debugging this issue, I noticed that via `dsh`, I could eventually ssh onto all of the pis (albeit slowly, might take ~5 minutes) except for one! I decided to touch the raspberry pis to feel how hot they were. I noticed that the one pi that I could not ssh onto was very hot -- it would hurt to touch the CPU on it. Whereas the other raspberry pis were not nearly as hot as the one that I could not ssh onto. Unplugging the ethernet cable from this one "bad apple" pi immediately resolved the slow ssh / video playback problem. In my case, the "bad apple" pi was piwall2.local. Restarting the pi (by unplugging the power cable) seemed to fix everything. I seem to recall that this issue has happened once before with the same "bad apple" pi, but I cannot remember 100% if it was the same one (piwall2). If it was the same one, this seems to be a very rarely occuring bug that affects the same pi... hm... I would like to wait and see if the issue recurrs with the same pi.
