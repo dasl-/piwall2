@@ -196,7 +196,6 @@ Some more notes on the issue:
 ** wtf no idea what this means...? https://unix.stackexchange.com/questions/148333/can-strace-ptrace-cause-a-program-to-crash
 ** once, while stracing the omxplayer process, I stopped stracing. Immediately after strace detached from the process, the video hung!
 * once the bug starts to occur, it commonly recurs, but it might take a while to get the first occurence of the bug
-* maybe it only happens in the evening?
 * omxplayer logs via `--genlog` don't have any useful info
 * attaching to omxplayer with strace AFTER it has frozen is not helpful -- it shows normal execution syscalls as if nothing is frozen.
 * nothing in `dmesg`, the pi is not overheating nor undervoltage.
