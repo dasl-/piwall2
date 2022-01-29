@@ -3,7 +3,7 @@ import io
 import json
 import traceback
 import urllib
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
@@ -255,13 +255,20 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         self.__logger.info("%s - - %s" % (self.client_address[0], format % args))
 
+class Piwall2ThreadingHTTPServer(http.server.ThreadingHTTPServer):
+
+    # Override: https://github.com/python/cpython/blob/18cb2ef46c9998480f7182048435bc58265c88f2/Lib/socketserver.py#L421-L443
+    # See: https://docs.python.org/3/library/socketserver.html#socketserver.BaseServer.request_queue_size
+    # This prevents messages we might see in `dmesg` like:
+    #   [Sat Jan 29 00:44:36 2022] TCP: request_sock_TCP: Possible SYN flooding on port 80. Sending cookies.  Check SNMP counters.
+    request_queue_size = 128
 
 class Server:
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info('Starting up server...')
-        self.__server = http.server.ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
+        self.__server = Piwall2ThreadingHTTPServer(('0.0.0.0', 80), ServerRequestHandler)
         self.__config_loader = ConfigLoader()
 
     def serve_forever(self):
