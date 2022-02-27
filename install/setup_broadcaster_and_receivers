@@ -52,18 +52,18 @@ This script should be run on the broadcaster. This script does several things:
 """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dont-setup-ssh', dest='setup_ssh', action='store_false', default=True,
-        help="Skip setting up SSH.")
+        help="Skip setting up SSH; set setup_ssh to False.")
     parser.add_argument('--ssh-password', dest='ssh_password', action='store', default=None,
         help="SSH password for logging into the broadcaster and receiver raspberry pis. If you " +
         "haven't changed this, it will be 'raspberry'. Required if setting up SSH.")
     parser.add_argument('--omxplayer-branch', dest='omxplayer_branch', action='store', default='master',
         help="omxplayer branch to build (uses https://github.com/dasl-/omxplayer/ )")
     parser.add_argument('--dont-install-dependencies', dest='install_dependencies', action='store_false',
-        default=True, help="Skip installing dependencies.")
+        default=True, help="Skip installing dependencies; set install_dependencies to False")
     parser.add_argument('--dont-install-app', dest='install_app', action='store_false',
-        default=True, help="Skip installing app.")
+        default=True, help="Skip installing app; set install_app to False.")
     parser.add_argument('--dont-disable-wifi', dest='dont_disable_wifi', action='store_true', default=False,
-        help="Don't disable wifi. Only specify this option if you know what you're doing.")
+        help="Don't disable wifi; set dont_disable_wifi to True. Only specify this option if you know what you're doing.")
     args = parser.parse_args()
     return args
 
