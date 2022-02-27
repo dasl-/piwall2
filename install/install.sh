@@ -36,6 +36,7 @@ main(){
     fi
 
     setGpuMem
+    setOverVoltage
 
     new_config=$(cat $CONFIG)
     config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
@@ -277,6 +278,34 @@ setGpuMem(){
     else
         echo "gpu_mem was the right size already: $gpu_mem megabytes..."
     fi
+}
+
+# See: https://github.com/dasl-/piwall2/blob/main/docs/issues_weve_seen_before.adoc#video-playback-freezes-cause-1
+#      https://github.com/Hexxeh/rpi-firmware/issues/249
+#      https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking
+setOverVoltage(){
+    over_voltage=$(vcgencmd get_config over_voltage | sed -n 's/over_voltage=\(.*\)/\1/p')
+    if (( over_voltage >= 2 )); then
+        echo "over_voltage was already high enough ( $over_voltage )..."
+        return
+    fi
+
+    force_turbo=$(vcgencmd get_config force_turbo | sed -n 's/force_turbo=\(.*\)/\1/p')
+    if (( force_turbo == 1 )); then
+        # See: https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking-options
+        echo "WARNING: not setting over_voltage because force_turbo is enabled and we don't " \
+            "want to set your warranty bit. This might result in video playback issues."
+        return
+    fi
+
+    # Set over_voltage.
+    echo "Setting over_voltage to 2..."
+
+    # comment out existing over_voltage lines in config
+    sudo sed $CONFIG -i -e "s/^\(over_voltage=.*\)/#\1/"
+
+    # create the new stanza -- this is only necessary on raspberry pi model 4 AFAIK.
+    echo -e '\n[pi4]\nover_voltage=2\n\n[all]' | sudo tee -a $CONFIG >/dev/null
 }
 
 main "$@"
