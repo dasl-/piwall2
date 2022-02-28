@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 RESTART_REQUIRED_FILE='/tmp/piwall2_install_restart_required'
@@ -12,6 +12,8 @@ force_enable_composite_video_output=false
 disable_wifi=true
 
 main(){
+    trap 'fail $? $LINENO' ERR
+
     parseOpts "$@"
 
     setTimezone
@@ -41,8 +43,9 @@ main(){
     new_config=$(cat $CONFIG)
     config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
     if [[ $is_restart_required = true || -n "$config_diff" ]] ; then
-        echo "Please restart to complete installation!"
-        echo -e "Config diff:\n$config_diff"
+        info "Please restart to complete installation!"
+        info "Config diff:\n"
+        echo -e "$config_diff"
         touch "$RESTART_REQUIRED_FILE"
     fi
 }
@@ -92,12 +95,12 @@ parseOpts(){
 }
 
 setTimezone(){
-    echo "Setting timezone to UTC..."
+    info "Setting timezone to UTC..."
     sudo timedatectl set-timezone UTC
 }
 
 setupLogging(){
-    echo "Setting up logging..."
+    info "Setting up logging..."
 
     # syslog
     sudo mkdir -p /var/log/piwall2
@@ -119,7 +122,7 @@ setupLogging(){
 }
 
 setupSystemdServices(){
-    echo "Setting up systemd services..."
+    info "Setting up systemd services..."
 
     if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
         sudo "$BASE_DIR/install/piwall2_queue_service.sh"
@@ -155,22 +158,22 @@ setupSystemdServices(){
 }
 
 setupYoutubeDlUpdateCron(){
-    echo "Setting up youtube-dl update cron..."
+    info "Setting up youtube-dl update cron..."
     sudo "$BASE_DIR/install/piwall2_cron.sh"
     sudo chown root:root /etc/cron.d/piwall2
     sudo chmod 644 /etc/cron.d/piwall2
 }
 
 updateDbSchema(){
-    echo "Updating DB schema (if necessary)..."
+    info "Updating DB schema (if necessary)..."
     sudo "$BASE_DIR"/utils/make_db
 }
 
 buildWebApp(){
-    echo "Writing web app config..."
+    info "Writing web app config..."
     "$BASE_DIR"/utils/write_tv_config_for_web_app
 
-    echo "Building web app..."
+    info "Building web app..."
     npm run build --prefix "$BASE_DIR"/app
 }
 
@@ -182,7 +185,7 @@ buildWebApp(){
 # See: https://raspberrypi.stackexchange.com/a/62522
 disableWifi(){
     if ! grep -q '^dtoverlay=disable-wifi' $CONFIG ; then
-        echo 'disabling wifi...'
+        info 'disabling wifi...'
 
         # uncomment it if the stanza is commented out
         sudo sed $CONFIG -i -e "s/^#\?dtoverlay=disable-wifi *$/dtoverlay=disable-wifi/"
@@ -192,7 +195,7 @@ disableWifi(){
             echo 'dtoverlay=disable-wifi' | sudo tee -a $CONFIG >/dev/null
         fi
     else
-        echo 'wifi already disabled...'
+        info 'wifi already disabled...'
     fi
 }
 
@@ -201,7 +204,7 @@ disableWifi(){
 maybeAdjustCompositeVideoOutput(){
     if [ $force_enable_composite_video_output = true ] || "$BASE_DIR"/utils/get_receiver_config_value --keys video,video2 | grep --quiet composite; then
         if ! grep -q '^enable_tvout=1' $CONFIG ; then
-            echo 'enabling composite video output...'
+            info 'enabling composite video output...'
 
             # uncomment it and enable it if the stanza is commented out
             sudo sed $CONFIG -i -e "s/^#\?enable_tvout=.*/enable_tvout=1/"
@@ -211,10 +214,10 @@ maybeAdjustCompositeVideoOutput(){
                 echo 'enable_tvout=1' | sudo tee -a $CONFIG >/dev/null
             fi
         else
-            echo 'composite video output already enabled...'
+            info 'composite video output already enabled...'
         fi
     else
-        echo 'disabling composite video output if it was enabled...'
+        info 'disabling composite video output if it was enabled...'
         # comment out existing enable_tvout lines in config
         sudo sed $CONFIG -i -e "s/^\(enable_tvout=1.*\)/#\1/"
     fi
@@ -225,7 +228,7 @@ maybeAdjustScreenRotateMode(){
     local rotate_mode;
     rotate_mode=$("$BASE_DIR"/utils/get_receiver_config_value --keys rotate)
     if [[ "$rotate_mode" == "90" || "$rotate_mode" == "180" || "$rotate_mode" == "270" ]]; then
-        echo "Setting screen rotation to $rotate_mode degrees..."
+        info "Setting screen rotation to $rotate_mode degrees..."
 
         # comment out existing `dtoverlay=vc4-fkms-v3d` lines in config
         sudo sed $CONFIG -i -e "s/^\(dtoverlay=vc4-fkms-v3d.*\)/#\1/"
@@ -241,8 +244,7 @@ maybeAdjustScreenRotateMode(){
         elif [[ "$rotate_mode" == "270" ]]; then
             rotate_mode_value=3
         else
-            echo "Unexpected rotate_mode: $rotate_mode"
-            exit 99
+            die "Unexpected rotate_mode: $rotate_mode"
         fi
 
         # uncomment it and enable it if the stanza is commented out
@@ -253,7 +255,7 @@ maybeAdjustScreenRotateMode(){
             echo "display_hdmi_rotate=$rotate_mode_value" | sudo tee -a $CONFIG >/dev/null
         fi
     else
-        echo "Resetting screen rotation options if present..."
+        info "Resetting screen rotation options if present..."
 
         # uncomment existing `#dtoverlay=vc4-fkms-v3d` lines in config
         sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-fkms-v3d.*/dtoverlay=vc4-fkms-v3d/"
@@ -268,7 +270,7 @@ maybeAdjustScreenRotateMode(){
 setGpuMem(){
     gpu_mem=$(vcgencmd get_mem gpu | sed -n 's/gpu=\(.*\)M/\1/p')
     if (( gpu_mem != 128 )); then
-        echo 'Setting gpu_mem to 128 megabytes...'
+        info 'Setting gpu_mem to 128 megabytes...'
 
         # comment out existing gpu_mem.* lines in config
         sudo sed $CONFIG -i -e "s/^\(gpu_mem.*\)/#\1/"
@@ -276,7 +278,7 @@ setGpuMem(){
         # create the new stanza
         echo 'gpu_mem=128' | sudo tee -a $CONFIG >/dev/null
     else
-        echo "gpu_mem was the right size already: $gpu_mem megabytes..."
+        info "gpu_mem was the right size already: $gpu_mem megabytes..."
     fi
 }
 
@@ -286,26 +288,46 @@ setGpuMem(){
 setOverVoltage(){
     over_voltage=$(vcgencmd get_config over_voltage | sed -n 's/over_voltage=\(.*\)/\1/p')
     if (( over_voltage >= 2 )); then
-        echo "over_voltage was already high enough ( $over_voltage )..."
+        info "over_voltage was already high enough ( $over_voltage )..."
         return
     fi
 
     force_turbo=$(vcgencmd get_config force_turbo | sed -n 's/force_turbo=\(.*\)/\1/p')
     if (( force_turbo == 1 )); then
         # See: https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking-options
-        echo "WARNING: not setting over_voltage because force_turbo is enabled and we don't " \
+        warn "WARNING: not setting over_voltage because force_turbo is enabled and we don't " \
             "want to set your warranty bit. This might result in video playback issues."
         return
     fi
 
     # Set over_voltage.
-    echo "Setting over_voltage to 2..."
+    info "Setting over_voltage to 2..."
 
     # comment out existing over_voltage lines in config
     sudo sed $CONFIG -i -e "s/^\(over_voltage=.*\)/#\1/"
 
     # create the new stanza -- this is only necessary on raspberry pi model 4 AFAIK.
     echo -e '\n[pi4]\nover_voltage=2\n\n[all]' | sudo tee -a $CONFIG >/dev/null
+}
+
+fail(){
+    local exit_code=$1
+    local line_no=$2
+    die "Error at line number: $line_no with exit code: $exit_code"
+}
+
+info(){
+    echo -e "\x1b[32m$*\x1b[0m" # green stdout
+}
+
+warn(){
+    echo -e "\x1b[33m$*\x1b[0m" # yellow stdout
+}
+
+die(){
+    echo
+    echo -e "\x1b[31m$*\x1b[0m" >&2 # red stderr
+    exit 1
 }
 
 main "$@"

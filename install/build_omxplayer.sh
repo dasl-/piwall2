@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 BRANCH="master"
 
@@ -51,6 +51,8 @@ doBuild(){
 }
 
 main(){
+    trap 'fail $? $LINENO' ERR
+
     while getopts "b:h" opt; do
         case ${opt} in
             b) BRANCH=${OPTARG} ;;
@@ -63,6 +65,26 @@ main(){
     doPackageStuff
     fixBuildScripts
     doBuild
+}
+
+fail(){
+    local exit_code=$1
+    local line_no=$2
+    die "Error at line number: $line_no with exit code: $exit_code"
+}
+
+info(){
+    echo -e "\x1b[32m$*\x1b[0m" # green stdout
+}
+
+warn(){
+    echo -e "\x1b[33m$*\x1b[0m" # yellow stdout
+}
+
+die(){
+    echo
+    echo -e "\x1b[31m$*\x1b[0m" >&2 # red stderr
+    exit 1
 }
 
 main "$@"

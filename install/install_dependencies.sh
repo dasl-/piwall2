@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euo pipefail -o errtrace
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 installation_type=false
@@ -8,6 +8,8 @@ only_install_python_deps=false
 omxplayer_branch='master'
 
 main(){
+    trap 'fail $? $LINENO' ERR
+
     parseOpts "$@"
 
     if [ "$only_install_python_deps" = true ] ; then
@@ -69,7 +71,7 @@ parseOpts(){
 }
 
 stopPiwallServices(){
-    echo -e "\\nStopping piwall services..."
+    info "\\nStopping piwall services..."
     # stop the services because in particular, a running omxplayer instance can cause the installation to fail,
     # specifically the `buildAndInstallOmxplayerFork` step:
     #   pi@piwall8.local: cp: cannot create regular file '/usr/bin/omxplayer.bin': Text file busy
@@ -83,7 +85,7 @@ stopPiwallServices(){
 }
 
 updateAndInstallAptPackages(){
-    echo -e "\\nUpdating and installing apt packages..."
+    info "\\nUpdating and installing apt packages..."
     sudo apt update
     sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv
     sudo apt -y full-upgrade
@@ -92,25 +94,25 @@ updateAndInstallAptPackages(){
 
 # A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.
 buildAndInstallOmxplayerFork(){
-    echo -e "\\nBuilding and installing omxplayer fork..."
+    info "\\nBuilding and installing omxplayer fork..."
     "$BASE_DIR"/install/build_omxplayer.sh -b "$omxplayer_branch"
 }
 
 updateAndInstallPythonPackages(){
-    echo -e "\\nUpdating and installing python packages..."
+    info "\\nUpdating and installing python packages..."
     sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
 }
 
 # Just in case the youtube-dl cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780
 clearYoutubedlCache(){
-    echo -e "\\nClearing youtube-dl cache..."
+    info "\\nClearing youtube-dl cache..."
     # shellcheck disable=SC1083
     parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root pi ::: youtube-dl yt-dlp
 }
 
 installNode(){
-    echo -e "\\nInstalling latest version of node and npm..."
+    info "\\nInstalling latest version of node and npm..."
 
     # Install node and npm. Installing this with the OS's default packages provided by apt installs a pretty old
     # version of node and npm. We need a newer version.
@@ -118,7 +120,7 @@ installNode(){
     curl -fsSL https://deb.nodesource.com/setup_16.x | sudo bash -
     sudo apt-get install -y nodejs
 
-    echo -e "\\nInstalling react app dependencies..."
+    info "\\nInstalling react app dependencies..."
     # TODO: when installing from scratch on a fresh OS installation, this step once failed with
     # and error: https://gist.github.com/dasl-/01b9bf9650730c7dbfab6c859ea6c0dc
     # See if this is reproducible on a fresh install sometime...
@@ -126,6 +128,26 @@ installNode(){
     # npm command. Could npm be shelling out to node? Maybe I can figure this out by running
     # checking the process list while the next step is running, and htop to look at RAM usage.`
     sudo npm install --prefix "$BASE_DIR/app"
+}
+
+fail(){
+    local exit_code=$1
+    local line_no=$2
+    die "Error at line number: $line_no with exit code: $exit_code"
+}
+
+info(){
+    echo -e "\x1b[32m$*\x1b[0m" # green stdout
+}
+
+warn(){
+    echo -e "\x1b[33m$*\x1b[0m" # yellow stdout
+}
+
+die(){
+    echo
+    echo -e "\x1b[31m$*\x1b[0m" >&2 # red stderr
+    exit 1
 }
 
 main "$@"
