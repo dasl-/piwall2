@@ -133,7 +133,9 @@ installNode(){
 fail(){
     local exit_code=$1
     local line_no=$2
-    die "Error at line number: $line_no with exit code: $exit_code"
+    local script_name
+    script_name=$(basename "${BASH_SOURCE[0]}")
+    die "Error in $script_name at line number: $line_no with exit code: $exit_code"
 }
 
 info(){
