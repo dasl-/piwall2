@@ -60,7 +60,7 @@ class Playlist:
         self.__cursor.execute(
             ("INSERT INTO playlist_videos " +
                 "(url, thumbnail, title, duration, status, settings, type, priority) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?)"),
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)"),
             [url, thumbnail, title, duration, self.STATUS_QUEUED, settings, video_type, priority]
         )
         return self.__cursor.lastrowid
