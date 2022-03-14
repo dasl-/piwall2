@@ -75,6 +75,7 @@ class Playlist extends React.Component {
                       <LoadWithVideo key={video.video_id} video={video}>
                         <PlaylistVideo
                           removeVideo={this.props.removeVideo}
+                          playVideoNext={this.props.playVideoNext}
                         />
                       </LoadWithVideo>
                     );

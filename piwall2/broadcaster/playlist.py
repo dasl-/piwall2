@@ -22,6 +22,9 @@ class Playlist:
     TYPE_VIDEO = 'TYPE_VIDEO'
     TYPE_CHANNEL_VIDEO = 'TYPE_CHANNEL_VIDEO'
 
+    # sqlite3's maximum integer value. Higher priority means play the video first.
+    __CHANNEL_VIDEO_PRIORITY = 2 ** 63 - 1
+
     def __init__(self):
         self.__cursor = piwall2.broadcaster.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -39,18 +42,26 @@ class Playlist:
                 duration VARCHAR(20),
                 status VARCHAR(20),
                 is_skip_requested INTEGER DEFAULT 0,
-                settings TEXT DEFAULT ''
+                settings TEXT DEFAULT '',
+                priority INTEGER DEFAULT 0
             )""")
 
-        self.__cursor.execute("DROP INDEX IF EXISTS status_type_idx")
-        self.__cursor.execute("CREATE INDEX status_type_idx ON playlist_videos (status, type ASC, playlist_video_id ASC)")
+        self.__cursor.execute("DROP INDEX IF EXISTS status_type_priority_idx")
+        self.__cursor.execute("CREATE INDEX status_type_priority_idx ON playlist_videos (status, type, priority)")
+        self.__cursor.execute("DROP INDEX IF EXISTS status_priority_idx")
+        self.__cursor.execute("CREATE INDEX status_priority_idx ON playlist_videos (status, priority DESC, playlist_video_id ASC)")
 
-    def enqueue(self, url, thumbnail, title, duration, settings, type):
+    def enqueue(self, url, thumbnail, title, duration, settings, video_type):
+        if video_type == self.TYPE_CHANNEL_VIDEO:
+            priority = self.__CHANNEL_VIDEO_PRIORITY
+        else:
+            priority = 0
+
         self.__cursor.execute(
             ("INSERT INTO playlist_videos " +
-                "(url, thumbnail, title, duration, status, settings, type) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?)"),
-            [url, thumbnail, title, duration, self.STATUS_QUEUED, settings, type]
+                "(url, thumbnail, title, duration, status, settings, type, priority) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)"),
+            [url, thumbnail, title, duration, self.STATUS_QUEUED, settings, video_type, priority]
         )
         return self.__cursor.lastrowid
 
@@ -93,23 +104,41 @@ class Playlist:
             [self.STATUS_PLAYING]
         )
 
+    def play_next(self, playlist_video_id):
+        self.__cursor.execute(
+            """
+                UPDATE playlist_videos set priority = (
+                    SELECT MAX(priority)+1 FROM playlist_videos WHERE type = ? AND status = ?
+                ) WHERE playlist_video_id = ?
+            """,
+            [self.TYPE_VIDEO, self.STATUS_QUEUED, playlist_video_id]
+        )
+        return self.__cursor.rowcount >= 1
+
     def get_current_video(self):
         self.__cursor.execute("SELECT * FROM playlist_videos WHERE status = ? LIMIT 1", [self.STATUS_PLAYING])
         return self.__cursor.fetchone()
 
     def get_next_playlist_item(self):
         self.__cursor.execute(
-            "SELECT * FROM playlist_videos WHERE status = ? order by type asc, playlist_video_id asc LIMIT 1",
+            "SELECT * FROM playlist_videos WHERE status = ? order by priority desc, playlist_video_id asc LIMIT 1",
             [self.STATUS_QUEUED]
         )
         return self.__cursor.fetchone()
 
     def get_queue(self):
         self.__cursor.execute(
-            "SELECT * FROM playlist_videos WHERE status IN (?, ?) order by type asc, playlist_video_id asc",
+            "SELECT * FROM playlist_videos WHERE status IN (?, ?) order by priority desc, playlist_video_id asc",
             [self.STATUS_PLAYING, self.STATUS_QUEUED]
         )
-        return self.__cursor.fetchall()
+        queue = self.__cursor.fetchall()
+        ordered_queue = []
+        for playlist_item in queue:
+            if playlist_item['status'] == self.STATUS_PLAYING:
+                ordered_queue.insert(0, playlist_item)
+            else:
+                ordered_queue.append(playlist_item)
+        return ordered_queue
 
     # Atomically set the requested video to "playing" status. This may fail if in a scenario like:
     #   1) Next video in the queue is retrieved

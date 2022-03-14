@@ -76,6 +76,10 @@ class Piwall2Api():
         self.__playlist.clear()
         return {'success': True}
 
+    def play_next(self, post_data):
+        success = self.__playlist.play_next(post_data['playlist_video_id'])
+        return {'success': success}
+
     # TODO : race conditions when setting volume, bigger surface area after converting to ThreadingHTTPServer.
     # Options:
     # 1) increase time interval to send ajax volume requests to reduce likelihood of race condition
@@ -194,6 +198,8 @@ class ServerRequestHandler(http.server.BaseHTTPRequestHandler):
             response = self.__api.remove(post_data)
         elif path == 'clear':
             response = self.__api.clear()
+        elif path == 'play_next':
+            response = self.__api.play_next(post_data)
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
         elif path == 'display_mode':
