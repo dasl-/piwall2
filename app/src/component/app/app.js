@@ -70,7 +70,7 @@ class App extends React.Component {
     this.nextVideo = this.nextVideo.bind(this);
     this.clearQueue = this.clearQueue.bind(this);
     this.removeVideo = this.removeVideo.bind(this);
-    this.playVideoNext = this.playVideoNext.bind.(this);
+    this.playVideoNext = this.playVideoNext.bind(this);
     this.setVolPct = this.setVolPct.bind(this);
 
     /* Tv callbacks */
