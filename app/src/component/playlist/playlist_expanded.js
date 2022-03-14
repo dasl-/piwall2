@@ -81,6 +81,8 @@ class PlaylistExpanded extends React.Component {
     this.props.removeVideo(video);
   }
 
+  // TODO playVideoNext shit
+
   handleSkip(e) {
     e.preventDefault();
     e.stopPropagation();

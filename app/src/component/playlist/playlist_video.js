@@ -7,6 +7,7 @@ class PlaylistVideo extends React.Component {
     super(props);
 
     this.onRemoveVideo = this.onRemoveVideo.bind(this);
+    this.onPlayVideoNext = this.onPlayVideoNext.bind(this);
   }
 
   render() {
@@ -32,6 +33,9 @@ class PlaylistVideo extends React.Component {
             <a href='#' onClick={this.onRemoveVideo}>
               <span className='glyphicon glyphicon-remove bg-light-text' aria-hidden='true' />
             </a>
+            <a href='#' onClick={this.onPlayVideoNext}>
+              <span className='glyphicon glyphicon-menu-up bg-light-text' aria-hidden='true' />
+            </a>
           </div>
         </div>
       </div>
@@ -42,6 +46,12 @@ class PlaylistVideo extends React.Component {
     e.preventDefault();
     this.props.setLoading();
     this.props.removeVideo(this.props.video);
+  }
+
+  onPlayVideoNext(e) {
+    e.preventDefault();
+    this.props.setLoading();
+    this.props.playVideoNext(this.props.video);
   }
 }
 

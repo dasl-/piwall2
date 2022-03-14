@@ -82,6 +82,7 @@ class Content extends React.Component {
                   nextVideo={this.props.nextVideo}
                   clearQueue={this.props.clearQueue}
                   removeVideo={this.props.removeVideo}
+                  playVideoNext={this.props.playVideoNext}
                   setVolPct={this.props.setVolPct}
                   vol_pct={this.props.vol_pct}
                   tv_data={this.props.tv_data}
@@ -112,6 +113,7 @@ class Content extends React.Component {
                 nextVideo={this.props.nextVideo}
                 clearQueue={this.props.clearQueue}
                 removeVideo={this.props.removeVideo}
+                playVideoNext={this.props.playVideoNext}
                 contractFooterPlaylist={this.contractFooterPlaylist}
                 setVolPct={this.props.setVolPct}
                 vol_pct={this.props.vol_pct}

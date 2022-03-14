@@ -70,6 +70,7 @@ class App extends React.Component {
     this.nextVideo = this.nextVideo.bind(this);
     this.clearQueue = this.clearQueue.bind(this);
     this.removeVideo = this.removeVideo.bind(this);
+    this.playVideoNext = this.playVideoNext.bind.(this);
     this.setVolPct = this.setVolPct.bind(this);
 
     /* Tv callbacks */
@@ -144,6 +145,7 @@ class App extends React.Component {
               nextVideo={this.nextVideo}
               clearQueue={this.clearQueue}
               removeVideo={this.removeVideo}
+              playVideoNext={this.playVideoNext}
               setVolPct={this.setVolPct}
               vol_pct={this.state.vol_pct}
               is_screensaver_enabled={this.state.is_screensaver_enabled}
@@ -230,6 +232,7 @@ class App extends React.Component {
         })
     }
   }
+
   clearQueue() {
     this.cancelQueuePoll();
 
@@ -237,6 +240,7 @@ class App extends React.Component {
       .clearQueue()
       .finally(() => this.getPlaylistQueue())
   }
+
   removeVideo(video) {
     this.cancelQueuePoll();
 
@@ -244,6 +248,15 @@ class App extends React.Component {
       .removeVideo(video)
       .finally(() => this.getPlaylistQueue())
   }
+
+  playVideoNext(video) {
+    this.cancelQueuePoll();
+
+    return this.apiClient
+      .playVideoNext(video)
+      .finally(() => this.getPlaylistQueue())
+  }
+
   setVolPct(vol_pct) {
     return this.apiClient.setVolPct(vol_pct)
   }
