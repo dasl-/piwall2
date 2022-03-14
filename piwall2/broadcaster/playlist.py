@@ -131,7 +131,14 @@ class Playlist:
             "SELECT * FROM playlist_videos WHERE status IN (?, ?) order by priority desc, playlist_video_id asc",
             [self.STATUS_PLAYING, self.STATUS_QUEUED]
         )
-        return self.__cursor.fetchall()
+        queue = self.__cursor.fetchall()
+        ordered_queue = []
+        for playlist_item in queue:
+            if playlist_item['status'] == self.STATUS_PLAYING:
+                ordered_queue.insert(0, playlist_item)
+            else:
+                ordered_queue.append(playlist_item)
+        return ordered_queue
 
     # Atomically set the requested video to "playing" status. This may fail if in a scenario like:
     #   1) Next video in the queue is retrieved
