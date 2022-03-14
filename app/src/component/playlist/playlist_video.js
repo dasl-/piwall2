@@ -51,7 +51,9 @@ class PlaylistVideo extends React.Component {
   onPlayVideoNext(e) {
     e.preventDefault();
     this.props.setLoading();
-    this.props.playVideoNext(this.props.video);
+    this.props
+      .playVideoNext(this.props.video)
+      .then(this.props.removeLoading);
   }
 }
 
