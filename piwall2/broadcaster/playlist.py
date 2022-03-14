@@ -70,10 +70,10 @@ class Playlist:
         )
         return self.__cursor.rowcount >= 1
 
-    def skip_videos_of_type(self, type):
+    def remove_videos_of_type(self, video_type):
         self.__cursor.execute(
-            "UPDATE playlist_videos set is_skip_requested = 1 WHERE type = ?",
-            [self.TYPE_CHANNEL_VIDEO]
+            "UPDATE playlist_videos set status = ? WHERE status = ? AND type = ?",
+            [self.STATUS_DELETED, self.STATUS_QUEUED, video_type]
         )
         return self.__cursor.rowcount >= 1
 

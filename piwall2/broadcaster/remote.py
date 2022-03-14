@@ -206,13 +206,13 @@ class Remote:
         Why is this necessary? One might think the `skip` call below would be sufficient.
 
         We could be reading multiple channel up / down button presses in here before returning
-        control back to the queue. If we didn't skip all videos with TYPE_CHANNEL_VIDEO, then for each channel up /
-        down button press we handle before returning control back to the queue, we'd be marking only the previously
-        playing video as skipped. That is, we wouldn't mark the previous channel video we had just enqueued for skip.
+        control back to the queue. If we didn't remove all videos with TYPE_CHANNEL_VIDEO, we'd be marking only the
+        currently playing video as skipped. That is, for each additional channel up / down button press we handled
+        before returning control back to the queue, we wouldn't remove / skip those.
         """
-        self.__playlist.skip_videos_of_type(Playlist.TYPE_CHANNEL_VIDEO)
+        self.__playlist.remove_videos_of_type(Playlist.TYPE_CHANNEL_VIDEO)
 
-        if self.__currently_playing_item and self.__currently_playing_item['type'] != Playlist.TYPE_CHANNEL_VIDEO:
+        if self.__currently_playing_item:
             self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
 
         self.__playlist.enqueue(
