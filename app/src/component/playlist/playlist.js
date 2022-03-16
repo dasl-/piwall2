@@ -74,6 +74,7 @@ class Playlist extends React.Component {
                     return (
                       <LoadWithVideo key={video.video_id} video={video}>
                         <PlaylistVideo
+                          index={index}
                           removeVideo={this.props.removeVideo}
                           playVideoNext={this.props.playVideoNext}
                         />

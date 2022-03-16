@@ -36,7 +36,10 @@ class PlaylistVideo extends React.Component {
               <a href='#' onClick={this.onRemoveVideo}>
                 <span className='glyphicon glyphicon-remove bg-light-text' aria-hidden='true' />
               </a>
-              <PlayNextIcon className='play-next-icon' onClick={this.onPlayVideoNext} />
+              {
+                (this.props.index !== 0) &&
+                <PlayNextIcon className='play-next-icon' onClick={this.onPlayVideoNext} />
+              }
           </div>
         </div>
       </div>
