@@ -76,7 +76,7 @@ input[type="search"]::-webkit-search-cancel-button {
   height:100vh;
 }
 .bg-background {
-  background: $background-light !important;
+  background-color: $background-light !important;
 }
 .bg-light {
   background: $background-light !important;
@@ -136,15 +136,11 @@ body {
   padding-right:.5rem;
   color:$primary-dark;
 }
-.playlist-video {
-  padding:.5rem 0;
+.playlist-video-common {
   border-bottom:1px solid $primary-dark;
 }
-.playlist-video img {
-  height:100%;
-  object-fit:cover;
-  margin-left:-1px;
-  mix-blend-mode:multiply;
+.playlist-video-thumbnail-container {
+  background-color: $accent-color2;
 }
 .playlist-expanded .skip-icon {
   float: right;

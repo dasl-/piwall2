@@ -11,19 +11,21 @@ class PlaylistVideo extends React.Component {
   }
 
   render() {
-    var row_class = 'container px-0 my-0 '
+    var row_class = 'container px-0 my-0 playlist-video-common '
       + (this.props.loading ? 'playlist-video-loading' : 'playlist-video');
 
     return (
       <div className={row_class}>
         <div className='row mr-0'>
           <div className='col-4 px-2 pl-3 small-vertical-center'>
-            <img
-              className='img-fluid'
-              src={this.props.video.thumbnail}
-              alt={this.props.video.title}
-              onLoad={this.props.setImageLoaded}
-            />
+            <div className='playlist-video-thumbnail-container'>
+              <img
+                className='img-fluid'
+                src={this.props.video.thumbnail}
+                alt={this.props.video.title}
+                onLoad={this.props.setImageLoaded}
+              />
+            </div>
           </div>
           <div className='col-7 py-2 px-2'>
             <div className='small font-weight-bold'>{this.props.video.title}</div>
