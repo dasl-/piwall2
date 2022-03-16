@@ -19,6 +19,24 @@
   transition: opacity 50ms;
   transition-timing-function: ease-in;
 }
+.playlist-video-thumbnail-container {
+  background-image: url('/grain.png');
+  background-blend-mode:multiply;
+}
+
+/* styles common to both the .playlist-video and .playlist-video-loading classes */
+.playlist-video-common {
+  padding:.5rem 0;
+}
+
+.playlist-video-thumbnail-container {
+  height: 100%;
+}
+.playlist-video-thumbnail-container img {
+  min-height: 100%;
+  object-fit:cover;
+  mix-blend-mode:multiply;
+}
 
 .playlist-mask {
   visibility: visible;
