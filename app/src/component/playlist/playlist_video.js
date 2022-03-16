@@ -1,6 +1,7 @@
 import React from 'react';
 
 import './playlist.css';
+import {ReactComponent as PlayNextIcon} from '../../play-next-icon-filled.svg';
 
 class PlaylistVideo extends React.Component {
   constructor(props) {
@@ -31,13 +32,14 @@ class PlaylistVideo extends React.Component {
             <div className='small font-weight-bold'>{this.props.video.title}</div>
             <div className='small badge badge-secondary'>{this.props.video.duration}</div>
           </div>
-          <div className='col-1 p-0 small-vertical-center'>
-            <a href='#' onClick={this.onRemoveVideo}>
-              <span className='glyphicon glyphicon-remove bg-light-text' aria-hidden='true' />
-            </a>
-            <a href='#' onClick={this.onPlayVideoNext}>
-              <span className='glyphicon glyphicon-menu-up bg-light-text' aria-hidden='true' />
-            </a>
+          <div className='col-1 p-0 playlist-video-icon-container align-items-end'>
+              <a href='#' onClick={this.onRemoveVideo}>
+                <span className='glyphicon glyphicon-remove bg-light-text' aria-hidden='true' />
+              </a>
+              {
+                (this.props.index !== 0) &&
+                <PlayNextIcon className='play-next-icon' onClick={this.onPlayVideoNext} />
+              }
           </div>
         </div>
       </div>
