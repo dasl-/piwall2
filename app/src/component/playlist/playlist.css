@@ -56,3 +56,19 @@
   background: rgba(9, 9, 9, 0);
   visibility: hidden;
 }
+
+.playlist-video-icon-container {
+  display: flex;
+  justify-content:space-between;
+  flex-direction:column;
+}
+
+.playlist-video-icon-container svg:hover {
+  cursor:pointer;
+}
+
+svg.play-next-icon {
+  height: 25px;
+  width: 25px;
+  margin-right: -2px;
+}

@@ -142,6 +142,9 @@ body {
 .playlist-video-thumbnail-container {
   background-color: $accent-color2;
 }
+.playlist-video-icon-fill-color {
+  fill:$primary-light;
+}
 .playlist-expanded .skip-icon {
   float: right;
 }
