@@ -18,19 +18,19 @@ class SvgButton extends React.Component {
       case 'ANIMATION_MODE_TILE':
         return <span className='position-relative'>
         <TileIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
-          <span class="icon-tooltip">Fullscreen</span></span>
+          <span className="icon-tooltip">Fullscreen</span></span>
       case 'ANIMATION_MODE_REPEAT':
         return <span className='position-relative'>
           <RepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
-          <span class="icon-tooltip">Tile</span></span>
+          <span className="icon-tooltip">Tile</span></span>
       case 'ANIMATION_MODE_TILE_REPEAT':
         return <span className='position-relative'>
           <TileRepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
-          <span class="icon-tooltip">Alternate</span></span>
+          <span className="icon-tooltip">Alternate</span></span>
       case 'ANIMATION_MODE_SPIRAL': // TODO: change the spiral icon
         return <span className='position-relative'>
           <SpiralIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
-          <span class="icon-tooltip">Spiral</span></span>
+          <span className="icon-tooltip">Spiral</span></span>
       default:
         return <TileRepeatIcon className={classes} aria-hidden='true'onClick={this.setAnimationMode} />
     }
