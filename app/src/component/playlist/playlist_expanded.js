@@ -8,7 +8,7 @@ class PlaylistExpanded extends React.Component {
   constructor(props) {
     super(props);
 
-    this.onSwipeVideo = this.onSwipeVideo.bind(this);
+    this.onRemoveVideo = this.onRemoveVideo.bind(this);
     this.handleSkip = this.handleSkip.bind(this);
   }
 
@@ -45,8 +45,20 @@ class PlaylistExpanded extends React.Component {
               <SwipeableList background={<span></span>}>
               {
                 this.props.videos.map((video, index) => {
+                  console.log(video);
                   return (
-                    <SwipeableListItem key={video.video_id} onSwipe={() => this.onSwipeVideo(video)}>
+                    <SwipeableListItem
+                      // append to the key to ensure the swipe menu collapses after the video has
+                      // been moved to the top of the queue
+                      key={video.video_id + '-' + video.priority + '-' + (index == 0 ? '0' : '1')}
+                      index={index}
+                      onRemoveVideo={() => this.onRemoveVideo(video)}
+                      onPlayVideoNext={() => this.onPlayVideoNext(video)}
+                      fullSwipeThreshold={100} // don't allow full swipes
+                      partialSwipeThreshold={0.2}
+                      buttonWidth={100}
+                      numButtons={index == 0 ? 1 : 2}
+                    >
                       <div className='container px-0 playlist-video-common'>
                           <div className='row mr-0'>
 
@@ -77,8 +89,12 @@ class PlaylistExpanded extends React.Component {
     );
   }
 
-  onSwipeVideo(video) {
+  onRemoveVideo(video) {
     this.props.removeVideo(video);
+  }
+
+  onPlayVideoNext(video) {
+    this.props.playVideoNext(video);
   }
 
   // TODO playVideoNext shit
