@@ -148,6 +148,7 @@ class SwipeableListItem extends React.Component {
       }
 
       this.startTime = Date.now();
+      this.forceUpdate(); // necessary to ensure the opacity changes get reflected immediately
     }
   }
 
