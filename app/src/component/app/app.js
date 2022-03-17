@@ -100,7 +100,6 @@ class App extends React.Component {
       re-run now that the image's dimensions are no longer 0 x 0 pixels.
      */
     if (!prevState.show_search_results && this.state.show_search_results) {
-      console.log("app componentDidUpdate resize");
       window.dispatchEvent(new Event('resize'));
     }
   }

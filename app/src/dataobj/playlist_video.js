@@ -25,7 +25,9 @@ class PlaylistVideo {
       // Unique Data
       create_date: props.create_date,
       color_mode: props.color_mode,
-      status: props.status
+      status: props.status,
+
+      priority: props.priority,
     };
   }
 
