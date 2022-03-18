@@ -30,6 +30,7 @@ class SwipeableListItem extends React.Component {
     this.wrapper = null;
     this.background = null;
     this.buttons = []
+    this.isMenuOpen = false;
 
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onTouchMove = this.onTouchMove.bind(this);
@@ -80,33 +81,49 @@ class SwipeableListItem extends React.Component {
 
   onDragEndMouse(evt) {
     window.removeEventListener("mousemove", this.onMouseMove);
-    this.onDragEnd();
+    this.onDragEnd(evt.clientX);
   }
 
   onDragEndTouch(evt) {
+    const touch = evt.targetTouches[0];
     window.removeEventListener("touchmove", this.onTouchMove);
-    this.onDragEnd();
+    this.onDragEnd(touch.clientX);
   }
 
-  onDragEnd() {
+  onDragEnd(clientX) {
     if (this.dragged) {
       this.dragged = false;
       this.dragStopTime = Date.now();
 
       const fullSwipeThreshold = this.props.fullSwipeThreshold || 0.5;
-      const partialSwipeThreshold = this.props.partialSwipeThreshold || 0.3;
+      const openMenuSwipeThreshold = this.props.openMenuSwipeThreshold || 0.3;
+      const closeMenuSwipeThreshold = this.props.closeMenuSwipeThreshold || 0.3;
       if (this.state.left < this.listElement.offsetWidth * fullSwipeThreshold * -1) {
-        // full swipe
+        // full left swipe
         this.setState({left: -this.listElement.offsetWidth * 2});
         this.wrapper.style.maxHeight = 0;
         this.onSwiped();
-      } else if (this.state.left < this.listElement.offsetWidth * partialSwipeThreshold * -1) {
-        // partial swipe
-        this.setState({left: this.props.numButtons * -this.props.buttonWidth});
-
-      } else {
-        // no swipe registered
-        this.setState({left: 0});
+      } else if (!this.isMenuOpen) {
+        if (this.state.left < this.listElement.offsetWidth * openMenuSwipeThreshold * -1) {
+          // partial left swipe: we swiped to reveal menu with buttons
+          this.isMenuOpen = true;
+          this.setState({left: this.props.numButtons * -this.props.buttonWidth});
+        } else {
+          // no swipe registered
+          this.setState({left: 0});
+        }
+      } else if (this.isMenuOpen) {
+        const wasDragDirectionRight = this.dragStartX - clientX < 0;
+        const positionPctDelta = this.dragStartLeft / this.listElement.offsetWidth - this.state.left / this.listElement.offsetWidth;
+        console.log(positionPctDelta);
+        if (wasDragDirectionRight && -1 * positionPctDelta > closeMenuSwipeThreshold) {
+          // we swiped right hard enough to close the menu
+          this.isMenuOpen = false;
+          this.setState({left: 0});
+        } else {
+          // menu is still open. Don't adjust this.isMenuOpen.
+          this.setState({left: this.props.numButtons * -this.props.buttonWidth});
+        }
       }
 
       this.listElement.className = "BouncingListItem";
@@ -119,7 +136,7 @@ class SwipeableListItem extends React.Component {
     console.log("mouse move");
     const leftDelta = evt.clientX - this.dragStartX;
     const newLeft = leftDelta + this.dragStartLeft;
-    if (newLeft < 0) { // don't allow swiping right
+    if (newLeft < 0) { // don't allow swiping right past the boundary
       this.setState({left: newLeft});
     }
   }
@@ -128,15 +145,13 @@ class SwipeableListItem extends React.Component {
     const touch = evt.targetTouches[0];
     const leftDelta = touch.clientX - this.dragStartX;
     const newLeft = leftDelta + this.dragStartLeft;
-    if (newLeft < 0) { // don't allow swiping right
+    if (newLeft < 0) { // don't allow swiping right past the boundary
       this.setState({left: newLeft});
     }
   }
 
   updatePosition() {
     if (this.dragged) {
-      requestAnimationFrame(this.updatePosition);
-    } else if (Date.now() - this.dragStopTime < 600) {
       requestAnimationFrame(this.updatePosition);
     }
 
@@ -145,14 +160,6 @@ class SwipeableListItem extends React.Component {
 
     if (elapsed > this.fpsInterval) {
       this.listElement.style.transform = `translateX(${this.state.left}px)`;
-      const opacity = (Math.abs(this.state.left) / 100).toFixed(2);
-      if (opacity < 1 && opacity.toString() !== this.background.style.opacity) {
-        this.background.style.opacity = opacity.toString();
-      }
-      if (opacity >= 1) {
-        this.background.style.opacity = "1";
-      }
-
       this.dragStartTime = Date.now();
     }
   }
