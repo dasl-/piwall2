@@ -54,7 +54,7 @@ class PlaylistExpanded extends React.Component {
                       onRemoveVideo={() => this.onRemoveVideo(video)}
                       onPlayVideoNext={() => this.onPlayVideoNext(video)}
                       fullSwipeThreshold={100} // don't allow full swipes
-                      openMenuSwipeThreshold={0.2}
+                      openMenuSwipeThreshold={0.1}
                       closeMenuSwipeThreshold={0.05}
                       buttonWidth={100}
                       numButtons={index == 0 ? 1 : 2}

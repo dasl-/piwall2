@@ -64,7 +64,7 @@ class SwipeableListItem extends React.Component {
   }
 
   onDragStartTouch(evt) {
-    const touch = evt.targetTouches[0];
+    const touch = evt.changedTouches[0];
     this.onDragStart(touch.clientX);
     window.addEventListener("touchmove", this.onTouchMove);
   }
@@ -85,7 +85,7 @@ class SwipeableListItem extends React.Component {
   }
 
   onDragEndTouch(evt) {
-    const touch = evt.targetTouches[0];
+    const touch = evt.changedTouches[0];
     window.removeEventListener("touchmove", this.onTouchMove);
     this.onDragEnd(touch.clientX);
   }
@@ -115,7 +115,6 @@ class SwipeableListItem extends React.Component {
       } else if (this.isMenuOpen) {
         const wasDragDirectionRight = this.dragStartX - clientX < 0;
         const positionPctDelta = this.dragStartLeft / this.listElement.offsetWidth - this.state.left / this.listElement.offsetWidth;
-        console.log(positionPctDelta);
         if (wasDragDirectionRight && -1 * positionPctDelta > closeMenuSwipeThreshold) {
           // we swiped right hard enough to close the menu
           this.isMenuOpen = false;
@@ -133,7 +132,6 @@ class SwipeableListItem extends React.Component {
   }
 
   onMouseMove(evt) {
-    console.log("mouse move");
     const leftDelta = evt.clientX - this.dragStartX;
     const newLeft = leftDelta + this.dragStartLeft;
     if (newLeft < 0) { // don't allow swiping right past the boundary
