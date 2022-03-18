@@ -16,9 +16,11 @@ class SwipeableListItem extends React.Component {
   dragStartX = 0;
   left = 0;
   dragged = false;
+  dragStartLeft = 0;
 
   // FPS Limit
-  startTime;
+  dragStartTime;
+  dragStopTime;
   fpsInterval = 1000 / 60;
 
   constructor(props) {
@@ -71,7 +73,7 @@ class SwipeableListItem extends React.Component {
     this.dragStartX = clientX;
     this.dragStartLeft = this.state.left;
     this.listElement.className = "ListItem";
-    this.startTime = Date.now();
+    this.dragStartTime = Date.now();
     this.buttons.forEach(button => button.style.transition = 'width 0s ease-out');
     requestAnimationFrame(this.updatePosition);
   }
@@ -89,6 +91,7 @@ class SwipeableListItem extends React.Component {
   onDragEnd() {
     if (this.dragged) {
       this.dragged = false;
+      this.dragStopTime = Date.now();
 
       const fullSwipeThreshold = this.props.fullSwipeThreshold || 0.5;
       const partialSwipeThreshold = this.props.partialSwipeThreshold || 0.3;
@@ -131,14 +134,17 @@ class SwipeableListItem extends React.Component {
   }
 
   updatePosition() {
-    if (this.dragged) requestAnimationFrame(this.updatePosition);
+    if (this.dragged) {
+      requestAnimationFrame(this.updatePosition);
+    } else if (Date.now() - this.dragStopTime < 600) {
+      requestAnimationFrame(this.updatePosition);
+    }
 
     const now = Date.now();
-    const elapsed = now - this.startTime;
+    const elapsed = now - this.dragStartTime;
 
-    if (this.dragged && elapsed > this.fpsInterval) {
+    if (elapsed > this.fpsInterval) {
       this.listElement.style.transform = `translateX(${this.state.left}px)`;
-
       const opacity = (Math.abs(this.state.left) / 100).toFixed(2);
       if (opacity < 1 && opacity.toString() !== this.background.style.opacity) {
         this.background.style.opacity = opacity.toString();
@@ -147,8 +153,7 @@ class SwipeableListItem extends React.Component {
         this.background.style.opacity = "1";
       }
 
-      this.startTime = Date.now();
-      this.forceUpdate(); // necessary to ensure the opacity changes get reflected immediately
+      this.dragStartTime = Date.now();
     }
   }
 
@@ -160,14 +165,13 @@ class SwipeableListItem extends React.Component {
 
   render() {
     this.buttons.forEach(button => button.style.width = -this.state.left / this.props.numButtons + "px");
-
     return (
       <div className="Wrapper" ref={div => (this.wrapper = div)}>
         <div ref={div => (this.background = div)} className="Background">
           {
             this.props.index !== 0 &&
             <div
-              ref={div => {this.buttons[0] = div}}
+              ref={div => {this.buttons[1] = div}}
               className="swipeable-list-item-button play-next"
               onClick={this.props.onPlayVideoNext}
             >
@@ -175,7 +179,7 @@ class SwipeableListItem extends React.Component {
             </div>
           }
           <div
-            ref={div => {this.buttons[1] = div}}
+            ref={div => {this.buttons[0] = div}}
             className="swipeable-list-item-button remove-video"
             onClick={this.props.onRemoveVideo}
           >

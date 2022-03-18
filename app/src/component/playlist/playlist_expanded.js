@@ -45,7 +45,6 @@ class PlaylistExpanded extends React.Component {
               <SwipeableList background={<span></span>}>
               {
                 this.props.videos.map((video, index) => {
-                  console.log(video);
                   return (
                     <SwipeableListItem
                       // append to the key to ensure the swipe menu collapses after the video has
