@@ -49,7 +49,7 @@ class PlaylistExpanded extends React.Component {
                     <SwipeableListItem
                       // append to the key to ensure the swipe menu collapses after the video has
                       // been moved to the top of the queue
-                      key={video.video_id + '-' + video.priority + '-' + (index == 0 ? '0' : '1')}
+                      key={video.video_id + '-' + video.priority + '-' + (index === 0 ? '0' : '1')}
                       index={index}
                       onRemoveVideo={() => this.onRemoveVideo(video)}
                       onPlayVideoNext={() => this.onPlayVideoNext(video)}
@@ -57,7 +57,7 @@ class PlaylistExpanded extends React.Component {
                       openMenuSwipeThreshold={0.1}
                       closeMenuSwipeThreshold={0.05}
                       buttonWidth={100}
-                      numButtons={index == 0 ? 1 : 2}
+                      numButtons={index === 0 ? 1 : 2}
                     >
                       <div className='container px-0 playlist-video-common'>
                           <div className='row mr-0'>
