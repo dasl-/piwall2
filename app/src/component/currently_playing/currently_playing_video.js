@@ -70,6 +70,8 @@ class CurrentlyPlayingVideo extends React.Component {
         <div className='row'>
           <div className='col-1 p-0 text-right'><span className='glyphicon glyphicon-volume-down bg-light-text vol-icon' aria-hidden='true' /></div>
           <div className='col-10 volume-container'>
+            {/* volume jumping bug on mobile (iOS): https://github.com/react-component/slider/issues/603
+                would love to find a fix */}
             <Slider
               className='volume'
               min={0}
