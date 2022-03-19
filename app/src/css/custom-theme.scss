@@ -161,7 +161,15 @@ body {
   font-weight:400;
   border-top: 3px solid $border;
 }
-
+.swipeable-list-item-button.play-next {
+  background-color: $primary-dark;
+}
+.swipeable-list-item-button.remove-video {
+  background-color: $primary-light;
+}
+.swipeable-list-item-button.remove-video .glyphicon {
+  color: $primary-dark;
+}
 
 /* alert */
 .bg-success {

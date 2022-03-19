@@ -43,9 +43,3 @@
   width: inherit;
   text-align: center;
 }
-.swipeable-list-item-button.play-next {
-  background-color: blue;
-}
-.swipeable-list-item-button.remove-video {
-  background-color: red;
-}
