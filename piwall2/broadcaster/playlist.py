@@ -74,7 +74,6 @@ class Playlist:
                 status = ?,
                 is_skip_requested = ?,
                 priority = (SELECT MAX(priority)+1 FROM playlist_videos WHERE type = ? AND status = ?)
-
             WHERE playlist_video_id = ?""",
             [self.STATUS_QUEUED, 0, self.TYPE_VIDEO, self.STATUS_QUEUED, playlist_video_id]
         )
