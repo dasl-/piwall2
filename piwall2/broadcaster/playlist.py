@@ -65,15 +65,26 @@ class Playlist:
         )
         return self.__cursor.lastrowid
 
+    # Note: this method only works for videos of type TYPE_VIDEO. Attempting to use this for
+    # type CHANNEL_VIDEO would result in integer overflow incrementing the priority if we
+    # did not filter for only videos of TYPE_VIDEO in the sub WHERE clause.
     def reenqueue(self, playlist_video_id):
-        self.__cursor.execute(
-            "UPDATE playlist_videos set status = ?, is_skip_requested = ? WHERE playlist_video_id = ?",
-            [self.STATUS_QUEUED, 0, playlist_video_id]
+        self.__cursor.execute("""
+            UPDATE playlist_videos set
+                status = ?,
+                is_skip_requested = ?,
+                priority = (SELECT MAX(priority)+1 FROM playlist_videos WHERE type = ? AND status = ?)
+
+            WHERE playlist_video_id = ?""",
+            [self.STATUS_QUEUED, 0, self.TYPE_VIDEO, self.STATUS_QUEUED, playlist_video_id]
         )
         return self.__cursor.rowcount >= 1
 
     # Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the
     # video that the user intended to skip.
+    #
+    # Note: technically this method only _requests_ a skip. The actual skipping is asynchronous, handled by
+    # the queue process.
     def skip(self, playlist_video_id):
         self.__cursor.execute(
             "UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ? AND playlist_video_id = ?",

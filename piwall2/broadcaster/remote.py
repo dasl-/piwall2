@@ -213,6 +213,9 @@ class Remote:
         self.__playlist.remove_videos_of_type(Playlist.TYPE_CHANNEL_VIDEO)
 
         if self.__currently_playing_item:
+            # Note: we have logic in the Queue class to re-enqueue videos of type TYPE_VIDEO that were skipped
+            # in this manner. The video skipped here will be added back at the head of the queue.
+            # See: Queue::__should_reenqueue_current_playlist_item
             self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
 
         self.__playlist.enqueue(
