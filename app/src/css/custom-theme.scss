@@ -281,19 +281,33 @@ body {
 }
 
 //Volume slider
-
 .rc-slider-handle {
   border:0;
   border-radius:2px;
   height:15px;
   width:10px;
   background-color:$primary-light;
+  opacity:1;
+}
+.rc-slider-handle::after {
+  // make the touch area for volume slider a bigger target without affecting the appearance
+  content: "";
+  position: absolute;
+  // center this over its parent
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
 }
 .rc-slider-handle:active {
   box-shadow:$primary-dark -1px 1px 0;
   height:19px;
   width:12px;
   margin-top:-7px;
+}
+.rc-slider-handle-dragging.rc-slider-handle-dragging.rc-slider-handle-dragging {
+  box-shadow:none;
 }
 .rc-slider-rail {
   border:0;
