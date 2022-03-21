@@ -127,7 +127,7 @@ installNode(){
     # It's weird because apparently it's a node error, but the line that is executing below is a
     # npm command. Could npm be shelling out to node? Maybe I can figure this out by running
     # checking the process list while the next step is running, and htop to look at RAM usage.`
-    sudo npm install --prefix "$BASE_DIR/app"
+    npm install --prefix "$BASE_DIR/app"
 }
 
 fail(){
