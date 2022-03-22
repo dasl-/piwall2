@@ -33,9 +33,9 @@ class Database:
     # Schema change how-to:
     # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), etc)
     # 2) Increment self.__SCHEMA_VERSION
-    # 3) Implement self.__update_schema_to_vN for the incremented SCHEMA_VERSION, call this method in
-    #   the below for loop.
-    # 4) Run ./install/install.sh
+    # 3) Implement self.__update_schema_to_vN method for the incremented SCHEMA_VERSION
+    # 4) Call the method in the below for loop.
+    # 5) Run ./install/install.sh
     def construct(self):
         self.get_cursor().execute("BEGIN TRANSACTION")
         try:
@@ -68,9 +68,6 @@ class Database:
                     self.__update_schema_to_v2()
                 elif i == 3:
                     self.__update_schema_to_v3()
-                # When next schema change happens, do something like this:
-                # elif i == 4:
-                #     self.__update_schema_to_v4()
                 else:
                     msg = "No update schema method defined for version: {}.".format(i)
                     self.__logger.error(msg)
