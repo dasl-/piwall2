@@ -262,8 +262,8 @@ class ConfigLoader:
     def __get_local_ip(self):
         private_ip = (subprocess
             .check_output(
-                r'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
-                r'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
+                'set -o pipefail && sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | ' +
+                'grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
                 stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
             )
             .decode("utf-8")
