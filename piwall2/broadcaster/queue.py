@@ -8,7 +8,6 @@ import time
 from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.remote import Remote
-from piwall2.broadcaster.settingsdb import SettingsDb
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
@@ -26,7 +25,6 @@ class Queue:
         self.__logger.info("Starting queue...")
         self.__config_loader = ConfigLoader()
         self.__playlist = Playlist()
-        self.__settings_db = SettingsDb()
         self.__volume_controller = VolumeController()
         self.__control_message_helper = ControlMessageHelper().setup_for_broadcaster()
         self.__last_tick_time = 0
