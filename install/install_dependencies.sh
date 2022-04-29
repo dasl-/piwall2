@@ -86,6 +86,9 @@ stopPiwallServices(){
 
 updateAndInstallAptPackages(){
     info "\\nUpdating and installing apt packages..."
+
+    # attempt to work around for transient apt failures. Examples of failures: https://gist.github.com/dasl-/12c765db73d63c7936204903d0f0cf6b
+    echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/piwall-retries
     sudo apt update
     sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv
     sudo apt -y full-upgrade
