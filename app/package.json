@@ -4,7 +4,7 @@
   "private": true,
   "//": [
     "DEPENDENCY NOTES:",
-    "rc-slider: See https://github.com/dasl-/piwall2/issues/16"
+    "rc-slider: upgrading rc-slider has caused us some bugs in the past. Thus we hardcode the version to be conservative about upgrading. See https://github.com/dasl-/piwall2/issues/16"
   ],
   "dependencies": {
     "axios": "0.21.1",
@@ -15,7 +15,7 @@
     "react-scripts": "3.0.1",
     "react-transition-group": "^4.2.2",
     "redux": "^4.0.4",
-    "rc-slider": "dasl-/slider#click-rail-publish",
+    "rc-slider": "10.0.0",
     "sass": "^1.42.1",
     "npm-run-all": "^4.1.2"
   },
