@@ -21,15 +21,7 @@ import math
 # errors: https://gist.github.com/dasl-/3858c6473aa434f1487372f0a188ca05
 class VolumeController:
 
-    """
-    sudo amixer cset numid=1 96.24%
-    numid=1,iface=MIXER,name='Headphone Playback Volume'
-      ; type=INTEGER,access=rw---R--,values=1,min=-10239,max=400,step=0
-      : values=0
-      | dBscale-min=-102.39dB,step=0.01dB,mute=1
-
-    Setting 96.24% is equivalent to 0dB. Anything higher may result in clipping.
-    """
+    # Anything higher than 0 dB may result in clipping.
     __LIMITED_MAX_VOL_VAL = 0
 
     # amixer output: ; type=INTEGER,access=rw---R--,values=1,min=-10239,max=400,step=0
@@ -55,9 +47,8 @@ class VolumeController:
     # takes a perceptual loudness %.
     # vol_pct should be a float in the range [0, 100]
     def set_vol_pct(self, vol_pct):
-        mb_level = VolumeController.pct_to_millibels(vol_pct)
-        pct_to_set = ((mb_level - self.GLOBAL_MIN_VOL_VAL) / (self.GLOBAL_MAX_VOL_VAL - self.GLOBAL_MIN_VOL_VAL)) * 100
-        subprocess.check_output(('amixer', 'cset', 'numid=1', '{}%'.format(pct_to_set)))
+        mb_level = round(VolumeController.pct_to_millibels(vol_pct))
+        subprocess.check_output(('amixer', 'cset', 'numid=1', '--', str(mb_level)))
 
     # increments volume percentage by the specified increment. The increment should be a float in the range [0, 100]
     # Returns the new volume percent, which will be a float in the range [0, 100]
