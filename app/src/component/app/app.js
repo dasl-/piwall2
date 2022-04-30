@@ -79,11 +79,6 @@ class App extends React.Component {
 
     this.animation_mode_mutex = false;
     this.animation_mode_mutex_releasable = false;
-
-    // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
-    if (window.__firefox__) {
-        window.__firefox__.NightMode.setEnabled(false);
-    }
   }
 
   componentDidMount() {
