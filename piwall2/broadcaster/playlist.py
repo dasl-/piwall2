@@ -65,6 +65,8 @@ class Playlist:
         )
         return self.__cursor.lastrowid
 
+    # Re-enqueue a video at the front of the queue.
+    #
     # Note: this method only works for videos of type TYPE_VIDEO. Attempting to use this for
     # type CHANNEL_VIDEO would result in integer overflow incrementing the priority if we
     # did not filter for only videos of TYPE_VIDEO in the sub WHERE clause.
