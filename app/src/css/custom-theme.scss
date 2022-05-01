@@ -136,9 +136,21 @@ body {
   padding-right:.5rem;
   color:$primary-dark;
 }
-.playlist-video-common {
-  border-bottom:1px solid $primary-dark;
+
+// We need to set the border on the .Wrapper class when the playlist is expanded,
+// because we want the border to persist even when the playlist item row is swiped
+.playlist-expanded .Wrapper {
+  border-top:1px solid $primary-dark;
 }
+.playlist-video-common {
+  border-top:1px solid $primary-dark;
+}
+.playlist-expanded .Wrapper .playlist-video-common,
+.play-queue .playlist-video-common:first-of-type,
+.play-queue .Wrapper:first-of-type {
+  border-top:none;
+}
+
 .playlist-video-thumbnail-container {
   background-color: $accent-color2;
 }
