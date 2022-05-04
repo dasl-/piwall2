@@ -27,8 +27,8 @@ class Receiver:
         self.__hostname = socket.gethostname() + ".local"
 
         # The current crop modes for up to two TVs that may be hooked up to this receiver
-        self.__display_mode = DisplayMode.DISPLAY_MODE_TILE
-        self.__display_mode2 = DisplayMode.DISPLAY_MODE_TILE
+        self.__display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
+        self.__display_mode2 = DisplayMode.DISPLAY_MODE_FULLSCREEN
 
         self.__video_crop_args = None
         self.__video_crop_args2 = None
@@ -123,7 +123,7 @@ class Receiver:
                 if tv_id in display_mode_by_tv_id:
                     display_mode_to_set = display_mode_by_tv_id[tv_id]
                     if display_mode_to_set not in DisplayMode.DISPLAY_MODES:
-                        display_mode_to_set = DisplayMode.DISPLAY_MODE_TILE
+                        display_mode_to_set = DisplayMode.DISPLAY_MODE_FULLSCREEN
                     if tv_num == 1:
                         should_set_tv1 = True
                         self.__display_mode = display_mode_to_set

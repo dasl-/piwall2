@@ -9,10 +9,10 @@ class Tv extends React.Component {
   }
 
   render() {
-    const backgroundPosition = this.props.display_mode === 'DISPLAY_MODE_TILE' ?
-      this.props.displayModeTileBgPos : this.props.displayModeRepeatBgPos;
-    const backgroundSize = this.props.display_mode === 'DISPLAY_MODE_TILE' ?
-      this.props.displayModeTileBgSize : this.props.displayModeRepeatBgSize;
+    const backgroundPosition = this.props.display_mode === 'DISPLAY_MODE_FULLSCREEN' ?
+      this.props.displayModeFullscreenBgPos : this.props.displayModeTileBgPos;
+    const backgroundSize = this.props.display_mode === 'DISPLAY_MODE_FULLSCREEN' ?
+      this.props.displayModeFullscreenBgSize : this.props.displayModeTileBgSize;
     const maybe_loading_class = this.props.loading ? 'loading' : '';
 
     return (
@@ -39,9 +39,9 @@ class Tv extends React.Component {
 
   toggleDisplayMode(e) {
     e.preventDefault();
-    let new_display_mode = 'DISPLAY_MODE_TILE';
-    if (this.props.display_mode === 'DISPLAY_MODE_TILE') {
-      new_display_mode = 'DISPLAY_MODE_REPEAT';
+    let new_display_mode = 'DISPLAY_MODE_FULLSCREEN';
+    if (this.props.display_mode === 'DISPLAY_MODE_FULLSCREEN') {
+      new_display_mode = 'DISPLAY_MODE_TILE';
     }
     let display_mode_by_tv_id = {};
     display_mode_by_tv_id[this.props.tv_id] = new_display_mode;

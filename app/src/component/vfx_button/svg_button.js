@@ -1,7 +1,7 @@
 import React from 'react';
+import {ReactComponent as FullscreenIcon} from '../../fullscreen-icon.svg';
 import {ReactComponent as TileIcon} from '../../tile-icon.svg';
-import {ReactComponent as RepeatIcon} from '../../repeat-icon.svg';
-import {ReactComponent as TileRepeatIcon} from '../../tile-repeat-icon.svg';
+import {ReactComponent as FullscreenTileIcon} from '../../fullscreen-tile-icon.svg';
 import {ReactComponent as SpiralIcon} from '../../spiral-icon.svg';
 
 class SvgButton extends React.Component {
@@ -15,24 +15,23 @@ class SvgButton extends React.Component {
     const selected_class = this.isSelected() ? ' selected ' : '';
     const classes = 'svg-icon' + selected_class;
     switch(this.props.button_animation_mode) {
+      case 'ANIMATION_MODE_FULLSCREEN':
+        return <span className='position-relative'>
+        <FullscreenIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
+          <span className="icon-tooltip">Fullscreen</span></span>
       case 'ANIMATION_MODE_TILE':
         return <span className='position-relative'>
-        <TileIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
-          <span className="icon-tooltip">Fullscreen</span></span>
-      case 'ANIMATION_MODE_REPEAT':
-        return <span className='position-relative'>
-          <RepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
+          <TileIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
           <span className="icon-tooltip">Tile</span></span>
-      case 'ANIMATION_MODE_TILE_REPEAT':
-        return <span className='position-relative'>
-          <TileRepeatIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
-          <span className="icon-tooltip">Alternate</span></span>
-      case 'ANIMATION_MODE_SPIRAL': // TODO: change the spiral icon
+      case 'ANIMATION_MODE_SPIRAL':
         return <span className='position-relative'>
           <SpiralIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
           <span className="icon-tooltip">Spiral</span></span>
+      case 'ANIMATION_MODE_FULLSCREEN_TILE':
       default:
-        return <TileRepeatIcon className={classes} aria-hidden='true'onClick={this.setAnimationMode} />
+        return <span className='position-relative'>
+          <FullscreenTileIcon className={classes} aria-hidden='true' onClick={this.setAnimationMode} />
+          <span className="icon-tooltip">Alternate</span></span>
     }
   }
 

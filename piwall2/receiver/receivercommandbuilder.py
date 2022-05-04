@@ -154,9 +154,9 @@ class ReceiverCommandBuilder:
         return (display, display2)
 
     """
-    Returns a set of crop args supporting two display modes: tile mode and repeat mode.
-    Tile mode is like this: https://i.imgur.com/BBrA1Cr.png
-    Repeat mode is like this: https://i.imgur.com/cpS61s8.png
+    Returns a set of crop args supporting two display modes: fullscreen mode and tile mode.
+    Fullscreen mode is like this: https://i.imgur.com/BBrA1Cr.png
+    Tile mode is like this: https://i.imgur.com/cpS61s8.png
 
     We return four crop settings because for each mode, we calculate the crop arguments
     for each of two TVs (each receiver can have at most two TVs hooked up to it).
@@ -165,7 +165,7 @@ class ReceiverCommandBuilder:
         receiver_config = self.__receiver_config_stanza
 
         #####################################################################################
-        # Do tile mode calculations first ###################################################
+        # Do fullscreen mode calculations first ###################################################
         #####################################################################################
         wall_width = self.__config_loader.get_wall_width()
         wall_height = self.__config_loader.get_wall_height()
@@ -196,9 +196,9 @@ class ReceiverCommandBuilder:
             self.__logger.warn(f"The crop y1 coordinate ({y1}) " +
                 f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
 
-        tile_mode_crop = (x0, y0, x1, y1)
+        fullscreen_mode_crop = (x0, y0, x1, y1)
 
-        tile_mode_crop2 = None
+        fullscreen_mode_crop2 = None
         if receiver_config['is_dual_video_output']:
             x0_2 = round(x_offset + ((receiver_config['x2'] / wall_width) * displayable_video_width))
             y0_2 = round(y_offset + ((receiver_config['y2'] / wall_height) * displayable_video_height))
@@ -218,10 +218,10 @@ class ReceiverCommandBuilder:
                 self.__logger.warn(f"The crop y1_2 coordinate ({y1_2}) " +
                     f"was greater than the video_height ({video_height}). This may indicate a misconfiguration.")
 
-            tile_mode_crop2 = (x0_2, y0_2, x1_2, y1_2)
+            fullscreen_mode_crop2 = (x0_2, y0_2, x1_2, y1_2)
 
         #####################################################################################
-        # Do repeat mode calculations second ################################################
+        # Do tile mode calculations second ################################################
         #####################################################################################
         displayable_video_width, displayable_video_height = (
             self.__get_displayable_video_dimensions_for_screen(
@@ -234,9 +234,9 @@ class ReceiverCommandBuilder:
         y0 = round(y_offset)
         x1 = round(x_offset + displayable_video_width)
         y1 = round(y_offset + displayable_video_height)
-        repeat_mode_crop = (x0, y0, x1, y1)
+        tile_mode_crop = (x0, y0, x1, y1)
 
-        repeat_mode_crop2 = None
+        tile_mode_crop2 = None
         if receiver_config['is_dual_video_output']:
             displayable_video_width, displayable_video_height = (
                 self.__get_displayable_video_dimensions_for_screen(
@@ -249,15 +249,15 @@ class ReceiverCommandBuilder:
             y0 = round(y_offset)
             x1 = round(x_offset + displayable_video_width)
             y1 = round(y_offset + displayable_video_height)
-            repeat_mode_crop2 = (x0, y0, x1, y1)
+            tile_mode_crop2 = (x0, y0, x1, y1)
 
         crop_args = {
+            DisplayMode.DISPLAY_MODE_FULLSCREEN: fullscreen_mode_crop,
             DisplayMode.DISPLAY_MODE_TILE: tile_mode_crop,
-            DisplayMode.DISPLAY_MODE_REPEAT: repeat_mode_crop,
         }
         crop_args2 = {
+            DisplayMode.DISPLAY_MODE_FULLSCREEN: fullscreen_mode_crop2,
             DisplayMode.DISPLAY_MODE_TILE: tile_mode_crop2,
-            DisplayMode.DISPLAY_MODE_REPEAT: repeat_mode_crop2,
         }
         return (crop_args, crop_args2)
 

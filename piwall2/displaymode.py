@@ -4,12 +4,12 @@ from piwall2.controlmessagehelper import ControlMessageHelper
 
 class DisplayMode:
     
-    # Tile mode is like this: https://i.imgur.com/BBrA1Cr.png
-    # Repeat mode is like this: https://i.imgur.com/cpS61s8.png
+    # Fullscreen mode is like this: https://i.imgur.com/BBrA1Cr.png
+    # Tile mode is like this: https://i.imgur.com/cpS61s8.png
+    DISPLAY_MODE_FULLSCREEN = 'DISPLAY_MODE_FULLSCREEN'
     DISPLAY_MODE_TILE = 'DISPLAY_MODE_TILE'
-    DISPLAY_MODE_REPEAT = 'DISPLAY_MODE_REPEAT'    
-    DISPLAY_MODES = (DISPLAY_MODE_TILE, DISPLAY_MODE_REPEAT)
-    DEFAULT_DISPLAY_MODE = DISPLAY_MODE_TILE
+    DISPLAY_MODES = (DISPLAY_MODE_FULLSCREEN, DISPLAY_MODE_TILE)
+    DEFAULT_DISPLAY_MODE = DISPLAY_MODE_FULLSCREEN
 
     def __init__(self):
         self.__settings_db = piwall2.broadcaster.settingsdb.SettingsDb()
@@ -65,10 +65,10 @@ class DisplayMode:
         new_display_modes_for_db = {}
         new_display_mode_by_tv_id = {}
         for key, old_display_mode in old_display_modes.items():
-            if old_display_mode == self.DISPLAY_MODE_TILE:
-                new_display_mode = self.DISPLAY_MODE_REPEAT
-            else:
+            if old_display_mode == self.DISPLAY_MODE_FULLSCREEN:
                 new_display_mode = self.DISPLAY_MODE_TILE
+            else:
+                new_display_mode = self.DISPLAY_MODE_FULLSCREEN
             new_display_modes_for_db[key] = new_display_mode
 
             tv_id = self.__settings_db.get_tv_id_from_settings_key(key)

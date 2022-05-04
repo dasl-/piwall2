@@ -45,17 +45,17 @@ class CurrentlyPlayingVideo extends React.Component {
           <div className='container animation-container pt-1 px-0 mt-1'>
           <div className='row d-flex justify-content-center'>
             <SvgButton
+              button_animation_mode='ANIMATION_MODE_FULLSCREEN'
+              setAnimationMode={this.props.setAnimationMode}
+              app_animation_mode={this.props.animation_mode}
+            />
+            <SvgButton
               button_animation_mode='ANIMATION_MODE_TILE'
               setAnimationMode={this.props.setAnimationMode}
               app_animation_mode={this.props.animation_mode}
             />
             <SvgButton
-              button_animation_mode='ANIMATION_MODE_REPEAT'
-              setAnimationMode={this.props.setAnimationMode}
-              app_animation_mode={this.props.animation_mode}
-            />
-            <SvgButton
-              button_animation_mode='ANIMATION_MODE_TILE_REPEAT'
+              button_animation_mode='ANIMATION_MODE_FULLSCREEN_TILE'
               setAnimationMode={this.props.setAnimationMode}
               app_animation_mode={this.props.animation_mode}
             />

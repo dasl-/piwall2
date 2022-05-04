@@ -12,8 +12,8 @@ class Animator:
     # No animation
     ANIMATION_MODE_NONE = 'ANIMATION_MODE_NONE'
 
-    # Cycles between switching all TVs to DISPLAY_MODE_TILE and DISPLAY_MODE_REPEAT
-    ANIMATION_MODE_TILE_REPEAT = 'ANIMATION_MODE_TILE_REPEAT'
+    # Cycles between switching all TVs to DISPLAY_MODE_FULLSCREEN and DISPLAY_MODE_TILE
+    ANIMATION_MODE_FULLSCREEN_TILE = 'ANIMATION_MODE_FULLSCREEN_TILE'
 
     ANIMATION_MODE_RAIN = 'ANIMATION_MODE_RAIN'
     ANIMATION_MODE_SPIRAL = 'ANIMATION_MODE_SPIRAL'
@@ -26,16 +26,16 @@ class Animator:
     ANIMATION_MODE_UP = 'ANIMATION_MODE_UP'
     ANIMATION_MODE_DOWN = 'ANIMATION_MODE_DOWN'
 
+    # Pseudo animation mode: turn all the TVs to DISPLAY_MODE_FULLSCREEN
+    ANIMATION_MODE_FULLSCREEN = 'ANIMATION_MODE_FULLSCREEN'
+
     # Pseudo animation mode: turn all the TVs to DISPLAY_MODE_TILE
     ANIMATION_MODE_TILE = 'ANIMATION_MODE_TILE'
 
-    # Pseudo animation mode: turn all the TVs to DISPLAY_MODE_REPEAT
-    ANIMATION_MODE_REPEAT = 'ANIMATION_MODE_REPEAT'
-
-    ANIMATION_MODES = (ANIMATION_MODE_NONE, ANIMATION_MODE_TILE_REPEAT, ANIMATION_MODE_LEFT,
-        ANIMATION_MODE_RIGHT, ANIMATION_MODE_UP, ANIMATION_MODE_DOWN, ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT,
+    ANIMATION_MODES = (ANIMATION_MODE_NONE, ANIMATION_MODE_FULLSCREEN_TILE, ANIMATION_MODE_LEFT,
+        ANIMATION_MODE_RIGHT, ANIMATION_MODE_UP, ANIMATION_MODE_DOWN, ANIMATION_MODE_FULLSCREEN, ANIMATION_MODE_TILE,
         ANIMATION_MODE_RAIN, ANIMATION_MODE_SPIRAL)
-    PSEUDO_ANIMATION_MODES = (ANIMATION_MODE_TILE, ANIMATION_MODE_REPEAT)
+    PSEUDO_ANIMATION_MODES = (ANIMATION_MODE_FULLSCREEN, ANIMATION_MODE_TILE)
 
     __NUM_SECS_BTWN_DB_UPDATES = 2
 
@@ -52,10 +52,10 @@ class Animator:
 
     def set_animation_mode(self, animation_mode):
         if animation_mode in self.PSEUDO_ANIMATION_MODES:
-            if animation_mode == self.ANIMATION_MODE_TILE:
-                display_mode = DisplayMode.DISPLAY_MODE_TILE
+            if animation_mode == self.ANIMATION_MODE_FULLSCREEN:
+                display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
             else:
-                display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+                display_mode = DisplayMode.DISPLAY_MODE_TILE
 
             animation_mode = self.ANIMATION_MODE_NONE
             display_mode_by_tv_id = {}
@@ -90,10 +90,10 @@ class Animator:
                 break
 
         if are_all_display_modes_the_same:
-            if first_display_mode == DisplayMode.DISPLAY_MODE_TILE:
+            if first_display_mode == DisplayMode.DISPLAY_MODE_FULLSCREEN:
+                return self.ANIMATION_MODE_FULLSCREEN
+            elif first_display_mode == DisplayMode.DISPLAY_MODE_TILE:
                 return self.ANIMATION_MODE_TILE
-            elif first_display_mode == DisplayMode.DISPLAY_MODE_REPEAT:
-                return self.ANIMATION_MODE_REPEAT
 
         return self.ANIMATION_MODE_NONE
 
@@ -110,10 +110,10 @@ class Animator:
             if not self.__should_update(2):
                 return
             display_mode_by_tv_id = self.__get_current_display_modes()
-        elif self.__animation_mode == self.ANIMATION_MODE_TILE_REPEAT:
+        elif self.__animation_mode == self.ANIMATION_MODE_FULLSCREEN_TILE:
             if not self.__should_update(2):
                 return
-            display_mode_by_tv_id = self.__get_display_modes_for_tile_repeat()
+            display_mode_by_tv_id = self.__get_display_modes_for_fullscreen_tile()
         elif (
             self.__animation_mode in (
                 self.ANIMATION_MODE_LEFT, self.ANIMATION_MODE_RIGHT,
@@ -166,14 +166,14 @@ class Animator:
             display_mode_by_tv_id[tv_id] = tv_settings[SettingsDb.SETTING_DISPLAY_MODE]
         return display_mode_by_tv_id
 
-    def __get_display_modes_for_tile_repeat(self):
+    def __get_display_modes_for_fullscreen_tile(self):
         # Change modes every N seconds
         num_ticks_before_changing = self.__ticks_per_second * 2
         adjusted_tick = math.floor(self.__ticks / num_ticks_before_changing)
         if adjusted_tick % 2 == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_TILE
+            display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
         else:
-            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
+            display_mode = DisplayMode.DISPLAY_MODE_TILE
 
         tv_ids = self.__config_loader.get_tv_ids_list()
         display_mode_by_tv_id = {}
@@ -201,17 +201,17 @@ class Animator:
             tv_ids = self.__config_loader.get_wall_rows()[row_number]
 
         if self.__ticks == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_TILE
+            display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
         elif self.__animation_mode in (self.ANIMATION_MODE_LEFT, self.ANIMATION_MODE_RIGHT):
             if math.floor((self.__ticks - 1) / num_columns) % 2 == 0:
-                display_mode = DisplayMode.DISPLAY_MODE_REPEAT
-            else:
                 display_mode = DisplayMode.DISPLAY_MODE_TILE
+            else:
+                display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
         elif self.__animation_mode in (self.ANIMATION_MODE_UP, self.ANIMATION_MODE_DOWN):
             if math.floor((self.__ticks - 1) / num_rows) % 2 == 0:
-                display_mode = DisplayMode.DISPLAY_MODE_REPEAT
-            else:
                 display_mode = DisplayMode.DISPLAY_MODE_TILE
+            else:
+                display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
 
         display_mode_by_tv_id = {}
         for tv_id in tv_ids:
@@ -230,11 +230,11 @@ class Animator:
             tv_ids = self.__get_tv_ids_in_row_column_intersection(row_number, column_number)
 
         if self.__ticks == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_TILE
+            display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
         elif math.floor((self.__ticks - 1) / (num_rows * num_columns)) % 2 == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
-        else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
+        else:
+            display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
 
         display_mode_by_tv_id = {}
         for tv_id in tv_ids:
@@ -275,11 +275,11 @@ class Animator:
                 tv_ids = [] # pause at end of cycle
 
         if self.__ticks == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_TILE
+            display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
         elif math.floor(adjusted_tick / ticks_per_cycle) % 2 == 0:
-            display_mode = DisplayMode.DISPLAY_MODE_REPEAT
-        else:
             display_mode = DisplayMode.DISPLAY_MODE_TILE
+        else:
+            display_mode = DisplayMode.DISPLAY_MODE_FULLSCREEN
 
         display_mode_by_tv_id = {}
         for tv_id in tv_ids:

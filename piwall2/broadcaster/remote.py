@@ -19,9 +19,9 @@ class Remote:
     # This defines the order in which we will cycle through the animation modes by pressing
     # the KEY_BRIGHTNESSUP / KEY_BRIGHTNESSDOWN buttons
     __ANIMATION_MODES = (
+        Animator.ANIMATION_MODE_FULLSCREEN,
         Animator.ANIMATION_MODE_TILE,
-        Animator.ANIMATION_MODE_REPEAT,
-        Animator.ANIMATION_MODE_TILE_REPEAT,
+        Animator.ANIMATION_MODE_FULLSCREEN_TILE,
         Animator.ANIMATION_MODE_SPIRAL,
     )
 
@@ -151,10 +151,10 @@ class Remote:
             self.__display_mode.toggle_display_mode((tv_id,))
         elif key_name == 'KEY_SCREEN' and sequence == '00':
             animation_mode = self.__animator.get_animation_mode()
-            if animation_mode == Animator.ANIMATION_MODE_REPEAT:
-                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
+            if animation_mode == Animator.ANIMATION_MODE_TILE:
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_FULLSCREEN)
             else:
-                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_REPEAT)
+                self.__animator.set_animation_mode(Animator.ANIMATION_MODE_TILE)
         elif key_name == 'KEY_ENTER' and sequence == '00':
             if self.__currently_playing_item:
                 self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])

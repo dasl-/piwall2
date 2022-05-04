@@ -35,7 +35,7 @@ class TvWall extends React.Component {
             Object.values(this.state.scaledTvConfig).map((tv, index) => {
               const tv_id = tv['tv_id'];
               const this_tv_data = this.props.tv_data[tv_id] ? this.props.tv_data[tv_id] : {};
-              const display_mode = 'display_mode' in this_tv_data ? this_tv_data['display_mode'] : 'DISPLAY_MODE_TILE';
+              const display_mode = 'display_mode' in this_tv_data ? this_tv_data['display_mode'] : 'DISPLAY_MODE_FULLSCREEN';
               const loading = 'loading' in this_tv_data ? this_tv_data['loading'] : false;
               return (
                 <Tv
@@ -50,10 +50,10 @@ class TvWall extends React.Component {
                   display_mode={display_mode}
                   loading={loading}
                   setDisplayMode={this.props.setDisplayMode}
+                  displayModeFullscreenBgSize={tv.displayModeFullscreenBgSize}
+                  displayModeFullscreenBgPos={tv.displayModeFullscreenBgPos}
                   displayModeTileBgSize={tv.displayModeTileBgSize}
                   displayModeTileBgPos={tv.displayModeTileBgPos}
-                  displayModeRepeatBgSize={tv.displayModeRepeatBgSize}
-                  displayModeRepeatBgPos={tv.displayModeRepeatBgPos}
                 />
               );
             })
@@ -117,25 +117,25 @@ class TvWall extends React.Component {
       const width = (this_tv_config.width / wall_width) * displayable_video_width;
       const height = (this_tv_config.height / wall_height) * displayable_video_height;
 
-      // Background image positioning params for DISPLAY_MODE_TILE
-      const displayModeTileBgSize = video_width + 'px ' + video_height + 'px';
-      const displayModeTileBgPos = '-' + x0 + 'px -' + y0 + 'px';
+      // Background image positioning params for DISPLAY_MODE_FULLSCREEN
+      const displayModeFullscreenBgSize = video_width + 'px ' + video_height + 'px';
+      const displayModeFullscreenBgPos = '-' + x0 + 'px -' + y0 + 'px';
 
-      // Background image positioning params for DISPLAY_MODE_REPEAT
-      const displayModeRepeatBgSize = 'cover';
+      // Background image positioning params for DISPLAY_MODE_TILE
+      const displayModeTileBgSize = 'cover';
       const [displayableBgWidth, displayableBgHeight] = this.getDisplayableVideoDimensionsForScreen(
         video_width, video_height, width, height
       );
       const scale = width / displayableBgWidth;
       const tv_aspect_ratio = width / height;
       const video_aspect_ratio = video_width / video_height;
-      let displayModeRepeatBgPos = null;
+      let displayModeTileBgPos = null;
       if (video_aspect_ratio >= tv_aspect_ratio) {
         const x_offset = scale * ((video_width - displayableBgWidth) / 2);
-        displayModeRepeatBgPos = '-' + x_offset + 'px 0px';
+        displayModeTileBgPos = '-' + x_offset + 'px 0px';
       } else {
         const y_offset = scale * ((video_height - displayableBgHeight) / 2);
-        displayModeRepeatBgPos = '0px -' + y_offset + 'px';
+        displayModeTileBgPos = '0px -' + y_offset + 'px';
       }
 
       // Populate the new config...
@@ -146,10 +146,10 @@ class TvWall extends React.Component {
           y: y0,
           width: width,
           height: height,
+          displayModeFullscreenBgSize: displayModeFullscreenBgSize,
+          displayModeFullscreenBgPos: displayModeFullscreenBgPos,
           displayModeTileBgSize: displayModeTileBgSize,
           displayModeTileBgPos: displayModeTileBgPos,
-          displayModeRepeatBgSize: displayModeRepeatBgSize,
-          displayModeRepeatBgPos: displayModeRepeatBgPos,
         }
       }
     }

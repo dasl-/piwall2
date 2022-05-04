@@ -10,7 +10,7 @@ and re-read during program execution. They may be modified from a UI.
 class SettingsDb:
 
     # This is a per-TV setting.
-    # Determines whether each individual TV is in tile vs repeat mode.
+    # Determines whether each individual TV is in fullscreen vs tile mode.
     # See: DisplayMode
     SETTING_DISPLAY_MODE = 'display_mode'
 
