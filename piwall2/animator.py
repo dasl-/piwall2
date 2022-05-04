@@ -106,6 +106,7 @@ class Animator:
         else:
             self.__ticks += 1
 
+        display_mode_by_tv_id = None
         if self.__animation_mode == self.ANIMATION_MODE_NONE:
             if not self.__should_update(2):
                 return
