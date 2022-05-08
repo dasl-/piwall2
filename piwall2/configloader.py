@@ -34,9 +34,9 @@ class ConfigLoader:
 
     __APP_TV_CONFIG_FILE = DirectoryUtils().root_dir + "/app/src/tv_config.json"
 
-    def __init__(self):
+    def __init__(self, should_set_log_level = True):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__load_config_if_not_loaded()
+        self.__load_config_if_not_loaded(should_set_log_level)
 
     # returns dict keyed by receiver hostname, one item per receiver, even if the receiver has two TVs.
     def get_receivers_config(self):
@@ -105,7 +105,7 @@ class ConfigLoader:
         file.write(tv_config_json)
         file.close()
 
-    def __load_config_if_not_loaded(self):
+    def __load_config_if_not_loaded(self, should_set_log_level):
         if ConfigLoader.__is_loaded:
             return
 
@@ -167,9 +167,8 @@ class ConfigLoader:
         ConfigLoader.__raw_config = raw_config
         ConfigLoader.__wall_rows, ConfigLoader.__wall_columns = self.__compute_wall_rows_and_columns()
 
-        if 'log_level' in raw_config:
+        if 'log_level' in raw_config and should_set_log_level:
             log_level = raw_config['log_level']
-            self.__logger.info(f'Setting log_level to {log_level}.')
             Logger.set_level(log_level)
 
         ConfigLoader.__is_loaded = True
