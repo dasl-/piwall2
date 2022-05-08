@@ -25,6 +25,7 @@ main(){
     if [[ "$installation_type" != 'receiver' ]]; then
         updateDbSchema
         buildWebApp
+        checkYoutubeApiKey
     fi
 
     # Do receiver stuff
@@ -175,6 +176,17 @@ buildWebApp(){
 
     info "Building web app..."
     npm run build --prefix "$BASE_DIR"/app
+}
+
+checkYoutubeApiKey(){
+    info "Checking for youtube API key..."
+    local youtube_api_key
+    youtube_api_key=$("$BASE_DIR"/utils/set_youtube_api_key)
+    if [ -z "${youtube_api_key}" ]; then
+        warn "WARNING: your youtube API key has not been set. See: https://github.com/dasl-/piwall2/blob/main/docs/setting_your_youtube_api_key.adoc"
+    else
+        info "Found youtube API key!"
+    fi
 }
 
 # We disable wifi because multicast doesn't work well over wifi. Since the TV wall

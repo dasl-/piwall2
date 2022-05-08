@@ -70,13 +70,4 @@ An application’s developer team is allowed to have separate API keys for test,
 It is acceptable to have a separate API Project for each different use case of your API service. Examples include ... One API project for a production server, one for a development server.
 ____
 
-Thus, we support specifying up to three API keys via the `app/.env.development` and `app/.env.production` files. Example of what you might put in these files:
-....
-REACT_APP_GOOGLE_API_KEY=<your prod environment API key here>
-REACT_APP_GOOGLE_API_KEY_DEV=<your dev environment API key here>
-REACT_APP_GOOGLE_API_KEY_TEST=<your test environment API key here>
-....
-
-You can toggle between which environment is in use via appending url params, e.g. `http://piwall.tv/?dev`, `http://piwall.tv/?test`, or `http://piwall.tv/?prod`. Visiting the app with one of these URL params will set a cookie that persists your environment until you explicitly change it or clear your cookies. The default environment is prod.
-
 If you create separate API keys per environment for reasons of separating quota, you will need to create each API key in a new google project, because API keys in the same google project share quota. You do not need a separate google account to create new API keys -- up to 25 google projects may be created per google account.
