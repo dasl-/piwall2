@@ -6,7 +6,6 @@ BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 &&
 RESTART_REQUIRED_FILE='/tmp/piwall2_install_restart_required'
 CONFIG=/boot/config.txt
 old_config=$(cat $CONFIG)
-is_restart_required=false
 installation_type=false
 force_enable_composite_video_output=false
 disable_wifi=true
@@ -43,7 +42,7 @@ main(){
 
     new_config=$(cat $CONFIG)
     config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
-    if [[ $is_restart_required = true || -n "$config_diff" ]] ; then
+    if [[ -f $RESTART_REQUIRED_FILE || -n "$config_diff" ]] ; then
         info "Please restart to complete installation!"
         info "Config diff:\n"
         echo -e "$config_diff"

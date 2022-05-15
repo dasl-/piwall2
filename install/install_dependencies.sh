@@ -112,12 +112,12 @@ clearYoutubedlCache(){
 }
 
 installNode(){
-    info "\\nInstalling latest version of node and npm..."
+    info "\\nInstalling node and npm..."
 
     # Install node and npm. Installing this with the OS's default packages provided by apt installs a pretty old
     # version of node and npm. We need a newer version.
     # See: https://github.com/nodesource/distributions/blob/master/README.md#installation-instructions
-    curl -fsSL https://deb.nodesource.com/setup_16.x | sudo bash -
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash -
     sudo apt-get install -y nodejs
 
     info "\\nInstalling react app dependencies..."
