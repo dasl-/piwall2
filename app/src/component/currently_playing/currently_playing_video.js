@@ -8,6 +8,7 @@ import Slider from 'rc-slider';
 import LoadWithVideo from '../util/load_with_video';
 import TvWall from '../tv_wall/tv_wall';
 import SvgButton from '../vfx_button/svg_button';
+import playlist_placeholder_img from './playlist-placeholder.png';
 
 class CurrentlyPlayingVideo extends React.Component {
   constructor(props) {
@@ -27,7 +28,7 @@ class CurrentlyPlayingVideo extends React.Component {
       <div>
           <LoadWithVideo video={this.props.video}>
             <TvWall
-              src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
+              src={(this.props.video) ? this.props.video.thumbnail : playlist_placeholder_img}
               alt={(this.props.video) ? this.props.video.title : ''}
               ref={ (tv_wall) => { this.tv_wall = tv_wall } }
               tv_data={this.props.tv_data}
