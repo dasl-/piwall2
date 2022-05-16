@@ -20,7 +20,7 @@
   transition-timing-function: ease-in;
 }
 .playlist-video-thumbnail-container {
-  background-image: url('/grain.png');
+  background-image: url('../../grain.png');
   background-blend-mode:multiply;
 }
 

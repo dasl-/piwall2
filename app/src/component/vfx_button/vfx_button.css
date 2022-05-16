@@ -7,7 +7,7 @@
 .vfx-button.selected {
   text-stroke: 1px #421b0e;
   -webkit-text-stroke: 1px #421b0e;
-  background-color: linear-gradient(180deg, #845414 0%, #cdb352 100%), url(/grain.png) !important;
+  background-color: linear-gradient(180deg, #845414 0%, #cdb352 100%), url('../../grain.png') !important;
   border: 1px solid #f4ddb1;
 }
 

@@ -6,7 +6,7 @@ $primary-dark: #421b0e;
 $header-font: ltc-globe-gothic, sans-serif;
 $body-font: century-old-style-std, serif;
 
-$background-primary: linear-gradient(180deg, $accent-color1 0%, $accent-color2 100%), url(/grain.png); // Splash and input background
+$background-primary: linear-gradient(180deg, $accent-color1 0%, $accent-color2 100%), url('../grain.png'); // Splash and input background
 $background-light: transparent;   // Main background
 
 // logo shadow

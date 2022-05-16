@@ -128,7 +128,7 @@ body {
   color:$primary-dark;
 }
 .up-next {
-  background: url('/grain.png'), $primary-light;
+  background: url('../grain.png'), $primary-light;
   background-blend-mode:multiply;
   border-left:4px solid $accent-color2;
 }
@@ -252,7 +252,7 @@ body {
 }
 .thumbnail-container {
   background-color: $accent-color2;
-  background-image: url('/grain.png');
+  background-image: url('../grain.png');
   background-blend-mode:multiply;
   border:.2rem solid $primary-light;
   aspect-ratio: 4 / 3;
