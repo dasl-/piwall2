@@ -317,8 +317,7 @@ setOverVoltage(){
     # comment out existing over_voltage lines in config
     sudo sed $CONFIG -i -e "s/^\(over_voltage=.*\)/#\1/"
 
-    # create the new stanza -- this is only necessary on raspberry pi model 4 AFAIK.
-    echo -e '\n[pi4]\nover_voltage=2\n\n[all]' | sudo tee -a $CONFIG >/dev/null
+    echo -e 'over_voltage=2' | sudo tee -a $CONFIG >/dev/null
 }
 
 fail(){
