@@ -6,6 +6,7 @@ import subprocess
 import time
 
 from piwall2.animator import Animator
+from piwall2.broadcaster.loadingscreensignaller import LoadingScreenSignaller
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.remote import Remote
 from piwall2.configloader import ConfigLoader
@@ -34,6 +35,7 @@ class Queue:
         self.__is_broadcast_in_progress = False
         self.__animator = Animator(self.__TICKS_PER_SECOND)
         self.__remote = Remote(self.__TICKS_PER_SECOND)
+        self.__loading_screen_signaller = LoadingScreenSignaller()
 
         # house keeping
         self.__volume_controller.set_vol_pct(50)
@@ -64,22 +66,9 @@ class Queue:
         log_uuid = Logger.make_uuid()
         Logger.set_uuid(log_uuid)
         self.__logger.info(f"Starting broadcast for playlist_video_id: {playlist_item['playlist_video_id']}")
-        msg = {
-            'log_uuid': log_uuid,
-            'loading_screen_data': self.__choose_random_loading_screen()
-        }
-        self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, msg)
+        self.__loading_screen_signaller.send_loading_screen_signal(log_uuid)
         self.__do_broadcast(playlist_item['url'], log_uuid)
         self.__playlist_item = playlist_item
-
-    def __choose_random_loading_screen(self):
-        loading_screens_config = self.__config_loader.get_raw_config()['loading_screens']
-        if self.__config_loader.is_any_receiver_dual_video_output():
-            options = loading_screens_config['720p']
-        else:
-            options = loading_screens_config['1080p']
-        loading_screen_data = random.choice(list(options.values()))
-        return loading_screen_data
 
     def __play_screensaver(self):
         log_uuid = 'SCREENSAVER__' + Logger.make_uuid()

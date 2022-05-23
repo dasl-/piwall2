@@ -7,6 +7,7 @@ import time
 import traceback
 import youtube_dl
 
+from piwall2.broadcaster.loadingscreensignaller import LoadingScreenSignaller
 from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -87,7 +88,7 @@ class VideoBroadcaster:
     def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
         if self.__show_loading_screen:
-            self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, {})
+            LoadingScreenSignaller().send_loading_screen_signal(Logger.get_uuid())
 
         """
         What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:
