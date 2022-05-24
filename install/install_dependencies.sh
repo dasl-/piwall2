@@ -19,8 +19,8 @@ main(){
 
     stopPiwallServices
     updateAndInstallAptPackages
-    buildAndInstallOmxplayerFork
     updateAndInstallPythonPackages
+    buildAndInstallOmxplayerFork
     clearYoutubedlCache
 
     if [[ "$installation_type" != "receiver" ]]; then
@@ -89,18 +89,17 @@ updateAndInstallAptPackages(){
     sudo apt update
     sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv
     sudo apt -y full-upgrade
-    sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
+}
+
+updateAndInstallPythonPackages(){
+    info "\\nUpdating and installing python packages..."
+    sudo pip3 install --upgrade youtube_dl yt-dlp toml pyjson5 pytz
 }
 
 # A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.
 buildAndInstallOmxplayerFork(){
     info "\\nBuilding and installing omxplayer fork..."
     "$BASE_DIR"/install/build_omxplayer.sh -b "$omxplayer_branch"
-}
-
-updateAndInstallPythonPackages(){
-    info "\\nUpdating and installing python packages..."
-    sudo pip3 install --upgrade youtube_dl yt-dlp toml pytz
 }
 
 # Just in case the youtube-dl cache got polluted, as it has before...

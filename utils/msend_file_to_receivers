@@ -10,6 +10,7 @@ root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
 from piwall2.broadcaster.videobroadcaster import VideoBroadcaster
+from piwall2.config import Config
 from piwall2.cmdrunner import CmdRunner
 from piwall2.logger import Logger
 from piwall2.receiver.receiver import Receiver
@@ -29,6 +30,7 @@ def parseArgs():
 
 logger = Logger()
 args = parseArgs()
+Config.load_config_if_not_loaded()
 
 logger.info("Stopping receiver service on receivers...")
 cmd_runner = CmdRunner()

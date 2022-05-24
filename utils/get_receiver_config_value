@@ -7,6 +7,7 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
+from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.logger import Logger
 
@@ -24,12 +25,10 @@ for this receiver as it is set in the config file {ConfigLoader.CONFIG_PATH}.
     return args
 
 def main():
-    Logger.set_level(Logger.QUIET) # silence any other output to stdout, because we parse this script's stdout output.
-    if not os.path.isfile(ConfigLoader.CONFIG_PATH):
-        print(f"Config file does not exist at path {ConfigLoader.CONFIG_PATH}.")
-        sys.exit(0)
-
     args = parse_args()
+    Logger.set_level(Logger.QUIET) # silence any other output to stdout, because we parse this script's stdout output.
+    Config.load_config_if_not_loaded(should_set_log_level = False)
+
     config_keys_to_print = args.keys.split(',')
     receiver_config_stanza = ConfigLoader().get_own_receiver_config_stanza()
     for key in config_keys_to_print:

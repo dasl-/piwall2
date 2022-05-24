@@ -8,6 +8,7 @@ import time
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
+from piwall2.config import Config
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
@@ -23,6 +24,7 @@ def parseArgs():
 
 
 args = parseArgs()
+Config.load_config_if_not_loaded()
 log_level = Logger.get_level()
 if log_level is None or log_level <= Logger.DEBUG:
     # Prevent MulticastHelper.__send_video_stream_msg debug logs from being too spammy

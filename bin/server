@@ -6,6 +6,8 @@ import sys
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
+from piwall2.config import Config
 from piwall2.broadcaster.server import Server
 
+Config.load_config_if_not_loaded()
 Server().serve_forever()

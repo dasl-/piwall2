@@ -9,6 +9,7 @@ from piwall2.animator import Animator
 from piwall2.broadcaster.loadingscreensignaller import LoadingScreenSignaller
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.remote import Remote
+from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
@@ -71,18 +72,30 @@ class Queue:
         self.__playlist_item = playlist_item
 
     def __play_screensaver(self):
+        use_channel_videos_as_screensavers = Config.get('use_channel_videos_as_screensavers', False)
+        use_screensavers = Config.get('use_screensavers', True)
+
+        if not use_channel_videos_as_screensavers and not use_screensavers:
+            return
+
         log_uuid = 'SCREENSAVER__' + Logger.make_uuid()
         Logger.set_uuid(log_uuid)
-        # choose random screensaver video to play
-        screensavers_config = self.__config_loader.get_raw_config()['screensavers']
-        if self.__config_loader.is_any_receiver_dual_video_output():
-            options = screensavers_config['720p']
-        else:
-            options = screensavers_config['1080p']
-        screensaver_data = random.choice(list(options.values()))
-        path = DirectoryUtils().root_dir + '/' + screensaver_data['video_path']
+
+        if use_channel_videos_as_screensavers:
+            self.__remote.increment_channel()
+            screensaver_video_path = self.__remote.get_video_path_for_current_channel()
+        else: # use_screensavers
+            # choose random screensaver video to play
+            screensavers_config = self.__config_loader.get_raw_config()['screensavers']
+            if self.__config_loader.is_any_receiver_dual_video_output():
+                options = screensavers_config['720p']
+            else:
+                options = screensavers_config['1080p']
+            screensaver_data = random.choice(list(options.values()))
+            screensaver_video_path = DirectoryUtils().root_dir + '/' + screensaver_data['video_path']
+
         self.__logger.info("Starting broadcast of screensaver...")
-        self.__do_broadcast(path, log_uuid)
+        self.__do_broadcast(screensaver_video_path, log_uuid)
 
     def __do_broadcast(self, url, log_uuid):
         cmd = (f"{DirectoryUtils().root_dir}/bin/broadcast --url {shlex.quote(url)} " +
