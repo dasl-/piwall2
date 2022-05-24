@@ -1,0 +1,17 @@
+{
+    // Optional, string, default: "info".
+    // Valid values: "quiet", "error", "warning", "info", "debug", "all" (from quietest to most verbose).
+    "log_level": "info",
+
+    // Optional, boolean, default: true. Whether to play screensaver videos when nothing is in the
+    // playlist queue.
+    "use_screensavers": true,
+
+    // Optional, boolean, default: false. Whether to play "channel videos" when nothing is in the
+    // playlist queue. If only one of "use_screensavers" and "use_channel_videos_as_screensavers"
+    // is true, we will play screensavers, using either the "screensaver" or "channel" videos
+    // respectively. If both "use_screensavers" and "use_channel_videos_as_screensavers" are true,
+    // we will use channel videos as the screensavers.
+    "use_channel_videos_as_screensavers": false,
+
+}

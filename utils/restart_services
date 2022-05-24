@@ -7,12 +7,14 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
+from piwall2.config import Config
 from piwall2.cmdrunner import CmdRunner
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.configloader import ConfigLoader
 
 def main():
     args = parse_args()
+    Config.load_config_if_not_loaded()
     cmd_runner = CmdRunner()
     if args.should_copy_config:
         copy_config_to_receivers(cmd_runner)

@@ -8,6 +8,7 @@ import traceback
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
+from piwall2.config import Config
 from piwall2.receiver.videoreceiver import VideoReceiver
 from piwall2.logger import Logger
 
@@ -27,6 +28,7 @@ if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 
 try:
+    Config.load_config_if_not_loaded()
     VideoReceiver().receive_and_play_video(args.command)
 except Exception:
     logger = Logger().set_namespace(os.path.basename(__file__))

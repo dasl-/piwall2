@@ -7,5 +7,7 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 from piwall2.broadcaster.queue import Queue
+from piwall2.config import Config
 
+Config.load_config_if_not_loaded()
 Queue().run()

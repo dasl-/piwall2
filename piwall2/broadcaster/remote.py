@@ -123,6 +123,53 @@ class Remote:
             if (time.time() - start_time) > ((1 / self.__ticks_per_second) / 2):
                 return
 
+    def increment_channel(self):
+        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+            return
+
+        if self.__channel is None:
+            self.__channel = 0
+        else:
+            self.__channel = (self.__channel + 1) % len(Remote.__CHANNEL_VIDEOS)
+
+    def decrement_channel(self):
+        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+            return
+
+        if self.__channel is None:
+            self.__channel = len(Remote.__CHANNEL_VIDEOS) - 1
+        else:
+            self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
+
+    def get_video_path_for_current_channel(self):
+        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
+        return DirectoryUtils().root_dir + '/' + channel_data['video_path']
+
+    def __enqueue_video_for_current_channel(self):
+        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
+        thumbnail_path = '/' + channel_data['thumbnail_path']
+
+        """
+        Why is this necessary? One might think the `skip` call below would be sufficient.
+
+        We could be reading multiple channel up / down button presses in here before returning
+        control back to the queue. If we didn't remove all videos with TYPE_CHANNEL_VIDEO, we'd be marking only the
+        currently playing video as skipped. That is, for each additional channel up / down button press we handled
+        before returning control back to the queue, we wouldn't remove / skip those.
+        """
+        self.__playlist.remove_videos_of_type(Playlist.TYPE_CHANNEL_VIDEO)
+
+        if self.__currently_playing_item:
+            # Note: we have logic in the Queue class to re-enqueue videos of type TYPE_VIDEO that were skipped
+            # in this manner. The video skipped here will be added back at the head of the queue.
+            # See: Queue::__should_reenqueue_current_playlist_item
+            self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
+
+        self.__playlist.enqueue(
+            self.get_video_path_for_current_channel(), thumbnail_path, channel_data['title'],
+            channel_data['duration'], '', Playlist.TYPE_CHANNEL_VIDEO
+        )
+
     def __handle_input(self, sequence, key_name, remote):
         if key_name == 'KEY_MUTE' and sequence == '00':
             current_vol_pct = self.__vol_controller.get_vol_pct()
@@ -164,22 +211,12 @@ class Remote:
         elif key_name == 'KEY_VOLUMEDOWN':
             new_volume_pct = self.__vol_controller.increment_vol_pct(inc = -self.__VOLUME_INCREMENT)
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_VOLUME, new_volume_pct)
-        elif (key_name == 'KEY_CHANNELUP' or key_name == 'KEY_CHANNELDOWN') and sequence == '00':
-            if len(Remote.__CHANNEL_VIDEOS) <= 0:
-                return
-
-            if self.__channel is None:
-                if key_name == 'KEY_CHANNELUP':
-                    self.__channel = 0
-                else:
-                    self.__channel = len(Remote.__CHANNEL_VIDEOS) - 1
-            else:
-                if key_name == 'KEY_CHANNELUP':
-                    self.__channel = (self.__channel + 1) % len(Remote.__CHANNEL_VIDEOS)
-                else:
-                    self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
-
-            self.__play_video_for_channel()
+        elif key_name == 'KEY_CHANNELUP' and sequence == '00':
+            self.increment_channel()
+            self.__enqueue_video_for_current_channel()
+        elif key_name == 'KEY_CHANNELDOWN' and sequence == '00':
+            self.decrement_channel()
+            self.__enqueue_video_for_current_channel()
         elif (key_name == 'KEY_BRIGHTNESSUP' or key_name == 'KEY_BRIGHTNESSDOWN') and sequence == '00':
             old_animation_mode = self.__animator.get_animation_mode()
             try:
@@ -196,29 +233,3 @@ class Remote:
                     increment = -1
                 new_animation_index = (old_animation_index + increment) % len(self.__ANIMATION_MODES)
             self.__animator.set_animation_mode(self.__ANIMATION_MODES[new_animation_index])
-
-    def __play_video_for_channel(self):
-        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
-        video_path = DirectoryUtils().root_dir + '/' + channel_data['video_path']
-        thumbnail_path = '/' + channel_data['thumbnail_path']
-
-        """
-        Why is this necessary? One might think the `skip` call below would be sufficient.
-
-        We could be reading multiple channel up / down button presses in here before returning
-        control back to the queue. If we didn't remove all videos with TYPE_CHANNEL_VIDEO, we'd be marking only the
-        currently playing video as skipped. That is, for each additional channel up / down button press we handled
-        before returning control back to the queue, we wouldn't remove / skip those.
-        """
-        self.__playlist.remove_videos_of_type(Playlist.TYPE_CHANNEL_VIDEO)
-
-        if self.__currently_playing_item:
-            # Note: we have logic in the Queue class to re-enqueue videos of type TYPE_VIDEO that were skipped
-            # in this manner. The video skipped here will be added back at the head of the queue.
-            # See: Queue::__should_reenqueue_current_playlist_item
-            self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
-
-        self.__playlist.enqueue(
-            video_path, thumbnail_path, channel_data['title'], channel_data['duration'], '',
-            Playlist.TYPE_CHANNEL_VIDEO
-        )
