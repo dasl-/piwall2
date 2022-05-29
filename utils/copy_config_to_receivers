@@ -20,3 +20,9 @@ scp_cmd = (
     f'{ConfigLoader.CONFIG_PATH} pi@{{}}:{ConfigLoader.CONFIG_PATH}'
 )
 cmd_runner.run_parallel(scp_cmd, include_broadcaster = False)
+
+scp_cmd2 = (
+    f'scp {CmdRunner.SSH_KEY_PATH_FLAG} {ssh_opts} ' +
+    f'{Config.CONFIG_PATH} pi@{{}}:{Config.CONFIG_PATH}'
+)
+cmd_runner.run_parallel(scp_cmd2, include_broadcaster = False)
