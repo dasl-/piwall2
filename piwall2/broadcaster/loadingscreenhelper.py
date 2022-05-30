@@ -48,7 +48,7 @@ class LoadingScreenHelper:
     the loading screen videos: only those where height <= 720.
     """
     __loading_screen_videos = None
-    __LOADING_SCREEN_CACHE_FILE = 'loading_screen_config_cache.json'
+    __LOADING_SCREEN_CACHE_PATH = DirectoryUtils().root_dir + '/loading_screen_config_cache.json'
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -87,8 +87,8 @@ class LoadingScreenHelper:
         # we play. In particular, this metadata would be loaded by the broadcast process if we passed the
         # '--show-loading-screen' flag to ./bin/broadcast.
         should_use_cache = False
-        if os.path.isfile(self.__LOADING_SCREEN_CACHE_FILE):
-            loading_screen_cache_file = open(self.__LOADING_SCREEN_CACHE_FILE, 'r')
+        if os.path.isfile(self.__LOADING_SCREEN_CACHE_PATH):
+            loading_screen_cache_file = open(self.__LOADING_SCREEN_CACHE_PATH, 'r')
             loading_screen_cache = loading_screen_cache_file.read()
             loading_screen_cache = json.loads(loading_screen_cache)
             loading_screen_cache_file.close()
@@ -123,8 +123,8 @@ class LoadingScreenHelper:
             'loading_screens': LoadingScreenHelper.__loading_screen_videos,
             'hash': loading_screen_config_hash,
         }
-        loading_screen_cache_json = json.dumps(loading_screen_cache)
-        file = open(self.__LOADING_SCREEN_CACHE_FILE, "w")
+        loading_screen_cache_json = json.dumps(loading_screen_cache, indent = 4)
+        file = open(self.__LOADING_SCREEN_CACHE_PATH, "w")
         file.write(loading_screen_cache_json)
         file.close()
         self.__logger.info("Done loading loading screen video metadata.")
