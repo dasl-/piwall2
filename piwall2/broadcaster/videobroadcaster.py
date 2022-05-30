@@ -336,7 +336,7 @@ class VideoBroadcaster:
     def get_video_info(self, assert_data_not_yet_loaded = False):
         if self.__video_info:
             if assert_data_not_yet_loaded:
-                raise Exception('Failed asserting that data was not yet loaded')
+                self.__logger.warning('Failed asserting that data was not yet loaded')
             return self.__video_info
 
         video_url_type = self.__get_video_url_type()
