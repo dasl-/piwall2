@@ -7,7 +7,8 @@ import time
 import traceback
 import youtube_dl
 
-from piwall2.broadcaster.loadingscreensignaller import LoadingScreenSignaller
+from piwall2.broadcaster.ffprober import Ffprober
+from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
 from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -89,7 +90,7 @@ class VideoBroadcaster:
     def __broadcast_internal(self):
         self.__logger.info(f"Starting broadcast for: {self.__video_url}")
         if self.__show_loading_screen:
-            LoadingScreenSignaller().send_loading_screen_signal(Logger.get_uuid())
+            LoadingScreenHelper().send_loading_screen_signal(Logger.get_uuid())
 
         """
         What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:
@@ -374,18 +375,15 @@ class VideoBroadcaster:
             self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
                 f"{self.__video_info['width']}x{self.__video_info['height']}")
         elif video_url_type == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            # TODO: guard against unsupported video formats
-            ffprobe_cmd = ('ffprobe -hide_banner -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height ' +
-                shlex.quote(self.__video_url))
-            ffprobe_output = (subprocess
-                .check_output(ffprobe_cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT)
-                .decode("utf-8"))
-            ffprobe_output = ffprobe_output.split('\n')[0]
-            ffprobe_parts = ffprobe_output.split(',')
+            video_info = Ffprober().get_video_metadata(self.__video_url, ['width', 'height'])
             self.__video_info = {
-                'width': int(ffprobe_parts[0]),
-                'height': int(ffprobe_parts[1]),
+                'width': int(video_info['width']),
+                'height': int(video_info['height']),
             }
+
+        if self.__config_loader.is_any_receiver_dual_video_output() and self.__video_info['height'] > 720:
+            raise Exception("This video's resolution is too high for a dual output receiver " +
+                f"({self.__video_info['height']} is greater than 720p).")
 
         return self.__video_info
 

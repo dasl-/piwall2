@@ -6,9 +6,10 @@ import subprocess
 import time
 
 from piwall2.animator import Animator
-from piwall2.broadcaster.loadingscreensignaller import LoadingScreenSignaller
+from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.remote import Remote
+from piwall2.broadcaster.screensaverhelper import ScreensaverHelper
 from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -36,7 +37,7 @@ class Queue:
         self.__is_broadcast_in_progress = False
         self.__animator = Animator(self.__TICKS_PER_SECOND)
         self.__remote = Remote(self.__TICKS_PER_SECOND)
-        self.__loading_screen_signaller = LoadingScreenSignaller()
+        self.__loading_screen_helper = LoadingScreenHelper()
 
         # house keeping
         self.__volume_controller.set_vol_pct(50)
@@ -67,7 +68,7 @@ class Queue:
         log_uuid = Logger.make_uuid()
         Logger.set_uuid(log_uuid)
         self.__logger.info(f"Starting broadcast for playlist_video_id: {playlist_item['playlist_video_id']}")
-        self.__loading_screen_signaller.send_loading_screen_signal(log_uuid)
+        self.__loading_screen_helper.send_loading_screen_signal(log_uuid)
         self.__do_broadcast(playlist_item['url'], log_uuid)
         self.__playlist_item = playlist_item
 
@@ -84,15 +85,17 @@ class Queue:
         if use_channel_videos_as_screensavers:
             self.__remote.increment_channel()
             screensaver_video_path = self.__remote.get_video_path_for_current_channel()
+            if screensaver_video_path is None:
+                self.__logger.info("No screensavers found in channel video config.")
+                Logger.set_uuid('')
+                return
         else: # use_screensavers
-            # choose random screensaver video to play
-            screensavers_config = self.__config_loader.get_raw_config()['screensavers']
-            if self.__config_loader.is_any_receiver_dual_video_output():
-                options = screensavers_config['720p']
-            else:
-                options = screensavers_config['1080p']
-            screensaver_data = random.choice(list(options.values()))
-            screensaver_video_path = DirectoryUtils().root_dir + '/' + screensaver_data['video_path']
+            screensaver_data = ScreensaverHelper().choose_random_screensaver()
+            if screensaver_data is None:
+                self.__logger.info("No screensavers found in config.")
+                Logger.set_uuid('')
+                return
+            screensaver_video_path = screensaver_data['video_path']
 
         self.__logger.info("Starting broadcast of screensaver...")
         self.__do_broadcast(screensaver_video_path, log_uuid)

@@ -21,7 +21,7 @@ def parseArgs():
         help='show loading screen before video playback begins')
     parser.add_argument('--no-show-loading-screen', dest='show_loading_screen', action='store_false',
         help="don't show loading screen before video playback begins")
-    parser.set_defaults(show_loading_screen=True)
+    parser.set_defaults(show_loading_screen=False)
 
     args = parser.parse_args()
     return args

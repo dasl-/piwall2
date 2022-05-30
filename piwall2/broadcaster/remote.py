@@ -4,17 +4,20 @@ import time
 
 from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
+from piwall2.broadcaster.ffprober import Ffprober
+from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
+from piwall2.timeutils import TimeUtils
 from piwall2.volumecontroller import VolumeController
 
 class Remote:
 
     __VOLUME_INCREMENT = 1
-    __CHANNEL_VIDEOS = None
+    __channel_videos = None
 
     # This defines the order in which we will cycle through the animation modes by pressing
     # the KEY_BRIGHTNESSUP / KEY_BRIGHTNESSDOWN buttons
@@ -43,8 +46,29 @@ class Remote:
         self.__channel = None
         self.__playlist = Playlist()
         self.__currently_playing_item = None
-        if Remote.__CHANNEL_VIDEOS is None:
-            Remote.__CHANNEL_VIDEOS = list(self.__config_loader.get_raw_config().get('channel_videos', {}).values())
+
+        if Remote.__channel_videos is None:
+            self.__logger.info("Loading channel video metadata...")
+            ffprober = Ffprober()
+            channel_videos_config = Config.get('channel_videos', [])
+            Remote.__channel_videos = []
+            root_dir = DirectoryUtils().root_dir
+            for channel_video_metadata in channel_videos_config:
+                video_path = root_dir + '/' + channel_video_metadata['video_path']
+                ffprobe_metadata = ffprober.get_video_metadata(video_path, ['duration', 'height'])
+                pretty_duration = TimeUtils.pretty_duration(float(ffprobe_metadata['duration']))
+                video_height = int(ffprobe_metadata['height'])
+                if self.__config_loader.is_any_receiver_dual_video_output() and video_height > 720:
+                    self.__logger.warning(f'Not adding video [{video_path}] to channel_videos because its resolution' +
+                        f'was too high for a dual output receiver ({video_height} is greater than 720p).')
+                    continue
+                Remote.__channel_videos.append({
+                    'video_path': video_path,
+                    'thumbnail_path': '/' + channel_video_metadata['thumbnail_path'],
+                    'duration': pretty_duration,
+                    'title': channel_video_metadata['title']
+                })
+            self.__logger.info("Done loading channel video metadata.")
 
     def check_for_input_and_handle(self, currently_playing_item):
         start_time = time.time()
@@ -124,30 +148,34 @@ class Remote:
                 return
 
     def increment_channel(self):
-        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+        if len(Remote.__channel_videos) <= 0:
             return
 
         if self.__channel is None:
             self.__channel = 0
         else:
-            self.__channel = (self.__channel + 1) % len(Remote.__CHANNEL_VIDEOS)
+            self.__channel = (self.__channel + 1) % len(Remote.__channel_videos)
 
     def decrement_channel(self):
-        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+        if len(Remote.__channel_videos) <= 0:
             return
 
         if self.__channel is None:
-            self.__channel = len(Remote.__CHANNEL_VIDEOS) - 1
+            self.__channel = len(Remote.__channel_videos) - 1
         else:
-            self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
+            self.__channel = (self.__channel - 1) % len(Remote.__channel_videos)
 
     def get_video_path_for_current_channel(self):
-        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
-        return DirectoryUtils().root_dir + '/' + channel_data['video_path']
+        if len(Remote.__channel_videos) <= 0:
+            return None
+
+        return Remote.__channel_videos[self.__channel]['video_path']
 
     def __enqueue_video_for_current_channel(self):
-        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
-        thumbnail_path = '/' + channel_data['thumbnail_path']
+        if len(Remote.__channel_videos) <= 0:
+            return
+
+        channel_data = Remote.__channel_videos[self.__channel]
 
         """
         Why is this necessary? One might think the `skip` call below would be sufficient.
@@ -166,7 +194,7 @@ class Remote:
             self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
 
         self.__playlist.enqueue(
-            self.get_video_path_for_current_channel(), thumbnail_path, channel_data['title'],
+            self.get_video_path_for_current_channel(), channel_data['thumbnail_path'], channel_data['title'],
             channel_data['duration'], '', Playlist.TYPE_CHANNEL_VIDEO
         )
 
