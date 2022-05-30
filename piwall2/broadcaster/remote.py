@@ -54,8 +54,8 @@ class Remote:
             Remote.__channel_videos = []
             for channel_video_metadata in channel_videos_config:
                 video_path = DirectoryUtils().root_dir + '/' + channel_video_metadata['video_path']
-                duration = ffprober.get_video_metadata(video_path, ['duration'])
-                pretty_duration = TimeUtils.pretty_duration(float(duration))
+                ffprobe_metadata = ffprober.get_video_metadata(video_path, ['duration'])
+                pretty_duration = TimeUtils.pretty_duration(float(ffprobe_metadata['duration']))
                 Remote.__channel_videos.append({
                     'video_path': video_path,
                     'thumbnail_path': '/' + channel_video_metadata['thumbnail_path'],
