@@ -94,7 +94,7 @@ class Queue:
                 self.__logger.info("No screensavers found in config.")
                 Logger.set_uuid('')
                 return
-            screensaver_video_path = random.choice(screensaver_config)['video_path']
+            screensaver_video_path = DirectoryUtils().root_dir + '/' + random.choice(screensaver_config)['video_path']
 
         self.__logger.info("Starting broadcast of screensaver...")
         self.__do_broadcast(screensaver_video_path, log_uuid)
