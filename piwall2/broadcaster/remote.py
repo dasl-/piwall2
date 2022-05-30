@@ -170,7 +170,6 @@ class Remote:
             return
 
         channel_data = Remote.__channel_videos[self.__channel]
-        thumbnail_path = '/' + channel_data['thumbnail_path']
 
         """
         Why is this necessary? One might think the `skip` call below would be sufficient.
@@ -189,7 +188,7 @@ class Remote:
             self.__playlist.skip(self.__currently_playing_item['playlist_video_id'])
 
         self.__playlist.enqueue(
-            self.get_video_path_for_current_channel(), thumbnail_path, channel_data['title'],
+            self.get_video_path_for_current_channel(), channel_data['thumbnail_path'], channel_data['title'],
             channel_data['duration'], '', Playlist.TYPE_CHANNEL_VIDEO
         )
 
