@@ -51,6 +51,7 @@ class Remote:
             self.__logger.info("Loading channel video metadata...")
             ffprober = Ffprober()
             channel_videos_config = Config.get('channel_videos', [])
+            Remote.__channel_videos = []
             for channel_video_metadata in channel_videos_config:
                 video_path = DirectoryUtils().root_dir + '/' + channel_video_metadata['video_path']
                 duration = ffprober.get_video_metadata(video_path, ['duration'])
