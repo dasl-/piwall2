@@ -1,0 +1,12 @@
+# Local video file playback requirements
+:toc:
+:toclevels: 5
+
+If you want to playback a local file, whether via the `./bin/broadcast` command, or via the `screensaver`, `channel_video`, or `loading_screen` functionality (see: https://github.com/dasl-/piwall2/blob/main/sample_config.json[sample_config.json]), keep the following requirements in mind:
+
+1. The video file should use the `mpegts` container (see link:best_video_container_format_for_streaming.adoc#mpegts[best_video_container_format_for_streaming]).
+1. The video file must use the `h264` video codec (see link:video_formats_and_hardware_acceleration.adoc#the-bottom-line[video_formats_and_hardware_acceleration]).
+1. If you have any receivers with two TV outputs (i.e. you are using both HDMI outputs on at least one receiver), the video file must have a height of 720 pixels or less (see link:video_formats_and_hardware_acceleration.adoc#the-bottom-line[video_formats_and_hardware_acceleration]). 
+1. If you do not have any receivers with two TV outputs (i.e. all of your receivers only have a single TV connected), the video file must have a height of 1080 pixels or less (see link:video_formats_and_hardware_acceleration.adoc#the-bottom-line[video_formats_and_hardware_acceleration]).
+
+See the https://github.com/dasl-/piwall2/blob/main/utils/download_video[`./utils/download_video`] script which can download videos from youtube in the proper format for playback.
