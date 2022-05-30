@@ -7,12 +7,12 @@ import time
 import traceback
 import youtube_dl
 
+from piwall2.broadcaster.ffprober import Ffprober
 from piwall2.broadcaster.loadingscreensignaller import LoadingScreenSignaller
 from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
-from piwall2.ffprober import Ffprober
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 from piwall2.receiver.receiver import Receiver
