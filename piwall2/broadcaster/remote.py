@@ -142,10 +142,16 @@ class Remote:
             self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
 
     def get_video_path_for_current_channel(self):
+        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+            return None
+
         channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
         return DirectoryUtils().root_dir + '/' + channel_data['video_path']
 
     def __enqueue_video_for_current_channel(self):
+        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+            return
+
         channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
         thumbnail_path = '/' + channel_data['thumbnail_path']
 

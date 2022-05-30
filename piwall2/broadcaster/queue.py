@@ -84,15 +84,17 @@ class Queue:
         if use_channel_videos_as_screensavers:
             self.__remote.increment_channel()
             screensaver_video_path = self.__remote.get_video_path_for_current_channel()
+            if screensaver_video_path is None:
+                self.__logger.info("No screensavers found in channel video config.")
+                Logger.set_uuid('')
+                return
         else: # use_screensavers
-            # choose random screensaver video to play
-            screensavers_config = self.__config_loader.get_raw_config()['screensavers']
-            if self.__config_loader.is_any_receiver_dual_video_output():
-                options = screensavers_config['720p']
-            else:
-                options = screensavers_config['1080p']
-            screensaver_data = random.choice(list(options.values()))
-            screensaver_video_path = DirectoryUtils().root_dir + '/' + screensaver_data['video_path']
+            screensaver_config = Config.get('screensavers', [])
+            if len(screensaver_config) == 0:
+                self.__logger.info("No screensavers found in config.")
+                Logger.set_uuid('')
+                return
+            screensaver_video_path = random.choice(screensaver_config)['video_path']
 
         self.__logger.info("Starting broadcast of screensaver...")
         self.__do_broadcast(screensaver_video_path, log_uuid)

@@ -12,6 +12,7 @@ from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
+from piwall2.ffprober import Ffprober
 from piwall2.logger import Logger
 from piwall2.multicasthelper import MulticastHelper
 from piwall2.receiver.receiver import Receiver
@@ -189,7 +190,14 @@ class VideoBroadcaster:
     """
     def start_download_and_convert_video_proc(self, ytdl_video_format = None):
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            cmd = f"cat {shlex.quote(self.__video_url)}"
+            video_height = self.get_video_info()['height']
+            if self.__config_loader.is_any_receiver_dual_video_output() and video_height > 720:
+                # Scale to 720p, preserving aspect ratio.
+                ffmpeg_input_clause = self.__get_ffmpeg_input_clause(ytdl_video_format)
+                cmd = (f"set -o pipefail && export SHELLOPTS && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
+                    '-filter:v scale=-1:720 -c:a copy -f mpegts -')
+            else:
+                cmd = f"cat {shlex.quote(self.__video_url)}"
         else:
             # Mix the best audio with the video and send via multicast
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
@@ -374,17 +382,10 @@ class VideoBroadcaster:
             self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
                 f"{self.__video_info['width']}x{self.__video_info['height']}")
         elif video_url_type == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            # TODO: guard against unsupported video formats
-            ffprobe_cmd = ('ffprobe -hide_banner -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height ' +
-                shlex.quote(self.__video_url))
-            ffprobe_output = (subprocess
-                .check_output(ffprobe_cmd, shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT)
-                .decode("utf-8"))
-            ffprobe_output = ffprobe_output.split('\n')[0]
-            ffprobe_parts = ffprobe_output.split(',')
+            video_info = Ffprober().get_video_metadata(self.__video_url, ['width', 'height'])
             self.__video_info = {
-                'width': int(ffprobe_parts[0]),
-                'height': int(ffprobe_parts[1]),
+                'width': int(video_info['width']),
+                'height': int(video_info['height']),
             }
 
         return self.__video_info
