@@ -52,10 +52,16 @@ class Remote:
             ffprober = Ffprober()
             channel_videos_config = Config.get('channel_videos', [])
             Remote.__channel_videos = []
+            root_dir = DirectoryUtils().root_dir
             for channel_video_metadata in channel_videos_config:
-                video_path = DirectoryUtils().root_dir + '/' + channel_video_metadata['video_path']
-                ffprobe_metadata = ffprober.get_video_metadata(video_path, ['duration'])
+                video_path = root_dir + '/' + channel_video_metadata['video_path']
+                ffprobe_metadata = ffprober.get_video_metadata(video_path, ['duration', 'height'])
                 pretty_duration = TimeUtils.pretty_duration(float(ffprobe_metadata['duration']))
+                video_height = int(ffprobe_metadata['height'])
+                if self.__config_loader.is_any_receiver_dual_video_output() and video_height > 720:
+                    self.__logger.warning(f'Not adding video [{video_path}] to channel_videos because its resolution' +
+                        f'was too high for a dual output receiver ({video_height} is greater than 720p).')
+                    continue
                 Remote.__channel_videos.append({
                     'video_path': video_path,
                     'thumbnail_path': '/' + channel_video_metadata['thumbnail_path'],

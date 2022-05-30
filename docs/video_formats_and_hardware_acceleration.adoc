@@ -144,3 +144,12 @@ We came close to doing two 1080p videos via software decode, but occasional lags
 
 ## The bottom line
 If using one TV per raspberry pi, you can work with 1080p H264 (avc1) video from youtube. If using two TVs per raspberry pi (the raspberry pi 4 has two hdmi outputs), you can work with 720p H264 (avc1) video from youtube.
+
+## Video encoding
+One might htink that video encoding is not as applicable for this project, but it can be relevant if we are trying to play a video that is 1080p, but we have a receiver with two TV outputs. Recall that when playing two videos via h264 hardware decode, we are limited to 720p video. If we are trying to play a saved video file that is 1080p, one might think the broadcaster could scale the video down to 720p in real time during the broadcast. We tried this via:
+
+....
+ffmpeg -hide_banner -i input.ts  -filter:v scale=-1:720 -c:v h264_omx -c:a copy -f mpegts - >/dev/null
+....
+
+Unfortunately, we got less than realtime speeds, clocking in around 0.9x speed. Furthermore, CPU usage was quite high, ranging from 100% - 400% depending on variations of the ffmpeg incantation (we also tried `libx264` instead of `h264_omx` for the video codec). It might be possible to optimize this, but I'm really not sure. It is hard to get good information on how to do hardware accelerated h264 video encoding on the raspberry pi.

@@ -9,6 +9,7 @@ from piwall2.animator import Animator
 from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.remote import Remote
+from piwall2.broadcaster.screensaverhelper import ScreensaverHelper
 from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -89,12 +90,12 @@ class Queue:
                 Logger.set_uuid('')
                 return
         else: # use_screensavers
-            screensaver_config = Config.get('screensavers', [])
-            if len(screensaver_config) == 0:
+            screensaver_data = ScreensaverHelper().choose_random_screensaver()
+            if screensaver_data is None:
                 self.__logger.info("No screensavers found in config.")
                 Logger.set_uuid('')
                 return
-            screensaver_video_path = DirectoryUtils().root_dir + '/' + random.choice(screensaver_config)['video_path']
+            screensaver_video_path = screensaver_data['video_path']
 
         self.__logger.info("Starting broadcast of screensaver...")
         self.__do_broadcast(screensaver_video_path, log_uuid)

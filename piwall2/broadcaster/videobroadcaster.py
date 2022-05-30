@@ -190,14 +190,7 @@ class VideoBroadcaster:
     """
     def start_download_and_convert_video_proc(self, ytdl_video_format = None):
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            video_height = self.get_video_info()['height']
-            if self.__config_loader.is_any_receiver_dual_video_output() and video_height > 720:
-                # Scale to 720p, preserving aspect ratio.
-                ffmpeg_input_clause = self.__get_ffmpeg_input_clause(ytdl_video_format)
-                cmd = (f"set -o pipefail && export SHELLOPTS && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
-                    '-filter:v scale=-1:720 -c:a copy -f mpegts -')
-            else:
-                cmd = f"cat {shlex.quote(self.__video_url)}"
+            cmd = f"cat {shlex.quote(self.__video_url)}"
         else:
             # Mix the best audio with the video and send via multicast
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
@@ -336,7 +329,7 @@ class VideoBroadcaster:
     def get_video_info(self, assert_data_not_yet_loaded = False):
         if self.__video_info:
             if assert_data_not_yet_loaded:
-                self.__logger.warning('Failed asserting that data was not yet loaded')
+                raise Exception('Failed asserting that data was not yet loaded')
             return self.__video_info
 
         video_url_type = self.__get_video_url_type()
@@ -387,6 +380,10 @@ class VideoBroadcaster:
                 'width': int(video_info['width']),
                 'height': int(video_info['height']),
             }
+
+        if self.__config_loader.is_any_receiver_dual_video_output() and self.__video_info['height'] > 720:
+            raise Exception("This video's resolution is too high for a dual output receiver " +
+                f"({self.__video_info['height']} is greater than 720p).")
 
         return self.__video_info
 
