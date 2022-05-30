@@ -126,5 +126,6 @@ class LoadingScreenHelper:
         loading_screen_cache_json = json.dumps(loading_screen_cache, indent = 4)
         file = open(self.__LOADING_SCREEN_CACHE_PATH, "w")
         file.write(loading_screen_cache_json)
+        os.chmod(self.__LOADING_SCREEN_CACHE_PATH, 0o777)
         file.close()
         self.__logger.info("Done loading loading screen video metadata.")
