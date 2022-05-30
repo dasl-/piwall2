@@ -5,6 +5,7 @@ import random
 
 from piwall2.broadcaster.ffprober import Ffprober
 from piwall2.config import Config
+from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
@@ -64,7 +65,7 @@ class LoadingScreenHelper:
 
     # Returns a dict with the keys: video_path, width, height
     def __choose_random_loading_screen(self):
-        if self.__config_loader.is_any_receiver_dual_video_output():
+        if ConfigLoader().is_any_receiver_dual_video_output():
             options = LoadingScreenHelper.__loading_screen_videos['720p']
         else:
             options = LoadingScreenHelper.__loading_screen_videos['all']
