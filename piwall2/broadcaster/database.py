@@ -26,10 +26,6 @@ class Database:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    @staticmethod
-    def database_date_to_unix_time(database_date):
-        return time.mktime(time.strptime(database_date, '%Y-%m-%d  %H:%M:%S'))
-
     # Schema change how-to:
     # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), etc)
     # 2) Increment self.__SCHEMA_VERSION

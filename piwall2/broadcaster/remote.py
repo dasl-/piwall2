@@ -4,17 +4,20 @@ import time
 
 from piwall2.animator import Animator
 from piwall2.broadcaster.playlist import Playlist
+from piwall2.broadcaster.ffprober import Ffprober
+from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.displaymode import DisplayMode
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.logger import Logger
+from piwall2.timeutils import TimeUtils
 from piwall2.volumecontroller import VolumeController
 
 class Remote:
 
     __VOLUME_INCREMENT = 1
-    __CHANNEL_VIDEOS = None
+    __channel_videos = None
 
     # This defines the order in which we will cycle through the animation modes by pressing
     # the KEY_BRIGHTNESSUP / KEY_BRIGHTNESSDOWN buttons
@@ -43,8 +46,22 @@ class Remote:
         self.__channel = None
         self.__playlist = Playlist()
         self.__currently_playing_item = None
-        if Remote.__CHANNEL_VIDEOS is None:
-            Remote.__CHANNEL_VIDEOS = list(self.__config_loader.get_raw_config().get('channel_videos', {}).values())
+
+        if Remote.__channel_videos is None:
+            self.__logger.info("Loading channel video metadata...")
+            ffprober = Ffprober()
+            channel_videos_config = Config.get('channel_videos', [])
+            for channel_video_metadata in channel_videos_config:
+                video_path = DirectoryUtils().root_dir + '/' + channel_video_metadata['video_path']
+                duration = ffprober.get_video_metadata(video_path, ['duration'])
+                pretty_duration = TimeUtils.pretty_duration(float(duration))
+                Remote.__channel_videos.append({
+                    'video_path': video_path,
+                    'thumbnail_path': '/' + channel_video_metadata['thumbnail_path'],
+                    'duration': pretty_duration,
+                    'title': channel_video_metadata['title']
+                })
+            self.__logger.info("Done loading channel video metadata.")
 
     def check_for_input_and_handle(self, currently_playing_item):
         start_time = time.time()
@@ -124,35 +141,34 @@ class Remote:
                 return
 
     def increment_channel(self):
-        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+        if len(Remote.__channel_videos) <= 0:
             return
 
         if self.__channel is None:
             self.__channel = 0
         else:
-            self.__channel = (self.__channel + 1) % len(Remote.__CHANNEL_VIDEOS)
+            self.__channel = (self.__channel + 1) % len(Remote.__channel_videos)
 
     def decrement_channel(self):
-        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+        if len(Remote.__channel_videos) <= 0:
             return
 
         if self.__channel is None:
-            self.__channel = len(Remote.__CHANNEL_VIDEOS) - 1
+            self.__channel = len(Remote.__channel_videos) - 1
         else:
-            self.__channel = (self.__channel - 1) % len(Remote.__CHANNEL_VIDEOS)
+            self.__channel = (self.__channel - 1) % len(Remote.__channel_videos)
 
     def get_video_path_for_current_channel(self):
-        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+        if len(Remote.__channel_videos) <= 0:
             return None
 
-        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
-        return DirectoryUtils().root_dir + '/' + channel_data['video_path']
+        return Remote.__channel_videos[self.__channel]['video_path']
 
     def __enqueue_video_for_current_channel(self):
-        if len(Remote.__CHANNEL_VIDEOS) <= 0:
+        if len(Remote.__channel_videos) <= 0:
             return
 
-        channel_data = Remote.__CHANNEL_VIDEOS[self.__channel]
+        channel_data = Remote.__channel_videos[self.__channel]
         thumbnail_path = '/' + channel_data['thumbnail_path']
 
         """
