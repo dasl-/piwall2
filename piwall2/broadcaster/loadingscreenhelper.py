@@ -103,13 +103,13 @@ class LoadingScreenHelper:
 
         self.__logger.info("Not using loading screen cache file. Cache file is either invalid or does not exist.")
         ffprober = Ffprober()
-        root_dir = DirectoryUtils().root_dir
+        path_prefix = DirectoryUtils().root_dir + '/assets/loading_screens/'
         LoadingScreenHelper.__loading_screen_videos = {
             'all': [],
             '720p': [],
         }
         for loading_screen_metadata in loading_screen_config:
-            video_path = root_dir + '/' + loading_screen_metadata['video_path']
+            video_path = path_prefix + loading_screen_metadata['video_file']
             ffprobe_metadata = ffprober.get_video_metadata(video_path, ['width', 'height'])
             this_metadata = {
                 'video_path': video_path,

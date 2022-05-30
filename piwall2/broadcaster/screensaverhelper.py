@@ -28,9 +28,9 @@ class ScreensaverHelper:
         screensaver_config = Config.get('screensavers', [])
         ffprober = Ffprober()
         ScreensaverHelper.__screensavers = []
-        root_dir = DirectoryUtils().root_dir
+        path_prefix = DirectoryUtils().root_dir + '/assets/screensavers/'
         for screensaver_metadata in screensaver_config:
-            video_path = root_dir + '/' + screensaver_metadata['video_path']
+            video_path = path_prefix + screensaver_metadata['video_file']
             ffprobe_metadata = ffprober.get_video_metadata(video_path, ['height'])
             height = int(ffprobe_metadata['height'])
             if ConfigLoader().is_any_receiver_dual_video_output() and height > 720:

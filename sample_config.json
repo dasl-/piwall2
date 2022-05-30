@@ -15,54 +15,58 @@
     "use_channel_videos_as_screensavers": false,
 
     // Optional, array, default: []. A list of screensavers to play when the playlist queue is empty.
-    // Each element of the array should be an object with the key: "video_path". Ex:
+    // Each element of the array should be an object with the key: "video_file". Each video_file
+    // should be the name of a file in the ./assets/screensavers/ directory. Ex:
     //
     // [
-    //     {"video_path": "assets/screensavers/screensaver1.ts"},
-    //     {"video_path": "assets/screensavers/screensaver2.ts"},
+    //     {"video_file": "screensaver1.ts"},
+    //     {"video_file": "screensaver2.ts"},
     //     ...
     // ]
     //
-    // Paths are relative to the installation's root directory. Video file requirements:
+    // Video file requirements:
     // https://github.com/dasl-/piwall2/blob/main/docs/local_video_file_playback_requirements.adoc
     "screensavers": [],
 
     // Optional, array, default: []. A list of "channel videos" to play when the remote control's
     // CHANNEL UP or CHANNEL DOWN buttons are pressed (i.e. when we are channel surfing).
     //
-    // Each element of the array should be an object with the keys: "video_path", "thumbnail_path",
-    // and "title". The video's 1-based index in the array will be its channel number. Ex:
+    // Each element of the array should be an object with the keys: "video_file", "thumbnail_file",
+    // and "title". Each video_file / thumbnail_file should be the name of a file in the
+    // ./assets/channel_videos/ directory. The video's 1-based index in the array will be its channel
+    // number. Ex:
     //
     // [
     //     {
-    //         "video_path": "assets/screensavers/channel_video1.ts",
-    //         "thumbnail_path": "assets/screensavers/thumbnail1.jpg",
+    //         "video_file": "channel_video1.ts",
+    //         "thumbnail_file": "thumbnail1.jpg",
     //         "title": "Title 1"
     //     },
     //     {
-    //         "video_path": "assets/screensavers/channel_video2.ts",
-    //         "thumbnail_path": "assets/screensavers/thumbnail2.jpg",
+    //         "video_file": "channel_video2.ts",
+    //         "thumbnail_file": "thumbnail2.jpg",
     //         "title": "Title 2"
     //     },
     //     ...
     // ]
     //
-    // Paths are relative to the installation's root directory. Video file requirements:
+    // Video file requirements:
     // https://github.com/dasl-/piwall2/blob/main/docs/local_video_file_playback_requirements.adoc
     "channel_videos": [],
 
     // Optional, array, default: []. A list of "loading screen" videos to play while loading the next
     // video in the playlist queue.
     //
-    // Each element of the array should be an object with the key: "video_path". Ex:
+    // Each element of the array should be an object with the key: "video_file". Each video_file
+    // should be the name of a file in the ./assets/loading_screens/ directory. Ex:
     //
     // [
-    //     {"video_path": "assets/loading_screens/loadingscreen1.ts"},
-    //     {"video_path": "assets/loading_screens/loadingscreen2.ts"},
+    //     {"video_file": "loadingscreen1.ts"},
+    //     {"video_file": "loadingscreen2.ts"},
     //     ...
     // ]
     //
-    // Paths are relative to the installation's root directory. Video file requirements:
+    // Video file requirements:
     // https://github.com/dasl-/piwall2/blob/main/docs/local_video_file_playback_requirements.adoc
     "loading_screens": [],
 
