@@ -6,7 +6,7 @@ import subprocess
 import time
 
 from piwall2.animator import Animator
-from piwall2.broadcaster.loadingscreensignaller import LoadingScreenSignaller
+from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
 from piwall2.broadcaster.playlist import Playlist
 from piwall2.broadcaster.remote import Remote
 from piwall2.config import Config
@@ -36,7 +36,7 @@ class Queue:
         self.__is_broadcast_in_progress = False
         self.__animator = Animator(self.__TICKS_PER_SECOND)
         self.__remote = Remote(self.__TICKS_PER_SECOND)
-        self.__loading_screen_signaller = LoadingScreenSignaller()
+        self.__loading_screen_helper = LoadingScreenHelper()
 
         # house keeping
         self.__volume_controller.set_vol_pct(50)
@@ -67,7 +67,7 @@ class Queue:
         log_uuid = Logger.make_uuid()
         Logger.set_uuid(log_uuid)
         self.__logger.info(f"Starting broadcast for playlist_video_id: {playlist_item['playlist_video_id']}")
-        self.__loading_screen_signaller.send_loading_screen_signal(log_uuid)
+        self.__loading_screen_helper.send_loading_screen_signal(log_uuid)
         self.__do_broadcast(playlist_item['url'], log_uuid)
         self.__playlist_item = playlist_item
 

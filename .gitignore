@@ -9,6 +9,7 @@ __pycache__/
 *.db.bak
 config.toml
 config.json
+loading_screen_config_cache.json
 
 # these css files are built via scss
 app/src/css/custom-theme.css

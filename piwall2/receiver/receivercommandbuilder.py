@@ -84,7 +84,6 @@ class ReceiverCommandBuilder:
     def build_loading_screen_command_and_get_crop_args(
         self, volume_pct, display_mode, display_mode2, loading_screen_data
     ):
-        video_path = DirectoryUtils().root_dir + '/' + loading_screen_data['video_path']
         adev, adev2 = self.__get_video_command_adev_args()
         display, display2 = self.__get_video_command_display_args()
         crop_args, crop_args2 = self.__get_video_command_crop_args(loading_screen_data['width'], loading_screen_data['height'])
@@ -96,7 +95,7 @@ class ReceiverCommandBuilder:
             shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels)),
             OmxplayerController.TV1_LOADING_SCREEN_DBUS_NAME, '0'
         )
-        cat_cmd = f'cat {video_path}'
+        cat_cmd = f'cat {loading_screen_data["video_path"]}'
         loading_screen_cmd = 'set -o pipefail && export SHELLOPTS && '
         if self.__receiver_config_stanza['is_dual_video_output']:
             omx_cmd2 = self.__OMX_CMD_TEMPLATE.format(
