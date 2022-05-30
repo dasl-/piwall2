@@ -59,7 +59,7 @@ class Remote:
                 pretty_duration = TimeUtils.pretty_duration(float(ffprobe_metadata['duration']))
                 video_height = int(ffprobe_metadata['height'])
                 if self.__config_loader.is_any_receiver_dual_video_output() and video_height > 720:
-                    self.__logger.warning(f'Not adding video [{video_path}] to channel_videos because its resolution' +
+                    self.__logger.warning(f'Not adding video [{video_path}] to channel_videos because its resolution ' +
                         f'was too high for a dual output receiver ({video_height} is greater than 720p).')
                     continue
                 Remote.__channel_videos.append({

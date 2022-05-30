@@ -34,7 +34,7 @@ class ScreensaverHelper:
             ffprobe_metadata = ffprober.get_video_metadata(video_path, ['height'])
             height = int(ffprobe_metadata['height'])
             if ConfigLoader().is_any_receiver_dual_video_output() and height > 720:
-                self.__logger.warning(f'Not adding video [{video_path}] to screensavers because its resolution' +
+                self.__logger.warning(f'Not adding video [{video_path}] to screensavers because its resolution ' +
                     f'was too high for a dual output receiver ({height} is greater than 720p).')
                 continue
             ScreensaverHelper.__screensavers.append({

@@ -15,8 +15,8 @@ class Ffprober:
 
         ffprobe_data = json.loads(ffprobe_output)
 
-        # Not if I should always expect the data in both places ('streams' vs 'programs' key), so be
-        # defensive.
+        # Not sure if I should always expect the data in both places ('streams' vs 'programs' key), so be
+        # defensive and check both.
         if 'streams' in ffprobe_data and fields[0] in ffprobe_data['streams'][0]:
             return ffprobe_data['streams'][0]
         else:
