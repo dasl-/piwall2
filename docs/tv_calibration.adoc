@@ -5,10 +5,13 @@
 ## Background
 As noted in link:tv_output_options.adoc#general-video-options[the tv output options documentation], you may experience https://www.raspberrypi.org/documentation/configuration/raspi-config.md#underscan[overscan / underscan] issues. It is possible that these issues are more prevalent when using CRT TVs. As noted there, you may attempt to fix these with various `/boot/config.txt` settings, or your TV may have various settings that can be tweaked to adjust vertical / horizontal positioning. It will be helpful then, to have various test videos that can help you determine when you have properly centered your video image.
 
+## Setup
+Download https://www.dropbox.com/sh/sel3jqarxf41sl5/AAD0OpgZj3C1Dx5wTNF2lOXJa?dl=0[this folder of calibration assets] used in the below commands.
+
 ## calibration
 Ensure the calibration test image is properly centered:
 ....
-% sudo fbi -T 1 -noverbose docs/img/calibration/crt_calibration_test_480p.jpg
+% sudo fbi -T 1 -noverbose crt_calibration_test_480p.jpg
 %
 % # fbi keyboard controls don't work over ssh, so you may exit the image viewer program via:
 % sudo kill $(pgrep fbi)
