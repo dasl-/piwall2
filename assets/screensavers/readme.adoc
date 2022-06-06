@@ -1,0 +1,3 @@
+# README
+
+Place "screensaver" files in this folder and add them to your `config.json` file. See `screensavers` in https://github.com/dasl-/piwall2/blob/main/sample_config.json[sample_config.json].

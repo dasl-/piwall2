@@ -19,3 +19,10 @@ app/src/component/**/*.css.map
 
 # config file written on python server start up
 app/src/tv_config.json
+
+assets/channel_videos/*
+!assets/channel_videos/readme.adoc
+assets/loading_screens/*
+!assets/loading_screens/readme.adoc
+assets/screensavers/*
+!assets/screensavers/readme.adoc

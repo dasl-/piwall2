@@ -1,0 +1,3 @@
+# README
+
+Place "loading screen" files in this folder and add them to your `config.json` file. See `loading_screens` in https://github.com/dasl-/piwall2/blob/main/sample_config.json[sample_config.json].
