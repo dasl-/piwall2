@@ -87,7 +87,10 @@ stopPiwallServices(){
 updateAndInstallAptPackages(){
     info "\\nUpdating and installing apt packages..."
     sudo apt update
-    sudo apt -y install ffmpeg vlc fbi parallel dsh sshpass mbuffer sqlite3 pv
+
+    # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
+    #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
+    sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv
     sudo apt -y full-upgrade
 }
 
