@@ -7,7 +7,7 @@
 set -x
 
 echo "starting update_youtube-dl at $(date -u)"
-sudo pip3 install --upgrade youtube_dl yt-dlp
+sudo python3 -m pip install --upgrade youtube_dl yt-dlp
 
 # Just in case the youtube-dl cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780

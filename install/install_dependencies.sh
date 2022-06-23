@@ -87,13 +87,13 @@ stopPiwallServices(){
 updateAndInstallAptPackages(){
     info "\\nUpdating and installing apt packages..."
     sudo apt update
-    sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv
+    sudo apt -y install ffmpeg vlc fbi parallel dsh sshpass mbuffer sqlite3 pv
     sudo apt -y full-upgrade
 }
 
 updateAndInstallPythonPackages(){
     info "\\nUpdating and installing python packages..."
-    sudo pip3 install --upgrade youtube_dl yt-dlp toml pyjson5 pytz
+    sudo python3 -m pip install --upgrade youtube_dl yt-dlp toml pyjson5 pytz
 }
 
 # A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.
