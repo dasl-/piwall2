@@ -51,6 +51,27 @@ ____
 
 So youtube-dl won't be able to mux the separate video and audio files together in real-time! Instead, it will wait till they are both fully downloaded before starting to mux them together. Not ideal for starting playback as soon as possible.
 
+### UPDATE 2022-09
+https://github.com/yt-dlp/yt-dlp/commit/c111cefa5de2337fc677367ee2d727b8a56e3fd0[yt-dlp can now use ffmpeg] to download different video / audio formats and mux them together in real time.
+
+But, it's slow. Here's a yt-dlp invocation to make it download two different video / audio streams and mux them together:
+
+....
+yt-dlp --retries infinite -f 'bestvideo[vcodec^=avc1]+bestaudio' https://www.youtube.com/watch\?v\=XXYlFuWEuKI -o - >manmerge_ytdlp.ts
+....
+
+It takes about 2 minutes 7 seconds to complete. Internally, yt-dlp appears to use an ffmpeg invocation like this to do the muxing:
+....
+ffmpeg -y -hide_banner -headers 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.41 Safari/537.36^M\012Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8^M\012Accept-Language: en-us,en;q=0.5^M\012Sec-Fetch-Mode: navigate^M\012' -i https://rr4---sn-j5caxoxu-pn2d.googlevideo.com/videoplayback\?expire\=1662300538\&ei\=Gl0UY6iqIISN_9EP3rCJ-Ao\&ip\=68.193.226.202\&id\=o-AIMMNs_v7_sFJ0eQde1UgIJw14pPRQCZ-73AAQ_svnxG\&itag\=137\&source\=youtube\&requiressl\=yes\&mh\=tC\&mm\=31%2C26\&mn\=sn-j5caxoxu-pn2d%2Csn-p5qs7nsk\&ms\=au%2Conr\&mv\=m\&mvi\=4\&pl\=22\&gcr\=us\&initcwndbps\=1802500\&spc\=lT-KhiOz-_opjjutE1rK0cLltVpdlwI\&vprv\=1\&svpuc\=1\&mime\=video%2Fmp4\&gir\=yes\&clen\=52111783\&dur\=248.915\&lmt\=1651976219166124\&mt\=1662278479\&fvip\=1\&keepalive\=yes\&fexp\=24001373%2C24007246\&c\=ANDROID\&rbqsm\=fr\&txp\=4532434\&sparams\=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cgcr%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cgir%2Cclen%2Cdur%2Clmt\&sig\=AOq0QJ8wRQIhAM_Q1ZeS7myU4o_546BHMp8mjiFyfmf0t2svsTT7bmIwAiBnXe6h2zr-2ByNWXROS-WPSPevBSUUOwk2UxAsvjSr7A%3D%3D\&lsparams\=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Cinitcwndbps\&lsig\=AG3C_xAwRAIgMwD_ORbC-2n9e2svGXdfEEEYhuBSod8kJzrnVWrbKeICIC9uc6NbGIA9W_JYyAEVmOcd6UkJxMjrwl_Erb7iYJWY -headers 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.41 Safari/537.36^M\012Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8^M\012Accept-Language: en-us,en;q=0.5^M\012Sec-Fetch-Mode: navigate^M\012' -i https://rr4---sn-j5caxoxu-pn2d.googlevideo.com/videoplayback\?expire\=1662300538\&ei\=Gl0UY6iqIISN_9EP3rCJ-Ao\&ip\=68.193.226.202\&id\=o-AIMMNs_v7_sFJ0eQde1UgIJw14pPRQCZ-73AAQ_svnxG\&itag\=251\&source\=youtube\&requiressl\=yes\&mh\=tC\&mm\=31%2C26\&mn\=sn-j5caxoxu-pn2d%2Csn-p5qs7nsk\&ms\=au%2Conr\&mv\=m\&mvi\=4\&pl\=22\&gcr\=us\&initcwndbps\=1802500\&spc\=lT-KhiOz-_opjjutE1rK0cLltVpdlwI\&vprv\=1\&svpuc\=1\&mime\=audio%2Fwebm\&gir\=yes\&clen\=4165413\&dur\=248.941\&lmt\=1651974463699044\&mt\=1662278479\&fvip\=1\&keepalive\=yes\&fexp\=24001373%2C24007246\&c\=ANDROID\&rbqsm\=fr\&txp\=4532434\&sparams\=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cgcr%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cgir%2Cclen%2Cdur%2Clmt\&sig\=AOq0QJ8wRQIgNjx396Ta7vlaAWt1_eiR1LwT7B6AOemv7qXnlOND2_YCIQDo68zl70TjxYdZTXY22IFA1uNddfNHFXHeqOLflzXLZQ%3D%3D\&lsparams\=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Cinitcwndbps\&lsig\=AG3C_xAwRAIgMwD_ORbC-2n9e2svGXdfEEEYhuBSod8kJzrnVWrbKeICIC9uc6NbGIA9W_JYyAEVmOcd6UkJxMjrwl_Erb7iYJWY -c copy -map 0:0 -map 1:0 -f mpegts -
+....
+
+Whereas performing the muxing manually takes only 4 seconds!
+....
+ffmpeg -hide_banner -i <(yt-dlp --retries infinite -f 'bestvideo[vcodec^=avc1]' https://www.youtube.com/watch\?v\=XXYlFuWEuKI -o -) -i <(yt-dlp --retries infinite -f 'bestaudio' https://www.youtube.com/watch\?v\=XXYlFuWEuKI -o -) -c:v copy -c:a mp2 -b:a 192k -f mpegts - >manmerge.ts
+....
+
+Because doing the manual muxing is so much faster, we still prefer this method. That said, I'm not sure why it's so much faster. Maybe using those URLs yt-dlp's internal ffmpeg muxing invocation means the download gets rate limited by youtube somehow?
+
 ### Muxing local files
 The solution we came up with was to mux them ourselves (https://superuser.com/questions/277642/how-to-merge-audio-and-video-file-in-ffmpeg[stackexchange]).
 
