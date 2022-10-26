@@ -70,4 +70,8 @@
     // https://github.com/dasl-/piwall2/blob/main/docs/local_video_file_playback_requirements.adoc
     "loading_screens": [],
 
+    // Optional, boolean, default: false. Whether to play the audio track for any videos that are
+    // playing
+    "mute_audio": false,
+
 }
