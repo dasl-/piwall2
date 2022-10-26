@@ -6,6 +6,7 @@ import subprocess
 import time
 import traceback
 
+from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
@@ -104,6 +105,9 @@ class Receiver:
         elif msg_type == ControlMessageHelper.TYPE_SKIP_VIDEO:
             self.__stop_video_playback_if_playing(stop_loading_screen_playback = True)
         elif msg_type == ControlMessageHelper.TYPE_VOLUME:
+            if Config.get('mute_audio', False):
+                return # Don't adjust video player volume from its initial muted state.
+
             self.__video_player_volume_pct = ctrl_msg[ControlMessageHelper.CONTENT_KEY]
             vol_pairs = {}
             if self.__is_video_playback_in_progress:

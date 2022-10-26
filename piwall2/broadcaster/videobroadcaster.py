@@ -10,7 +10,6 @@ import youtube_dl
 from piwall2.broadcaster.ffprober import Ffprober
 from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
 from piwall2.broadcaster.youtubedlexception import YoutubeDlException
-from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
 from piwall2.directoryutils import DirectoryUtils
@@ -190,26 +189,16 @@ class VideoBroadcaster:
     download is necessary.
     """
     def start_download_and_convert_video_proc(self, ytdl_video_format = None):
-        mute_audio = Config.get('mute_audio', False)
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            if mute_audio: # ffmpeg's `-an` mutes audio
-                cmd = (f"set -o pipefail && export SHELLOPTS && {self.__get_standard_ffmpeg_cmd()} -i " +
-                    f"{shlex.quote(self.__video_url)} -c:v copy -an -f mpegts -")
-            else:
-                cmd = f"cat {shlex.quote(self.__video_url)}"
+            cmd = f"cat {shlex.quote(self.__video_url)}"
         else:
-            if mute_audio:
-                audio_clause = '-an' # ffmpeg's `-an` mutes audio
-            else:
-                # TODO: can we use mp3 instead of mp2?
-                audio_clause = '-c:a mp2 -b:a 192k'
-
             # Mix the best audio with the video and send via multicast
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
             # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
             ffmpeg_input_clause = self.__get_ffmpeg_input_clause(ytdl_video_format)
+            # TODO: can we use mp3 instead of mp2?
             cmd = (f"set -o pipefail && export SHELLOPTS && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
-                f"-c:v copy {audio_clause} -f mpegts -")
+                "-c:v copy -c:a mp2 -b:a 192k -f mpegts -")
         self.__logger.info(f"Running download_and_convert_video_proc command: {cmd}")
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f

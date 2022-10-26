@@ -1,6 +1,7 @@
 import math
 import shlex
 
+from piwall2.config import Config
 from piwall2.directoryutils import DirectoryUtils
 from piwall2.displaymode import DisplayMode
 from piwall2.logger import Logger
@@ -62,14 +63,14 @@ class ReceiverCommandBuilder:
         mbuffer_cmd = ('mbuffer -q -l /tmp/mbuffer.out -m ' +
             f'{piwall2.receiver.receiver.Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES}b')
 
-        omx_cmd_tempate = self.__OMX_CMD_TEMPLATE + ' --start-paused'
-        omx_cmd = omx_cmd_tempate.format(
+        omx_cmd_template = self.__OMX_CMD_TEMPLATE + ' --start-paused'
+        omx_cmd = omx_cmd_template.format(
             shlex.quote(crop), shlex.quote(adev), shlex.quote(display), shlex.quote(str(volume_millibels)),
             OmxplayerController.TV1_VIDEO_DBUS_NAME, '1'
         )
         cmd = 'set -o pipefail && export SHELLOPTS && '
         if self.__receiver_config_stanza['is_dual_video_output']:
-            omx_cmd2 = omx_cmd_tempate.format(
+            omx_cmd2 = omx_cmd_template.format(
                 shlex.quote(crop2), shlex.quote(adev2), shlex.quote(display2), shlex.quote(str(volume_millibels)),
                 OmxplayerController.TV2_VIDEO_DBUS_NAME, '1'
             )
@@ -263,7 +264,7 @@ class ReceiverCommandBuilder:
     def __get_video_command_volume_arg(self, volume_pct):
         # See: https://github.com/popcornmix/omxplayer/#volume-rw
         volume_pct = VolumeController.normalize_vol_pct(volume_pct)
-        if volume_pct == 0:
+        if volume_pct == 0 or Config.get('mute_audio', False):
             volume_millibels = VolumeController.GLOBAL_MIN_VOL_VAL
         else:
             volume_millibels = 2000 * math.log(volume_pct, 10)
