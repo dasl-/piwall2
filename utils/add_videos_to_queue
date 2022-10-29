@@ -2,9 +2,9 @@
 import argparse
 import csv
 import os
-import urlparse
 import random
 import sys
+from urllib.parse import urlparse
 
 # This is necessary for the import below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
