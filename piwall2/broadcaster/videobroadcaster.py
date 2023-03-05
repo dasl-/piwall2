@@ -356,7 +356,7 @@ class VideoBroadcaster:
         ffprobe_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height - > {self.__dimensions_fifo_name}'
         ffprobe_mbuffer1 = f'mbuffer -q -l /tmp/mbuffer-ffprobe1.out -m {1024 * 1024 * 50}b'
         ffprobe_mbuffer2 = f'mbuffer -q -l /tmp/mbuffer-ffprobe2.out -m {1024 * 1024 * 50}b'
-        dimensions_cmd = f'tee >( {ffprobe_mbuffer1} | {{ {ffprobe_cmd} && cat - >/dev/null }} ) | {ffprobe_mbuffer2} '
+        dimensions_cmd = f'tee >( {ffprobe_mbuffer1} | {{ {ffprobe_cmd} && cat - >/dev/null ; }} ) | {ffprobe_mbuffer2} '
 
         return dimensions_cmd
 
