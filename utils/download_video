@@ -61,7 +61,11 @@ if write_output_proc.returncode != 0:
     sys.exit(write_output_proc.returncode)
 
 if args.with_thumbnail:
-    video_id = broadcaster.get_video_info()['id']
+    video_id = (subprocess
+        .check_output(
+            (f'yt-dlp --retries infinite --print id {shlex.quote(args.url)}'),
+            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT)
+        .decode("utf-8"))
     thumbnail_url = f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg'
     logger.info(f"Downloading thumbnail: {thumbnail_url}...")
     urllib.request.urlretrieve(thumbnail_url, f'{args.output_file}.jpg')

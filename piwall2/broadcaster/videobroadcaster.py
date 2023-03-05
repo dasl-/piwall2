@@ -3,11 +3,10 @@ import shlex
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
-import youtube_dl
 
-from piwall2.broadcaster.ffprober import Ffprober
 from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
 from piwall2.broadcaster.youtubedlexception import YoutubeDlException
 from piwall2.configloader import ConfigLoader
@@ -25,6 +24,8 @@ class VideoBroadcaster:
     __VIDEO_URL_TYPE_YOUTUBE = 'video_url_type_youtube'
     __VIDEO_URL_TYPE_LOCAL_FILE = 'video_url_type_local_file'
     __AUDIO_FORMAT = 'bestaudio'
+
+    __FIFO_PREFIX = 'piwall2_fifo'
 
     # Touch this file when video playing is done.
     # We check for its existence to determine when video playback is over.
@@ -51,9 +52,7 @@ class VideoBroadcaster:
         self.__video_broadcast_proc_pgid = None
         self.__download_and_convert_video_proc_pgid = None
 
-        # Metadata about the video we are using, such as title, resolution, file extension, etc
-        # Access should go through self.get_video_info() to populate it lazily
-        self.__video_info = None
+        self.__dimensions_fifo_name = None
 
         # Bind multicast traffic to eth0. Otherwise it might send over wlan0 -- multicast doesn't work well over wifi.
         # `|| true` to avoid 'RTNETLINK answers: File exists' if the route has already been added.
@@ -93,37 +92,40 @@ class VideoBroadcaster:
             LoadingScreenHelper().send_loading_screen_signal(Logger.get_uuid())
 
         """
-        What's going on here? We invoke youtube-dl (ytdl) three times in the broadcast code:
-        1) To populate video metadata, including dimensions which allow us to know how much to crop the video
-        2) To download the proper video format (which generally does not have sound included) and mux it with (3)
-        3) To download the best audio quality
+        What's going on here? We invoke youtube-dl (ytdl) twice in the broadcast code:
+        1) To download the proper video format (which generally does not have sound included) and mux it with (2)
+        2) To download the best audio quality
 
-        Ytdl takes couple of seconds to be invoked. Luckily, (2) and (3) happen in parallel
-        (see self.__get_ffmpeg_input_clause). But that would still leave us with effectively two groups of ytdl
-        invocations which are happening serially: the group consisting of "1" and the group consisting of "2 and 3".
-        Note that (1) happens in self.get_video_info.
+        Ytdl takes couple of seconds to be invoked. Luckily, (1) and (2) happen in parallel
+        (see self.__get_ffmpeg_input_clause_and_video_dimensions_pipeline).
 
-        By starting a separate process for "2 and 3", we can actually ensure that all three of these invocations
-        happen in parallel. This separate process is started in self.__start_download_and_convert_video_proc.
-        This shaves 2-3 seconds off of video start up time -- although this time saving is partially canceled out
-        by the `time.sleep(2)` we had to add below.
+        Originally, a single pipeline was responsible for downloading, converting, and broadcasting the video.
+        Video dimensions were calculated separately, outside of this single pipeline.
 
-        This requires that we break up the original single pipeline into two halves. Originally, a single
-        pipeline was responsible for downloading, converting, and broadcasting the video. Now we have two
-        pipelines that we start separately:
-        1) download_and_convert_video_proc, which downloads and converts the video
+        Now we have two pipelines that we start separately:
+        1) download_and_convert_video_proc, which downloads the video, calculates the video dimensions, and
+            converts / muxes the video to the proper format.
         2) video_broadcast_proc, which broadcasts the converted video
 
-        We connect the stdout of (1) to the stdin of (2).
+        We connect the stdout of proc 1 to the stdin of proc 2.
 
-        In order to run all the ytdl invocations in parallel, we had to break up the original single pipeline
-        into these two halves, because broadcasting the video requires having started the receivers first.
-        And starting the receivers requires knowing how much to crop, which requires knowing the video dimensions.
-        Thus, we need to know the video dimensions before broadcasting the video. Without breaking up the pipeline,
-        we wouldn't be able to enforce that we don't start broadcasting the video before knowing the dimensions.
+        In order to calculate the video dimensions inline with the rest of the video pipeline, we had to break up
+        the original single pipeline into these two halves, because broadcasting the video requires having started the
+        receivers first. And starting the receivers requires knowing how much to crop, which requires knowing the
+        video dimensions. Thus, we need to know the video dimensions before broadcasting the video. Without breaking
+        up the pipeline, we wouldn't be able to enforce that we don't start broadcasting the video before knowing the
+        dimensions.
+
+        So what happens is:
+        1) The download_and_convert_video_proc starts. The ffmpeg conversion and muxing part of this pipeline is
+            actually blocked by calculating the video dimensions first and writing them to a FIFO file.
+        2) Whenever the dimensions are calculated and written to the FIFO, the ffmpeg conversion and muxing part
+            of the pipeline is unblocked. Simultaneously, the videobroadcaster will read the dimensions from the
+            FIFO.
+        3) The videobroadcaster starts the receivers, and tells them the video dimensions.
+        4) The videobroadcaster starts the video_broadcast_proc, which broadcasts the converted video
         """
         download_and_convert_video_proc = self.start_download_and_convert_video_proc()
-        self.get_video_info(assert_data_not_yet_loaded = True)
         self.__start_receivers()
 
         """
@@ -187,6 +189,8 @@ class VideoBroadcaster:
     Process to download video via youtube-dl and convert it to proper format via ffmpeg.
     Note that we only download the video if the input was a youtube_url. If playing a local file, no
     download is necessary.
+
+    This command also includes a pipeline to calculate video dimensions inline with the video download.
     """
     def start_download_and_convert_video_proc(self, ytdl_video_format = None):
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
@@ -195,7 +199,7 @@ class VideoBroadcaster:
             # Mix the best audio with the video and send via multicast
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
             # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
-            ffmpeg_input_clause = self.__get_ffmpeg_input_clause(ytdl_video_format)
+            ffmpeg_input_clause = self.__get_ffmpeg_input_clause_and_video_dimensions_pipeline(ytdl_video_format)
             # TODO: can we use mp3 instead of mp2?
             cmd = (f"set -o pipefail && export SHELLOPTS && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
                 "-c:v copy -c:a mp2 -b:a 192k -f mpegts -")
@@ -212,7 +216,7 @@ class VideoBroadcaster:
     def __start_video_broadcast_proc(self, download_and_convert_video_proc):
         # See: https://github.com/dasl-/piwall2/blob/main/docs/controlling_video_broadcast_speed.adoc
         mbuffer_size = round(Receiver.VIDEO_PLAYBACK_MBUFFER_SIZE_BYTES / 2)
-        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer.out -m {mbuffer_size}b | ' +
+        burst_throttling_clause = (f'mbuffer -q -l /tmp/mbuffer-broadcast.out -m {mbuffer_size}b | ' +
             f'{self.__get_standard_ffmpeg_cmd()} -re -i pipe:0 -c:v copy -c:a copy -f mpegts - >/dev/null ; ' +
             f'touch {self.__VIDEO_PLAYBACK_DONE_FILE}')
         broadcasting_clause = (f"{DirectoryUtils().root_dir}/bin/msend_video " +
@@ -241,10 +245,11 @@ class VideoBroadcaster:
         return video_broadcast_proc
 
     def __start_receivers(self):
+        video_dimensions = self.__read_dimensions_from_fifo()
         msg = {
             'log_uuid': Logger.get_uuid(),
-            'video_width': self.get_video_info()['width'],
-            'video_height': self.get_video_info()['height'],
+            'video_width': video_dimensions[0],
+            'video_height': video_dimensions[1],
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_INIT_VIDEO, msg)
         self.__logger.info(f"Sent {ControlMessageHelper.TYPE_INIT_VIDEO} control message.")
@@ -264,7 +269,9 @@ class VideoBroadcaster:
         # https://gist.github.com/dasl-/1ad012f55f33f14b44393960f66c6b00
         return f"ffmpeg -hide_banner {log_opts} "
 
-    def __get_ffmpeg_input_clause(self, ytdl_video_format):
+    def __get_ffmpeg_input_clause_and_video_dimensions_pipeline(self, ytdl_video_format):
+        video_dimensions_pipeline_cmd = self.__get_video_dimensions_pipeline_cmd()
+
         video_url_type = self.__get_video_url_type()
         if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBE:
             """
@@ -310,6 +317,8 @@ class VideoBroadcaster:
                 video_buffer_size
             )
 
+            youtube_dl_video_cmd_with_dimensions_calculation = youtube_dl_video_cmd + ' | ' + video_dimensions_pipeline_cmd
+
             # 5 MB. Based on one video, audio consumes about 0.016 MB/s. So this should
             # be enough buffer for ~312s
             audio_buffer_size = 1024 * 1024 * 5
@@ -320,78 +329,87 @@ class VideoBroadcaster:
                 audio_buffer_size
             )
 
-            return f"-i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd})"
+            return f"-i <({youtube_dl_video_cmd_with_dimensions_calculation}) -i <({youtube_dl_audio_cmd})"
         elif video_url_type == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            return f"-i {shlex.quote(self.__video_url)} "
+            return f"-i <( < {shlex.quote(self.__video_url)} {video_dimensions_pipeline_cmd} ) "
 
-    # Lazily populate video_info from youtube. This takes a couple seconds, as it invokes youtube-dl on the video.
-    # Must return a dict containing the keys: width, height
-    def get_video_info(self, assert_data_not_yet_loaded = False):
-        if self.__video_info:
-            if assert_data_not_yet_loaded:
-                raise Exception('Failed asserting that data was not yet loaded')
-            return self.__video_info
+    def __get_video_dimensions_pipeline_cmd(self):
+        self.__dimensions_fifo_name = self.__make_fifo(additional_prefix = 'dimensions')
 
-        video_url_type = self.__get_video_url_type()
-        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBE:
-            self.__logger.info("Downloading and populating video metadata...")
-            ydl_opts = {
-                'format': self.__config_loader.get_youtube_dl_video_format(),
-                'logger': Logger().set_namespace('youtube_dl'),
-                'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
-            }
-            ydl = youtube_dl.YoutubeDL(ydl_opts)
+        # Explanation of the video dimensions extraction pipeline:
+        #
+        # cat - >/dev/null: Prevent tee from exiting uncleanly (SIGPIPE) after ffprobe has finished probing.
+        #
+        # mbuffer: use mbuffer so that writes in either half of the tee are not blocked by shell pipeline backpressure.
+        # Specifically, ffprobe_mbuffer1 ensures that if ffprobe_cmd is slow to read input, that writing to the stdout
+        # half of the tee will not be blocked. The stdout of the tee is eventually piped to ffmpeg, which
+        # muxes and converts the video. So we ensure this is not blocked by a slow ffprobe. Likewise, ffprobe_mbuffer2
+        # ensures that if the downstream ffmpeg half of the pipeline is slow to read input, that writing to ffprobe
+        # will not be blocked.
+        #
+        # Note: ffprobe may need to read a number of bytes proportional to the video size, thus there may
+        # be no buffer size that works for all videos (see: https://stackoverflow.com/a/70707003/627663 )
+        # But our current buffer size works for videos that are ~24 hours long, so it's good enough in
+        # most cases. Something fails for videos that are 100h+ long, but I believe it's unrelated to
+        # mbuffer size -- those videos failed even with our old model of calculating dimensions separately from
+        # the video playback pipeline. See: https://github.com/yt-dlp/yt-dlp/issues/3390
+        ffprobe_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=width,height - > {self.__dimensions_fifo_name}'
+        ffprobe_mbuffer1 = f'mbuffer -q -l /tmp/mbuffer-ffprobe1.out -m {1024 * 1024 * 50}b'
+        ffprobe_mbuffer2 = f'mbuffer -q -l /tmp/mbuffer-ffprobe2.out -m {1024 * 1024 * 50}b'
+        dimensions_cmd = f'tee >( {ffprobe_mbuffer1} | {{ {ffprobe_cmd} && cat - >/dev/null ; }} ) | {ffprobe_mbuffer2} '
 
-            # Automatically try to update youtube-dl and retry failed youtube-dl operations when we get a youtube-dl
-            # error.
-            #
-            # The youtube-dl package needs updating periodically when youtube make updates. This is
-            # handled on a cron once a day:
-            # https://github.com/dasl-/piwall2/blob/3aa6dee264102baf2646aab1baebdcae0148b4bc/install/piwall2_cron.sh#L5
-            #
-            # But we also attempt to update it on the fly here if we get youtube-dl errors when trying to play
-            # a video.
-            #
-            # Example of how this would look in logs: https://gist.github.com/dasl-/09014dca55a2e31bb7d27f1398fd8155
-            max_attempts = 2
-            for attempt in range(1, (max_attempts + 1)):
-                try:
-                    self.__video_info = ydl.extract_info(self.__video_url, download = False)
-                except Exception as e:
-                    caught_or_raising = "Raising"
-                    if attempt < max_attempts:
-                        caught_or_raising = "Caught"
-                    self.__logger.warning("Problem downloading video info during attempt {} of {}. {} exception: {}"
-                        .format(attempt, max_attempts, caught_or_raising, traceback.format_exc()))
-                    if attempt < max_attempts:
-                        self.__logger.warning("Attempting to update youtube-dl before retrying download...")
-                        self.__update_youtube_dl()
-                    else:
-                        self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
-                        raise e
+        return dimensions_cmd
 
-            self.__logger.info("Done downloading and populating video metadata.")
+    def __read_dimensions_from_fifo(self):
+        dimensions = None
+        try:
+            dimensions_fifo = open(self.__dimensions_fifo_name, 'r')
+            # Need to call .read() rather than .readline() because in some cases, the output could
+            # contain multiple lines. We're only interested in the first line. Closing the fifo
+            # after only reading the first line when it has multi-line output would result in
+            # SIGPIPE errors
+            dimensions = list(map(int, dimensions_fifo.read().splitlines()[0].strip().split(',')))
+            dimensions_fifo.close()
+        except Exception as ex:
+            if self.__config_loader.is_any_receiver_dual_video_output():
+                dimensions = [1280, 720]
+            else:
+                dimensions = [1920, 1080]
 
-            self.__logger.info(f"Using: {self.__video_info['vcodec']} / {self.__video_info['ext']}@" +
-                f"{self.__video_info['width']}x{self.__video_info['height']}")
-        elif video_url_type == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            video_info = Ffprober().get_video_metadata(self.__video_url, ['width', 'height'])
-            self.__video_info = {
-                'width': int(video_info['width']),
-                'height': int(video_info['height']),
-            }
+            self.__logger.error("Got an error determining the dimensions: " + str(ex))
+            self.__logger.error(f"Assuming dimensions are {dimensions} for this video.")
 
-        if self.__config_loader.is_any_receiver_dual_video_output() and self.__video_info['height'] > 720:
-            raise Exception("This video's resolution is too high for a dual output receiver " +
-                f"({self.__video_info['height']} is greater than 720p).")
+        self.__logger.info(f'Calculated video dimensions: {dimensions}')
 
-        return self.__video_info
+        if self.__config_loader.is_any_receiver_dual_video_output() and dimensions[1] > 720:
+            raise Exception("This video's resolution is too high for a dual output receiver: " +
+                f"({dimensions[1]} is greater than 720p).")
+
+        return dimensions
 
     def __get_video_url_type(self):
         if self.__video_url.startswith('http://') or self.__video_url.startswith('https://'):
             return self.__VIDEO_URL_TYPE_YOUTUBE
         else:
             return self.__VIDEO_URL_TYPE_LOCAL_FILE
+
+    def __make_fifo(self, additional_prefix = None):
+        prefix = self.__FIFO_PREFIX + '__'
+        if additional_prefix:
+            prefix += additional_prefix + '__'
+
+        make_fifo_cmd = (
+            'fifo_name=$(mktemp --tmpdir={} --dry-run {}) && mkfifo -m 600 "$fifo_name" && printf $fifo_name'
+            .format(
+                tempfile.gettempdir(),
+                prefix + 'XXXXXXXXXX'
+            )
+        )
+        self.__logger.info('Making fifo...')
+        fifo_name = (subprocess
+            .check_output(make_fifo_cmd, shell = True, executable = '/usr/bin/bash')
+            .decode("utf-8"))
+        return fifo_name
 
     def __update_youtube_dl(self):
         update_youtube_dl_output = (subprocess
@@ -425,11 +443,11 @@ class VideoBroadcaster:
         if for_end_of_video:
             # sending a skip signal at the beginning of a video could skip the loading screen
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, {})
-        try:
-            os.remove(self.__VIDEO_PLAYBACK_DONE_FILE)
-        except Exception:
-            pass
-        self.__video_info = None
+
+        self.__logger.info(f"Deleting fifos and {self.__VIDEO_PLAYBACK_DONE_FILE} ...")
+        fifos_path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FIFO_PREFIX) + '*'
+        cleanup_files_cmd = f'sudo rm -rf {fifos_path_glob} {self.__VIDEO_PLAYBACK_DONE_FILE}'
+        subprocess.check_output(cleanup_files_cmd, shell = True, executable = '/usr/bin/bash')
 
     def __register_signal_handlers(self):
         signal.signal(signal.SIGINT, self.__signal_handler)
