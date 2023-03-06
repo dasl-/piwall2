@@ -203,7 +203,7 @@ class VideoBroadcaster:
     """
     def start_download_and_convert_video_proc(self, ytdl_video_format = None):
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            cmd = f"cat {shlex.quote(self.__video_url)}"
+            cmd = f"< {shlex.quote(self.__video_url)} {self.__get_video_dimensions_pipeline_cmd()}"
         else:
             # Mix the best audio with the video and send via multicast
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
@@ -279,76 +279,74 @@ class VideoBroadcaster:
         return f"ffmpeg -hide_banner {log_opts} "
 
     def __get_ffmpeg_input_clause_and_video_dimensions_pipeline(self, ytdl_video_format):
-        video_dimensions_pipeline_cmd = self.__get_video_dimensions_pipeline_cmd()
-
         video_url_type = self.__get_video_url_type()
-        if video_url_type == self.__VIDEO_URL_TYPE_YOUTUBE:
-            """
-            Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
-            and is trying to reconnect:
+        if video_url_type is not self.__VIDEO_URL_TYPE_YOUTUBE:
+            raise Exception(f'Unexpected video_url_type: {video_url_type}.')
 
-                [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 1 of 10)...
-                [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 2 of 10)...
-                [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 3 of 10)...
+        """
+        Pipe to mbuffer to avoid video drop outs when youtube-dl temporarily loses its connection
+        and is trying to reconnect:
 
-            This can happen from time to time when downloading long videos.
-            Youtube-dl should download quickly until it fills the mbuffer. After the mbuffer is filled,
-            ffmpeg will apply backpressure to youtube-dl because of ffmpeg's `-re` flag
+            [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 1 of 10)...
+            [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 2 of 10)...
+            [download] Got server HTTP error: [Errno 104] Connection reset by peer. Retrying (attempt 3 of 10)...
 
-            --retries infinite: using this to avoid scenarios where all of the retries (10 by default) were
-            exhausted on long video downloads. After a while, retries would be necessary to reconnect. The
-            retries would be successful, but the connection errors would happen again a few minutes later.
-            This allows us to keep retrying whenever it is necessary.
+        This can happen from time to time when downloading long videos.
+        Youtube-dl should download quickly until it fills the mbuffer. After the mbuffer is filled,
+        ffmpeg will apply backpressure to youtube-dl because of ffmpeg's `-re` flag
 
-            Use yt-dlp, a fork of youtube-dl that has a workaround (for now) for an issue where youtube has been
-            throttling youtube-dl’s download speed:
-            https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
-            """
-            youtube_dl_cmd_template = ("mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} {4} | " +
-                "mbuffer -q -Q -m {5}b")
+        --retries infinite: using this to avoid scenarios where all of the retries (10 by default) were
+        exhausted on long video downloads. After a while, retries would be necessary to reconnect. The
+        retries would be successful, but the connection errors would happen again a few minutes later.
+        This allows us to keep retrying whenever it is necessary.
 
-            log_opts = '--no-progress'
-            if Logger.get_level() <= Logger.DEBUG:
-                log_opts = '' # show video download progress
-            if not sys.stderr.isatty():
-                log_opts += ' --newline'
+        Use yt-dlp, a fork of youtube-dl that has a workaround (for now) for an issue where youtube has been
+        throttling youtube-dl’s download speed:
+        https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
+        """
+        youtube_dl_cmd_template = ("mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} {4} | " +
+            "mbuffer -q -Q -m {5}b")
 
-            if not ytdl_video_format:
-                ytdl_video_format = self.__config_loader.get_youtube_dl_video_format()
+        log_opts = '--no-progress'
+        if Logger.get_level() <= Logger.DEBUG:
+            log_opts = '' # show video download progress
+        if not sys.stderr.isatty():
+            log_opts += ' --newline'
 
-            use_extractors = ''
-            if self.__yt_dlp_extractors is not None:
-                use_extractors = f'--use-extractors {shlex.quote(self.__yt_dlp_extractors)}'
+        if not ytdl_video_format:
+            ytdl_video_format = self.__config_loader.get_youtube_dl_video_format()
 
-            # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
-            # be enough buffer for ~139s
-            video_buffer_size = 1024 * 1024 * 50
-            youtube_dl_video_cmd = youtube_dl_cmd_template.format(
-                shlex.quote(self.__VIDEO_TMP_DIR),
-                shlex.quote(self.__video_url),
-                shlex.quote(ytdl_video_format),
-                log_opts,
-                use_extractors,
-                video_buffer_size
-            )
+        use_extractors = ''
+        if self.__yt_dlp_extractors is not None:
+            use_extractors = f'--use-extractors {shlex.quote(self.__yt_dlp_extractors)}'
 
-            youtube_dl_video_cmd_with_dimensions_calculation = youtube_dl_video_cmd + ' | ' + video_dimensions_pipeline_cmd
+        # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
+        # be enough buffer for ~139s
+        video_buffer_size = 1024 * 1024 * 50
+        youtube_dl_video_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__VIDEO_TMP_DIR),
+            shlex.quote(self.__video_url),
+            shlex.quote(ytdl_video_format),
+            log_opts,
+            use_extractors,
+            video_buffer_size
+        )
 
-            # 5 MB. Based on one video, audio consumes about 0.016 MB/s. So this should
-            # be enough buffer for ~312s
-            audio_buffer_size = 1024 * 1024 * 5
-            youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
-                shlex.quote(self.__AUDIO_TMP_DIR),
-                shlex.quote(self.__video_url),
-                shlex.quote(self.__AUDIO_FORMAT),
-                log_opts,
-                use_extractors,
-                audio_buffer_size
-            )
+        youtube_dl_video_cmd_with_dimensions_calculation = youtube_dl_video_cmd + ' | ' + self.__get_video_dimensions_pipeline_cmd()
 
-            return f"-i <({youtube_dl_video_cmd_with_dimensions_calculation}) -i <({youtube_dl_audio_cmd})"
-        elif video_url_type == self.__VIDEO_URL_TYPE_LOCAL_FILE:
-            return f"-i <( < {shlex.quote(self.__video_url)} {video_dimensions_pipeline_cmd} ) "
+        # 5 MB. Based on one video, audio consumes about 0.016 MB/s. So this should
+        # be enough buffer for ~312s
+        audio_buffer_size = 1024 * 1024 * 5
+        youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__AUDIO_TMP_DIR),
+            shlex.quote(self.__video_url),
+            shlex.quote(self.__AUDIO_FORMAT),
+            log_opts,
+            use_extractors,
+            audio_buffer_size
+        )
+
+        return f"-i <({youtube_dl_video_cmd_with_dimensions_calculation}) -i <({youtube_dl_audio_cmd})"
 
     def __get_video_dimensions_pipeline_cmd(self):
         self.__dimensions_fifo_name = self.__make_fifo(additional_prefix = 'dimensions')
