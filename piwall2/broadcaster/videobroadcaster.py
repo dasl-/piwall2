@@ -31,6 +31,10 @@ class VideoBroadcaster:
     # We check for its existence to determine when video playback is over.
     __VIDEO_PLAYBACK_DONE_FILE = '/tmp/video_playback_done.file'
 
+    # Workaround for https://github.com/yt-dlp/yt-dlp/issues/6447
+    __VIDEO_TMP_DIR = '/tmp/piwall2_video_tmp'
+    __AUDIO_TMP_DIR = '/tmp/piwall2_audio_tmp'
+
     # video_url: may be a youtube url or a path to a file on disk
     # show_loading_screen: Loading screen may also get shown by the queue process. Sending the
     #   signal to show it from the queue is faster than showing it in the videobroadcaster
@@ -295,8 +299,8 @@ class VideoBroadcaster:
             throttling youtube-dl’s download speed:
             https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
-            youtube_dl_cmd_template = ("yt-dlp {0} --retries infinite --format {1} --output - {2} | " + 
-                "mbuffer -q -Q -m {3}b")
+            youtube_dl_cmd_template = ("mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} | " +
+                "mbuffer -q -Q -m {4}b")
 
             log_opts = '--no-progress'
             if Logger.get_level() <= Logger.DEBUG:
@@ -311,6 +315,7 @@ class VideoBroadcaster:
             # be enough buffer for ~139s
             video_buffer_size = 1024 * 1024 * 50
             youtube_dl_video_cmd = youtube_dl_cmd_template.format(
+                shlex.quote(self.__VIDEO_TMP_DIR),
                 shlex.quote(self.__video_url),
                 shlex.quote(ytdl_video_format),
                 log_opts,
@@ -323,6 +328,7 @@ class VideoBroadcaster:
             # be enough buffer for ~312s
             audio_buffer_size = 1024 * 1024 * 5
             youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
+                shlex.quote(self.__AUDIO_TMP_DIR),
                 shlex.quote(self.__video_url),
                 shlex.quote(self.__AUDIO_FORMAT),
                 log_opts,
@@ -444,9 +450,9 @@ class VideoBroadcaster:
             # sending a skip signal at the beginning of a video could skip the loading screen
             self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SKIP_VIDEO, {})
 
-        self.__logger.info(f"Deleting fifos and {self.__VIDEO_PLAYBACK_DONE_FILE} ...")
+        self.__logger.info(f"Deleting fifos, temp dirs, and {self.__VIDEO_PLAYBACK_DONE_FILE} ...")
         fifos_path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FIFO_PREFIX) + '*'
-        cleanup_files_cmd = f'sudo rm -rf {fifos_path_glob} {self.__VIDEO_PLAYBACK_DONE_FILE}'
+        cleanup_files_cmd = f'sudo rm -rf {fifos_path_glob} {self.__VIDEO_PLAYBACK_DONE_FILE} {self.__VIDEO_TMP_DIR} {self.__AUDIO_TMP_DIR}'
         subprocess.check_output(cleanup_files_cmd, shell = True, executable = '/usr/bin/bash')
 
     def __register_signal_handlers(self):
