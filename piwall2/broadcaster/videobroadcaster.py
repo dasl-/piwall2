@@ -40,7 +40,11 @@ class VideoBroadcaster:
     #   signal to show it from the queue is faster than showing it in the videobroadcaster
     #   process. But one may still wish to show a loading screen when playing videos via the
     #   command line.
-    def __init__(self, video_url, log_uuid, show_loading_screen):
+    #
+    # yt_dlp_extractors: string. Extractor names for yt-dlp to use, separated by commas.
+    #   Whitelisting extractors to use can speed up video download initialization time.
+    #   Refer to yt-dlp documentation for the '--use-extractors' flag for more details.
+    def __init__(self, video_url, log_uuid, show_loading_screen, yt_dlp_extractors):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         if log_uuid:
             Logger.set_uuid(log_uuid)
@@ -50,6 +54,7 @@ class VideoBroadcaster:
         self.__config_loader = ConfigLoader()
         self.__video_url = video_url
         self.__show_loading_screen = show_loading_screen
+        self.__yt_dlp_extractors = yt_dlp_extractors
 
         # Store the PGIDs separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
@@ -299,8 +304,8 @@ class VideoBroadcaster:
             throttling youtube-dl’s download speed:
             https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             """
-            youtube_dl_cmd_template = ("mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} | " +
-                "mbuffer -q -Q -m {4}b")
+            youtube_dl_cmd_template = ("mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} {4} | " +
+                "mbuffer -q -Q -m {5}b")
 
             log_opts = '--no-progress'
             if Logger.get_level() <= Logger.DEBUG:
@@ -311,6 +316,10 @@ class VideoBroadcaster:
             if not ytdl_video_format:
                 ytdl_video_format = self.__config_loader.get_youtube_dl_video_format()
 
+            use_extractors = ''
+            if self.__yt_dlp_extractors is not None:
+                use_extractors = f'--use-extractors {shlex.quote(self.__yt_dlp_extractors)}'
+
             # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
             # be enough buffer for ~139s
             video_buffer_size = 1024 * 1024 * 50
@@ -319,6 +328,7 @@ class VideoBroadcaster:
                 shlex.quote(self.__video_url),
                 shlex.quote(ytdl_video_format),
                 log_opts,
+                use_extractors,
                 video_buffer_size
             )
 
@@ -332,6 +342,7 @@ class VideoBroadcaster:
                 shlex.quote(self.__video_url),
                 shlex.quote(self.__AUDIO_FORMAT),
                 log_opts,
+                use_extractors,
                 audio_buffer_size
             )
 

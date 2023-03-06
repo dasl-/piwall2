@@ -102,7 +102,7 @@ class Queue:
 
     def __do_broadcast(self, url, log_uuid):
         cmd = (f"{DirectoryUtils().root_dir}/bin/broadcast --url {shlex.quote(url)} " +
-            f"--log-uuid {shlex.quote(log_uuid)} --no-show-loading-screen")
+            f"--log-uuid {shlex.quote(log_uuid)} --no-show-loading-screen --use-extractors youtube")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
         # it should not hurt if we were to set it to True either)
         self.__broadcast_proc = subprocess.Popen(
