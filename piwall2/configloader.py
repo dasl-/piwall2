@@ -15,8 +15,10 @@ class ConfigLoader:
     # install/setup_broadcaster_and_receivers script.
     CONFIG_PATH = DirectoryUtils().root_dir + '/config.toml'
 
-    DUAL_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT = 'bestvideo[vcodec^=avc1][height<=720]'
-    SINGLE_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT = 'bestvideo[vcodec^=avc1][height<=1080]'
+    # Fallback onto 'best', because some videos (live videos) only
+    # have combined video + audio formats. Thus, 'bestvideo' would fail for them.
+    DUAL_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT = 'bestvideo[vcodec^=avc1][height<=720]/best[vcodec^=avc1][height<=720]'
+    SINGLE_VIDEO_OUTPUT_YTDL_VIDEO_FORMAT = 'bestvideo[vcodec^=avc1][height<=1080]/best[vcodec^=avc1][height<=1080]'
 
     __is_loaded = False
     __receivers_config = None

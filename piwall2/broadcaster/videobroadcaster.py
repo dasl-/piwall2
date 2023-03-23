@@ -23,7 +23,13 @@ class VideoBroadcaster:
 
     __VIDEO_URL_TYPE_YOUTUBE = 'video_url_type_youtube'
     __VIDEO_URL_TYPE_LOCAL_FILE = 'video_url_type_local_file'
-    __AUDIO_FORMAT = 'bestaudio'
+
+    # bestaudio: try to select the best audio-only format
+    # bestaudio*: this is the fallback option -- select the best quality format that contains audio.
+    #   It may also contain video, e.g. in the case that there are no audio-only formats available.
+    #   Some videos (live videos) only have combined video + audio formats. Thus 'bestaudio' would
+    #   fail for them.
+    __AUDIO_FORMAT = 'bestaudio/bestaudio*'
 
     __FIFO_PREFIX = 'piwall2_fifo'
 
@@ -209,9 +215,15 @@ class VideoBroadcaster:
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
             # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
             ffmpeg_input_clause = self.__get_ffmpeg_input_clause_and_video_dimensions_pipeline(ytdl_video_format)
-            # TODO: can we use mp3 instead of mp2?
+
+            # `-c:a mp2`: mp2 is believed to result in better quality audio at high bit rates: https://wiki.audacityteam.org/wiki/MP2
+            #
+            # `-map 0:v:0 -map 1:a:0 -shortest`: Mux video from the first input with audio from the second input:
+            # https://stackoverflow.com/a/12943003/627663 We need to specify, because in some cases (live videos), either input
+            # could contain both audio and video. But in most cases, the first input will have only video, and the second input
+            # will have only audio.
             cmd = (f"set -o pipefail && export SHELLOPTS && {self.__get_standard_ffmpeg_cmd()} {ffmpeg_input_clause} " +
-                "-c:v copy -c:a mp2 -b:a 192k -f mpegts -")
+                "-c:v copy -c:a mp2 -b:a 256k -map 0:v:0 -map 1:a:0 -shortest -f mpegts -")
         self.__logger.info(f"Running download_and_convert_video_proc command: {cmd}")
 
         # Info on start_new_session: https://gist.github.com/dasl-/1379cc91fb8739efa5b9414f35101f5f
@@ -334,9 +346,8 @@ class VideoBroadcaster:
 
         youtube_dl_video_cmd_with_dimensions_calculation = youtube_dl_video_cmd + ' | ' + self.__get_video_dimensions_pipeline_cmd()
 
-        # 5 MB. Based on one video, audio consumes about 0.016 MB/s. So this should
-        # be enough buffer for ~312s
-        audio_buffer_size = 1024 * 1024 * 5
+        # Also use a 50MB buffer, because in some cases (live videos), the audio stream we download may also contain video.
+        audio_buffer_size = 1024 * 1024 * 50
         youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__AUDIO_TMP_DIR),
             shlex.quote(self.__video_url),
