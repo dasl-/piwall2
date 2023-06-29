@@ -210,3 +210,27 @@ Some more notes on the issue:
 
 ## Video playback freezes and ssh becomes slow
 In this failure mode, not only does video playback freeze, but if you try to ssh onto any / all of the pis, it will take a while to complete the ssh connection. In debugging this issue, I noticed that via `dsh`, I could eventually ssh onto all of the pis (albeit slowly, might take ~5 minutes) except for one! I decided to touch the raspberry pis to feel how hot they were. I noticed that the one pi that I could not ssh onto was very hot -- it would hurt to touch the CPU on it. Whereas the other raspberry pis were not nearly as hot as the one that I could not ssh onto. Unplugging the ethernet cable from this one "bad apple" pi immediately resolved the slow ssh / video playback problem. In my case, the "bad apple" pi was piwall2.local. Restarting the pi (by unplugging the power cable) seemed to fix everything. I seem to recall that this issue has happened once before with the same "bad apple" pi, but I cannot remember 100% if it was the same one (piwall2). If it was the same one, this seems to be a very rarely occuring bug that affects the same pi... hm... I would like to wait and see if the issue recurrs with the same pi.
+
+### Recurrence on 2023-06-28
+This happened again. This time it was piwall3.local that became unresponsive. Symptoms:
+
+* wifi internet becomes sporadically slow. I have periods of normal speeds that last maybe ~5 minutes, followed by what seems like an internet drop out that lasts for ~1 minute. I am not 100% sure that this symptom was related to the caused by the issue - it could have been a coincidence.
+* I am able to access my router via http://192.168.1.1 , and I am able to ssh onto some pis on my network, such as pifi.local, however ssh'ing onto any of the piwall raspberry pis is very slow
+* Running this dsh command shows that only one piwall raspberry pi is totally unresponsive: piwall3.local. The rest of them do respond, however it takes a minute or two for them to respond:
+....
+% while true ; do time dsh -r ssh -c -M -m pi@piwall.local,pi@piwall1.local,pi@piwall2.local,pi@piwall3.local,pi@piwall4.local,pi@piwall5.local,pi@piwall6.local,pi@piwall7.local,pi@piwall8.local,pi@piwall9.local,pi@piwall10.local "uptime" 2>/dev/null ; done
+pi@piwall10.local:  01:25:01 up 128 days,  4:22,  1 user,  load average: 0.03, 0.04, 0.01
+pi@piwall2.local:  01:25:01 up 112 days, 21:12,  1 user,  load average: 0.00, 0.00, 0.00
+pi@piwall1.local:  01:25:01 up 112 days, 21:12,  1 user,  load average: 0.00, 0.00, 0.00
+pi@piwall4.local:  01:25:01 up 283 days,  1:30,  0 users,  load average: 0.00, 0.00, 0.00
+pi@piwall9.local:  01:25:01 up 283 days,  1:30,  0 users,  load average: 0.00, 0.00, 0.00
+pi@piwall6.local:  01:25:01 up 112 days, 21:12,  0 users,  load average: 0.24, 0.05, 0.02
+pi@piwall5.local:  01:25:00 up 112 days, 21:12,  0 users,  load average: 0.08, 0.02, 0.01
+pi@piwall7.local:  01:25:01 up 283 days,  1:30,  0 users,  load average: 0.00, 0.00, 0.00
+pi@piwall8.local:  01:25:01 up 112 days, 21:12,  0 users,  load average: 0.00, 0.00, 0.00
+....
+* Touching the CPU on all raspberry pis, it was very clear that piwall3's CPU felt the hottest (even with heatsinks attached to all pis).
+* I tested unplugging the power cable of another pi (piwall4) to confirm that this would not resolve the network issues.
+* Finally, I unplugged the power cable of piwall3. All network issues were immediately resolved.
+
+Based on git blame, the original occurence of this issue øccurred on 2022-01-06, which was 1.5 years ago. Given that the piwall has been running 24/7, a bug that occurs once every 1.5 years seems not the worst thing in the world. I suspect some sort of linux kernel related bug.
