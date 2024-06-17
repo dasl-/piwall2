@@ -236,3 +236,11 @@ pi@piwall8.local:  01:25:01 up 112 days, 21:12,  0 users,  load average: 0.00, 0
 Based on git blame, the original occurence of this issue was on 2022-01-06, which was 1.5 years ago. Given that the piwall has been running 24/7, a bug that occurs once every 1.5 years seems not the worst thing in the world. I suspect some sort of linux kernel related bug.
 
 https://github.com/dasl-/pitools/tree/main/shairport-sync#drop-outs-in-piwall-audio-receiver-every-15-minutes[There may be a leading indicator of this issue occurring]. In particular, if a shairport-sync instance is running on the same raspberry pi as one of the piwall receivers, you may start experiencing audio drop outs when a new screensaver broadcast starts. This might start occuring 1 - 3 weeks before total network failure.
+
+### Recurrence on 2024-06-13
+Something similar happened again. Symptoms:
+
+* wifi internet was not loading any pages. Restarting the router and modem did not help. Sporadically the internet might recover temporarily.
+* I am able to access my router via http://192.168.1.1 , and I am able to ssh onto all pis on my network except for the piwall pis. SSHing onto any piwall pis is unsuccessful, or it may take several minutes to slowly succeed.
+* felt the temperature of the pis, and none seemed as hot as they had in past occurrences of this issue
+* I did not pinpoint the issue to a specific piwall pi. I restarted all of them, and the internet issues were immediately fixed.
