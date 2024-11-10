@@ -22,7 +22,7 @@ main(){
     updateAndInstallPythonPackages
     installYtdlp
     buildAndInstallOmxplayerFork
-    clearYoutubedlCache
+    clearYtdlpCache
 
     if [[ "$installation_type" != "receiver" ]]; then
         installNode
@@ -120,10 +120,10 @@ buildAndInstallOmxplayerFork(){
 
 # Just in case the youtube-dl cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780
-clearYoutubedlCache(){
-    info "\\nClearing youtube-dl cache..."
+clearYtdlpCache(){
+    info "\\nClearing yt-dlp cache..."
     # shellcheck disable=SC1083
-    parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root pi ::: youtube-dl yt-dlp
+    parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root pi
 }
 
 installNode(){
