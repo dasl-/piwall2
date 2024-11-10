@@ -224,7 +224,6 @@ Note on OS support (https://pip.raspberrypi.com/categories/685-whitepapers-app-n
 * Buster: In buster, the default graphics stack is FKMS. In order to use the legacy graphics stack, we must comment out `dtoverlay=vc4-fkms-v3d`
 * Bullseye: In bullseye, the default graphics stack is KMS. In order to use the legacy graphics stack, we must comment out `dtoverlay=vc4-kms-v3d`
 * Bookworm: In bookworm, only the KMS graphics stack is supported. Neither FKMS nor legacy graphics stacks work. Thus, bookworm is incompatible (AFAIK) with performant screen rotation.
-on buster, we need to comment out `dtoverlay=vc4-fkms-v3d`, but on bullseye, we need to comment out `dtoverlay=vc4-kms-v3d` (`fkms` vs `kms`).
 
 As a final test, I tried another option: using the legacy graphics driver by commenting out `dtoverlay=vc4-fkms-v3d` in `/boot/config.txt`, but performing the rotation via `omxplayer` 's `--rotate` flag. This suffered from the same playback lag issues as before.
 
