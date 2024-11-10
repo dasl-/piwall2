@@ -5,7 +5,7 @@ set -euo pipefail -o errtrace
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 installation_type=false
 only_install_python_deps=false
-omxplayer_branch='master'
+omxplayer_branch='paused'
 
 main(){
     trap 'fail $? $LINENO' ERR
@@ -104,11 +104,15 @@ updateAndInstallPythonPackages(){
 # version of python3, we can still run yt-dlp.
 # https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#release-files
 installYtdlp(){
+    info "\\nInstalling yt-dlp..."
     sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_armv7l -O /usr/local/bin/yt-dlp
     sudo chmod a+rwx /usr/local/bin/yt-dlp
 }
 
-# A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.
+# The 'paused' branch is a fork of omxplayer with:
+# 1) The ability to start a video paused via the `--start-paused` flag. By unpausing in sync across all receivers,
+#   we get synchronized video playback.
+# 2) Millisecond granularity in the log files. Helpful for debugging timing issues.
 buildAndInstallOmxplayerFork(){
     info "\\nBuilding and installing omxplayer fork..."
     "$BASE_DIR"/install/build_omxplayer.sh -b "$omxplayer_branch"

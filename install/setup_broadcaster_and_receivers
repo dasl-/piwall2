@@ -56,7 +56,7 @@ This script should be run on the broadcaster. This script does several things:
     parser.add_argument('--ssh-password', dest='ssh_password', action='store', default=None,
         help="SSH password for logging into the broadcaster and receiver raspberry pis. If you " +
         "haven't changed this, it will be 'raspberry'. Required if setting up SSH.")
-    parser.add_argument('--omxplayer-branch', dest='omxplayer_branch', action='store', default='master',
+    parser.add_argument('--omxplayer-branch', dest='omxplayer_branch', action='store', default='paused',
         help="omxplayer branch to build (uses https://github.com/dasl-/omxplayer/ )")
     parser.add_argument('--dont-install-dependencies', dest='install_dependencies', action='store_false',
         default=True, help="Skip installing dependencies; set install_dependencies to False")
