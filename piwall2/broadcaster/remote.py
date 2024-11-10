@@ -40,8 +40,13 @@ class Remote:
         self.__logger.info("Connecting to LIRC remote socket...")
         self.__socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__socket.settimeout(1)
-        self.__socket.connect('/var/run/lirc/lircd')
-        self.__logger.info("Connected!")
+        try:
+            self.__socket.connect('/var/run/lirc/lircd')
+            self.__logger.info("Connected!")
+            self.__is_remote_enabled = True
+        except Exception as e:
+            self.__logger.info("Unable to connect")
+            self.__is_remote_enabled = False
 
         self.__channel = None
         self.__playlist = Playlist()
@@ -71,6 +76,9 @@ class Remote:
             self.__logger.info("Done loading channel video metadata.")
 
     def check_for_input_and_handle(self, currently_playing_item):
+        if not self.__is_remote_enabled:
+            return
+
         start_time = time.time()
         self.__currently_playing_item = currently_playing_item
         data = b''
