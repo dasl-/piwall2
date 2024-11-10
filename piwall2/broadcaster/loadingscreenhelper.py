@@ -57,9 +57,13 @@ class LoadingScreenHelper:
         self.__load_config_if_not_loaded()
 
     def send_loading_screen_signal(self, log_uuid):
+        loading_screen_data = self.__choose_random_loading_screen()
+        if not loading_screen_data:
+            return
+
         msg = {
             'log_uuid': log_uuid,
-            'loading_screen_data': self.__choose_random_loading_screen()
+            'loading_screen_data': loading_screen_data
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, msg)
 
@@ -69,7 +73,10 @@ class LoadingScreenHelper:
             options = LoadingScreenHelper.__loading_screen_videos['720p']
         else:
             options = LoadingScreenHelper.__loading_screen_videos['all']
-        loading_screen_data = random.choice(options)
+        if options:
+            loading_screen_data = random.choice(options)
+        else:
+            loading_screen_data = None
         return loading_screen_data
 
     def __load_config_if_not_loaded(self):
