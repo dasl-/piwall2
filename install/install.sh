@@ -241,8 +241,8 @@ maybeAdjustScreenRotateMode(){
     if [[ "$rotate_mode" == "90" || "$rotate_mode" == "180" || "$rotate_mode" == "270" ]]; then
         info "Setting screen rotation to $rotate_mode degrees..."
 
-        # comment out existing `dtoverlay=vc4-fkms-v3d` lines in config
-        sudo sed $CONFIG -i -e "s/^\(dtoverlay=vc4-fkms-v3d.*\)/#\1/"
+        # comment out existing `dtoverlay=vc4-kms-v3d` lines in config
+        sudo sed $CONFIG -i -e "s/^\(dtoverlay=vc4-kms-v3d.*\)/#\1/"
 
         # comment out existing `display_hdmi_rotate` lines in config
         sudo sed $CONFIG -i -e "s/^\(display_hdmi_rotate=.*\)/#\1/"
@@ -268,8 +268,8 @@ maybeAdjustScreenRotateMode(){
     else
         info "Resetting screen rotation options if present..."
 
-        # uncomment existing `#dtoverlay=vc4-fkms-v3d` lines in config
-        sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-fkms-v3d.*/dtoverlay=vc4-fkms-v3d/"
+        # uncomment existing `#dtoverlay=vc4-kms-v3d` lines in config
+        sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-kms-v3d.*/dtoverlay=vc4-kms-v3d/"
 
         # comment out existing `display_hdmi_rotate` lines in config
         sudo sed $CONFIG -i -e "s/^\(display_hdmi_rotate=.*\)/#\1/"
