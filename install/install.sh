@@ -241,8 +241,11 @@ maybeAdjustScreenRotateMode(){
     if [[ "$rotate_mode" == "90" || "$rotate_mode" == "180" || "$rotate_mode" == "270" ]]; then
         info "Setting screen rotation to $rotate_mode degrees..."
 
-        # comment out existing `dtoverlay=vc4-kms-v3d` lines in config
+        # comment out existing `dtoverlay=vc4-kms-v3d` and `dtoverlay=vc4-fkms-v3d`
+        # lines in config. This means we'll be using the legacy graphics stack, which
+        # is compatible with performant screen rotation.
         sudo sed $CONFIG -i -e "s/^\(dtoverlay=vc4-kms-v3d.*\)/#\1/"
+        sudo sed $CONFIG -i -e "s/^\(dtoverlay=vc4-fkms-v3d.*\)/#\1/"
 
         # comment out existing `display_hdmi_rotate` lines in config
         sudo sed $CONFIG -i -e "s/^\(display_hdmi_rotate=.*\)/#\1/"
@@ -268,8 +271,19 @@ maybeAdjustScreenRotateMode(){
     else
         info "Resetting screen rotation options if present..."
 
-        # uncomment existing `#dtoverlay=vc4-kms-v3d` lines in config
-        sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-kms-v3d.*/dtoverlay=vc4-kms-v3d/"
+        # Ensure we are using the FKMS graphics stack when there's no screen rotation. It's likely that the legacy
+        # graphics stack would also work here, but I haven't tested it as much in terms of long term reliability.
+
+        # comment out existing `dtoverlay=vc4-kms-v3d` lines in config.
+        sudo sed $CONFIG -i -e "s/^\(dtoverlay=vc4-kms-v3d.*\)/#\1/"
+
+        # uncomment existing `#dtoverlay=vc4-fkms-v3d` lines in config
+        sudo sed $CONFIG -i -e "s/^#\?dtoverlay=vc4-fkms-v3d.*/dtoverlay=vc4-fkms-v3d/"
+
+        # create the FKMS stanza if it doesn't yet exist
+        if ! grep -q "^dtoverlay=vc4-fkms-v3d" $CONFIG ; then
+            echo "dtoverlay=vc4-fkms-v3d" | sudo tee -a $CONFIG >/dev/null
+        fi
 
         # comment out existing `display_hdmi_rotate` lines in config
         sudo sed $CONFIG -i -e "s/^\(display_hdmi_rotate=.*\)/#\1/"
