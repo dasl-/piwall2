@@ -20,6 +20,7 @@ main(){
     stopPiwallServices
     updateAndInstallAptPackages
     updateAndInstallPythonPackages
+    installYtdlp
     buildAndInstallOmxplayerFork
     clearYoutubedlCache
 
@@ -96,7 +97,15 @@ updateAndInstallAptPackages(){
 
 updateAndInstallPythonPackages(){
     info "\\nUpdating and installing python packages..."
-    sudo python3 -m pip install --upgrade youtube_dl yt-dlp toml pyjson5 pytz
+    sudo python3 -m pip install --upgrade toml pyjson5 pytz
+}
+
+# We install yt-dlp as a standalone binary (rather than using pip) to ensure that even if we are using an outdated
+# version of python3, we can still run yt-dlp.
+# https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#release-files
+installYtdlp(){
+    sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_armv7l -O /usr/local/bin/yt-dlp
+    sudo chmod a+rwx /usr/local/bin/yt-dlp
 }
 
 # A fork of omxplayer with millisecond granularity in the log files. Helpful for debugging timing issues.

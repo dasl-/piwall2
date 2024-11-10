@@ -112,7 +112,7 @@ setupLogging(){
         sudo touch /var/log/piwall2/receiver.log
         sudo cp "$BASE_DIR"/install/piwall2_receiver_syslog.conf /etc/rsyslog.d
     fi
-    sudo touch /var/log/piwall2/update_youtube-dl.log
+    sudo touch /var/log/piwall2/update_yt-dlp.log
     sudo systemctl restart rsyslog
 
     # logrotate

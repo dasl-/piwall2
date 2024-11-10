@@ -94,7 +94,7 @@ class VideoBroadcaster:
                     self.__logger.warning("Caught exception in VideoBroadcaster.__broadcast_internal: " +
                         traceback.format_exc())
                     self.__logger.warning("Updating youtube-dl and retrying broadcast...")
-                    self.__update_youtube_dl()
+                    self.__update_yt_dlp()
                 if attempt >= max_attempts:
                     raise e
             finally:
@@ -437,16 +437,16 @@ class VideoBroadcaster:
             .decode("utf-8"))
         return fifo_name
 
-    def __update_youtube_dl(self):
-        update_youtube_dl_output = (subprocess
+    def __update_yt_dlp(self):
+        update_yt_dlp_output = (subprocess
             .check_output(
-                'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
+                'sudo ' + DirectoryUtils().root_dir + '/utils/update_yt-dlp.sh',
                 shell = True,
                 executable = '/usr/bin/bash',
                 stderr = subprocess.STDOUT
             )
             .decode("utf-8"))
-        self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
+        self.__logger.info("Update youtube-dl output: {}".format(update_yt_dlp_output))
 
     # for_end_of_video: whether we are doing housekeeping before or after playing a video
     def __do_housekeeping(self, for_end_of_video):
