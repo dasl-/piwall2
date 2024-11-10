@@ -6,5 +6,5 @@
 toc::[]
 
 # Installation
-. Requires a raspbian lite bullseye (a legacy OS): https://downloads.raspberrypi.com/raspios_oldstable_lite_armhf/images/raspios_oldstable_lite_armhf-2024-10-28/[2021-05-07-raspios-buster-armhf-lite.img]
+. Requires raspbian lite bullseye (a legacy OS): https://downloads.raspberrypi.com/raspios_oldstable_lite_armhf/images/raspios_oldstable_lite_armhf-2024-10-28/[2024-10-22-raspios-bullseye-armhf-lite.img]
 .
