@@ -69,6 +69,7 @@ buildUserland(){
 
 buildOmxplayer(){
     info "Building omxplayer..."
+    cd "$BASE_DIR/omxplayer"
 
     # See: https://github.com/dasl-/piwall2/blob/main/docs/tv_output_options.adoc#with-native-hdmi-sound
     # See: https://github.com/popcornmix/omxplayer/commit/6d186be9d15c3d2ee8a4256afd26cddebbd8251e
