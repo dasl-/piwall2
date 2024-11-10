@@ -5,6 +5,15 @@
 
 toc::[]
 
-# Installation
+# Installation and setup
 . Requires raspbian lite bullseye (a legacy OS): https://downloads.raspberrypi.com/raspios_oldstable_lite_armhf/images/raspios_oldstable_lite_armhf-2024-10-28/[2024-10-22-raspios-bullseye-armhf-lite.img]
-.
+. All pis should be provisioned with the username `pi`. All pis in the TV wall must use the same ssh password.
+. Create a https://gist.github.com/dasl-/b1e350648bbeb88abe636ba0402eabde[`config.toml`] file with the coordinates of the TVs
+. `./install/setup_broadcaster_and_receivers --ssh-password <your_ssh_password>`
+. https://github.com/dasl-/piwall2/blob/main/docs/setting_your_youtube_api_key.adoc[Setup your youtube API key]
+
+# Architecture
+TODO
+
+# Administration
+. Log files are located in `/var/log/piwall/`
