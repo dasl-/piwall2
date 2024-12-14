@@ -10,6 +10,7 @@ __pycache__/
 config.toml
 config.json
 loading_screen_config_cache.json
+.yt-dlp-version
 
 # these css files are built via scss
 app/src/css/custom-theme.css
