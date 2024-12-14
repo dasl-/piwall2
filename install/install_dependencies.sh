@@ -91,7 +91,7 @@ updateAndInstallAptPackages(){
 
     # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
     #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
-    sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv
+    sudo apt -y install ffmpeg vlc python3-pip fbi parallel dsh sshpass mbuffer sqlite3 pv jq
     sudo apt -y full-upgrade
 }
 
@@ -100,13 +100,9 @@ updateAndInstallPythonPackages(){
     sudo python3 -m pip install --upgrade toml pyjson5 pytz
 }
 
-# We install yt-dlp as a standalone binary (rather than using pip) to ensure that even if we are using an outdated
-# version of python3, we can still run yt-dlp.
-# https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#release-files
 installYtdlp(){
     info "\\nInstalling yt-dlp..."
-    sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_armv7l -O /usr/local/bin/yt-dlp
-    sudo chmod a+rwx /usr/local/bin/yt-dlp
+    "$BASE_DIR"/utils/update_yt-dlp.sh
 }
 
 # The 'paused' branch is a fork of omxplayer with:
