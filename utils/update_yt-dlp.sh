@@ -18,15 +18,15 @@ VERSION_FILE=$BASE_DIR/.yt-dlp-version
 
 main(){
     trap 'fail $? $LINENO' ERR
-    echo "starting update_yt-dlp at $(date -u)"
+    info "starting update_yt-dlp at $(date -u)"
 
     local latest_version_url
-    latest_version_url=$(curl --max-time 5 https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest | jq '.assets[] | select(.name == "yt-dlp_linux_armv7l") | .browser_download_url')
+    latest_version_url=$(curl --max-time 5 https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest | jq --raw-output '.assets[] | select(.name == "yt-dlp_linux_armv7l") | .browser_download_url')
     if shouldDownloadNewVersion "$latest_version_url" ; then
         downloadNewVersion "$latest_version_url"
         repopulateYtDlpCache
     fi
-    echo "finished update_yt-dlp at $(date -u)"
+    info "finished update_yt-dlp at $(date -u)"
 }
 
 shouldDownloadNewVersion(){
@@ -51,13 +51,14 @@ shouldDownloadNewVersion(){
 downloadNewVersion(){
     local latest_version_url=$1
     # https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_armv7l would also work for the URL
-    sudo curl --max-time 300 "$latest_version_url" > /usr/local/bin/yt-dlp.tmp
+    curl --location --max-time 300 "$latest_version_url" | sudo tee /usr/local/bin/yt-dlp.tmp >/dev/null
     sudo chmod a+rwx /usr/local/bin/yt-dlp.tmp
     sudo mv /usr/local/bin/yt-dlp.tmp /usr/local/bin/yt-dlp
     echo "$latest_version_url" | sudo tee "$VERSION_FILE"
 }
 
 repopulateYtDlpCache(){
+    info "Removing yt-dlp cache directory..."
     # Just in case the yt-dlp cache got polluted, as it has before...
     # https://github.com/ytdl-org/youtube-dl/issues/24780
     #
@@ -65,6 +66,7 @@ repopulateYtDlpCache(){
     # shellcheck disable=SC1083
     parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root pi
 
+    info "Repopulating yt-dlp cache..."
     # repopulate the cache that we just deleted? /shrug
     # e.g.: sudo -u root yt-dlp --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null
     # shellcheck disable=SC1083
