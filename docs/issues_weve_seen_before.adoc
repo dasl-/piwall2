@@ -211,6 +211,8 @@ Some more notes on the issue:
 ## Video playback freezes and ssh becomes slow
 In this failure mode, not only does video playback freeze, but if you try to ssh onto any / all of the pis, it will take a while to complete the ssh connection. In debugging this issue, I noticed that via `dsh`, I could eventually ssh onto all of the pis (albeit slowly, might take ~5 minutes) except for one! I decided to touch the raspberry pis to feel how hot they were. I noticed that the one pi that I could not ssh onto was very hot -- it would hurt to touch the CPU on it. Whereas the other raspberry pis were not nearly as hot as the one that I could not ssh onto. Unplugging the ethernet cable from this one "bad apple" pi immediately resolved the slow ssh / video playback problem. In my case, the "bad apple" pi was piwall2.local. Restarting the pi (by unplugging the power cable) seemed to fix everything. I seem to recall that this issue has happened once before with the same "bad apple" pi, but I cannot remember 100% if it was the same one (piwall2). If it was the same one, this seems to be a very rarely occuring bug that affects the same pi... hm... I would like to wait and see if the issue recurrs with the same pi.
 
+**idea for next time**: disable ethernet power save before rebooting pis and see if that fixes it: https://github.com/raspberrypi/linux/issues/4289
+
 ### Recurrence on 2023-06-28
 This happened again. This time it was piwall3.local that became unresponsive. Symptoms:
 
