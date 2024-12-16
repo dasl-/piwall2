@@ -86,13 +86,13 @@ class Queue:
             self.__remote.increment_channel()
             screensaver_video_path = self.__remote.get_video_path_for_current_channel()
             if screensaver_video_path is None:
-                self.__logger.info("No screensavers found in channel video config.")
+                self.__logger.debug("No screensavers found in channel video config.")
                 Logger.set_uuid('')
                 return
         else: # use_screensavers
             screensaver_data = ScreensaverHelper().choose_random_screensaver()
             if screensaver_data is None:
-                self.__logger.info("No screensavers found in config.")
+                self.__logger.debug("No screensavers found in config.")
                 Logger.set_uuid('')
                 return
             screensaver_video_path = screensaver_data['video_path']

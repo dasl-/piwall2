@@ -42,3 +42,4 @@ class ScreensaverHelper:
                 'height': height,
             })
         self.__logger.info("Done loading screensaver metadata.")
+        ScreensaverHelper.__is_loaded = True
