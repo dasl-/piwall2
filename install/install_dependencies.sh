@@ -17,7 +17,11 @@ main(){
         exit
     fi
 
-    stopPiwallServices
+    # stop the services because in particular, a running omxplayer instance can cause the installation to fail,
+    # specifically the `buildAndInstallOmxplayerFork` step:
+    #   pi@piwall8.local: cp: cannot create regular file '/usr/bin/omxplayer.bin': Text file busy
+    #   pi@piwall8.local: make: *** [Makefile:98: install] Error 1`
+    doActionOnPiwallServices stop
     updateAndInstallAptPackages
     updateAndInstallPythonPackages
     installYtdlp
@@ -27,6 +31,8 @@ main(){
     if [[ "$installation_type" != "receiver" ]]; then
         installNode
     fi
+
+    doActionOnPiwallServices restart
 }
 
 usage() {
@@ -71,17 +77,15 @@ parseOpts(){
     fi
 }
 
-stopPiwallServices(){
-    info "\\nStopping piwall services..."
-    # stop the services because in particular, a running omxplayer instance can cause the installation to fail,
-    # specifically the `buildAndInstallOmxplayerFork` step:
-    #   pi@piwall8.local: cp: cannot create regular file '/usr/bin/omxplayer.bin': Text file busy
-    #   pi@piwall8.local: make: *** [Makefile:98: install] Error 1`
+doActionOnPiwallServices(){
+    local action=$1
+
+    info "\\nExecuting this action on piwall services: $action..."
     local piwall2_units
     piwall2_units=$(systemctl --all --no-legend list-units 'piwall2_*' | awk '{ print $1; }' | paste -sd ' ')
     if [ -n "${piwall2_units}" ]; then
         # shellcheck disable=SC2086
-        sudo systemctl stop $piwall2_units || true
+        sudo systemctl $action $piwall2_units || true
     fi
 }
 
