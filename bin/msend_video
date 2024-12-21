@@ -67,7 +67,27 @@ while True:
 
     if data:
         bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
-        # Rate limit to sending 5 MB/s
+
+        # This sleep rate limits sending to 5 MB/s. This is especially important when playing back
+        # local files. Without the rate limit, files may send as fast as network bandwidth permits, which would
+        # prevent control messages from being received in a timely manner. Without rate limiting, when playing
+        # local files, we observed that a control message could be sent over the network and received ~10
+        # seconds later -- a delay because the tubes were clogged.
+        #
+        # Another reason rate limiting is important is because the transmitted video can get corrupted if it is
+        # sent too fast. Specifically, there may be missing chunks of the video -- the receiver won't receive all
+        # of the bytes that the broadcaster sent. This corruption might occur on ~50% of the sends. Example
+        # output without the rate limit:
+        # https://gist.githubusercontent.com/dasl-/d06329d31df346b936419e394d364bc7/raw/7097647283435e888e8d5e1896e4472c7578273c/gistfile1.txt
+        #
+        # With the rate limit, all of the bytes are received. Example output with the rate limit:
+        # https://gist.githubusercontent.com/dasl-/cf10aa4da8d47a96c219e38d2bcfd6d8/raw/3aa9378172a97a1a45a72fc234b647f93f735b03/gistfile1.txt
+        #
+        # We used to rate limit via a `pv --rate-limit 4M` in our pipeline. But we found that this was for some
+        # not able to prevent the corruption described above. I'm not sure why -- perhaps `pv` buffers input
+        # internally and can emit output in bursty chunks, which might allow transient periods where we transmit
+        # greater too quickly?? In any case, replacing the `pv` clause with this sleep seems better able to
+        # prevent the aforementioned corruption.
         time.sleep(1 / (5 * 1024 * 1024 / chunk_size))
     else:
         # We've sent all our data and we're just waiting for the signals to be sent. Avoid exhausting CPU.
