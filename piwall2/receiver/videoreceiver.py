@@ -28,14 +28,8 @@ class VideoReceiver:
         measurement_window_bytes_count = 0
         total_bytes_count = 0
 
-        import hashlib
-        chunk = 0
         while True:
-            chunk += 1
             video_bytes = multicast_helper.receive(MulticastHelper.VIDEO_PORT)
-            hash_s = hashlib.md5(video_bytes).hexdigest()
-            self.__logger.info(f"Received {chunk}: {hash_s}")
-
             if total_bytes_count == 0:
                 # Subsequent bytes after the first packet should be received more quickly
                 socket.settimeout(30)
