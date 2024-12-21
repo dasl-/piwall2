@@ -83,6 +83,10 @@ while True:
         # With the rate limit, all of the bytes are received. Example output with the rate limit:
         # https://gist.githubusercontent.com/dasl-/cf10aa4da8d47a96c219e38d2bcfd6d8/raw/3aa9378172a97a1a45a72fc234b647f93f735b03/gistfile1.txt
         #
+        # My theory for why this corruption happens is that we are overflowing some buffer in the network
+        # switch when we send too fast. This is because I observed neither send buffer errors on the broadcaster
+        # nor receive buffer errors on the receivers.
+        #
         # We used to rate limit via a `pv --rate-limit 4M` in our pipeline. But we found that this was for some
         # not able to prevent the corruption described above. I'm not sure why -- perhaps `pv` buffers input
         # internally and can emit output in bursty chunks, which might allow transient periods where we transmit
