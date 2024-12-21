@@ -71,7 +71,7 @@ class LoadingScreenHelper:
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, msg)
 
     # This method is called by setup scripts. It iterates through all loading screens in the config file.
-    # For loading screen:
+    # For each loading screen:
     #   1) check if it exists on the broadcaster. If not, throw an exception.
     #   2) check if it exists on each receiver. If not, copy it to all receivers.
     def copy_loading_screens_from_broadcaster_to_receivers(self):
