@@ -113,10 +113,11 @@ class LoadingScreenHelper:
         ).decode('utf-8').strip()
 
         cmd = f"md5sum --check --strict <( echo '{checksum}' )"
+        print("dasldasl cmd: " + cmd)
         return_code, stdout, stderr = cmd_runner.run_dsh(
             cmd, include_broadcaster = False, raise_on_failure = False, return_output = True
         )
-        print("dasldasl: " + stdout)
+        print("dasldasl dshoutput: " + stdout.decode('utf-8'))
         raise Exception("foobarr")
 
     def __load_config_if_not_loaded(self):
