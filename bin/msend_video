@@ -39,6 +39,7 @@ multicast_helper = MulticastHelper().setup_broadcaster_socket()
 control_message_helper = ControlMessageHelper().setup_for_broadcaster()
 bytes_sent = 0
 first_byte_send_time = None
+last_byte_send_time = None
 end_loading_screen_signal_time = None
 play_signal_time = None
 while True:
@@ -67,9 +68,16 @@ while True:
         bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
     else:
         # We've sent all our data and we're just waiting for the signals to be sent. Avoid exhausting CPU.
+        if not last_byte_send_time:
+            last_byte_send_time = time.time()
         time.sleep(0.01)
 
 if args.end_of_video_magic_bytes:
     bytes_sent += multicast_helper.send(args.end_of_video_magic_bytes.encode(), MulticastHelper.VIDEO_PORT)
 
-logger.info(f"Finished sending video. Sent {bytes_sent} bytes.")
+if not last_byte_send_time:
+    last_byte_send_time = time.time()
+
+logger.info(f"Finished sending video. Sent {bytes_sent} bytes in " +
+    f"{round(last_byte_send_time - first_byte_send_time, 2)} s " +
+    f"({round((bytes_sent / 1024) / (last_byte_send_time - first_byte_send_time), 2)} KB/s).")

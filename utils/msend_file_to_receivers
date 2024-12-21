@@ -45,8 +45,8 @@ receive_file_proc = cmd_runner.run_dsh(cmd, include_broadcaster = False, wait_fo
 time.sleep(2)
 
 logger.info("Sending file to receivers...")
-cmd = (f'{root_dir}/bin/msend_video --end-of-video-magic-bytes {VideoBroadcaster.END_OF_VIDEO_MAGIC_BYTES.decode()} ' +
-    f'< {shlex.quote(args.input_file)}')
+cmd = (f'set -o pipefail && export SHELLOPTS && cat {shlex.quote(args.input_file)} | pv --rate-limit 4M | ' +
+    f'{root_dir}/bin/msend_video --end-of-video-magic-bytes {VideoBroadcaster.END_OF_VIDEO_MAGIC_BYTES.decode()}')
 cmd_runner.run_cmd_with_realtime_output(cmd)
 
 while receive_file_proc.poll() is None:

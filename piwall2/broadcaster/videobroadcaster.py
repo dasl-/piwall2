@@ -252,6 +252,15 @@ class VideoBroadcaster:
         # control messages from being received in a timely manner. Without `pv` here, when playing local files,
         # we observed that a control message could be sent over the network and received ~10 seconds later --
         # a delay because the tubes were clogged.
+        #
+        # Another reason `pv` is important is because the transmitted video can get corrupted if it is sent
+        # too fast. Specifically, there may be missing chunks of the video -- the receiver won't receive all
+        # of the bytes that the broadcaster sent. This corruption might occur on ~50% of the sends. Example
+        # output without the rate limit:
+        # https://gist.githubusercontent.com/dasl-/d06329d31df346b936419e394d364bc7/raw/7097647283435e888e8d5e1896e4472c7578273c/gistfile1.txt
+        #
+        # With the rate limit, all of the bytes are received. Example output with the rate limit:
+        # https://gist.githubusercontent.com/dasl-/cf10aa4da8d47a96c219e38d2bcfd6d8/raw/152895f07f16717cf678f981ad40c4bc9ffebe91/gistfile1.txt
         video_broadcast_cmd = ("set -o pipefail && export SHELLOPTS && " +
             f"pv --rate-limit 4M | tee >({burst_throttling_clause}) >({broadcasting_clause}) >/dev/null")
         self.__logger.info(f"Running broadcast command: {video_broadcast_cmd}")
