@@ -110,13 +110,13 @@ class LoadingScreenHelper:
             shell = True,
             executable = '/usr/bin/bash',
             stderr = subprocess.STDOUT
-        )
+        ).decode('utf-8').strip()
 
         cmd = f"md5sum --check --strict <( echo '{checksum}' )"
         return_code, stdout, stderr = cmd_runner.run_dsh(
             cmd, include_broadcaster = False, raise_on_failure = False, return_output = True
         )
-        print(stdout)
+        print("dasldasl: " + stdout)
         raise Exception("foobarr")
 
     def __load_config_if_not_loaded(self):
