@@ -42,8 +42,9 @@ first_byte_send_time = None
 last_byte_send_time = None
 end_loading_screen_signal_time = None
 play_signal_time = None
+chunk_size = 4096
 while True:
-    data = sys.stdin.buffer.read(4096)
+    data = sys.stdin.buffer.read(chunk_size)
     if not data and end_loading_screen_signal_time and play_signal_time:
         # Need to make sure we've sent all these signals before breaking
         # Once data returns falsey, it should continue to be falsey forever.
@@ -66,6 +67,8 @@ while True:
 
     if data:
         bytes_sent += multicast_helper.send(data, MulticastHelper.VIDEO_PORT)
+        # Rate limit to sending 5 MB/s
+        time.sleep(1 / (5 * 1024 * 1024 / chunk_size))
     else:
         # We've sent all our data and we're just waiting for the signals to be sent. Avoid exhausting CPU.
         if not last_byte_send_time:
