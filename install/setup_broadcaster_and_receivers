@@ -184,6 +184,7 @@ def install_bootstrap_dependencies():
     run_cmd_with_realtime_output(ROOT_DIR + '/install/install_dependencies.sh -p -t broadcaster')
 
 def copy_loading_screens_from_broadcaster_to_receivers():
+    print("Copying loading screens from broadcaster to receivers if necessary...")
     from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
     LoadingScreenHelper().copy_loading_screens_from_broadcaster_to_receivers()
 

@@ -143,7 +143,7 @@ class LoadingScreenHelper:
         for video_path, match_count in video_to_match_count_map.items():
             if match_count < num_receivers:
                 self.__logger.info("Loading screen needs to be copied to one or more receivers " +
-                    f"(only matched on {match_count} of {num_receivers} receivers): {video_path}")
+                    f"(matched on {match_count} of {num_receivers} receivers): {video_path}")
                 loading_screens_that_need_to_be_copied.append(video_path)
             else:
                 self.__logger.info(f"Loading screen doesn't need to be copied receivers {video_path}")
