@@ -37,6 +37,7 @@ def main():
         install_dependencies(cmd_runner, args.omxplayer_branch)
     if args.install_app:
         install_app(cmd_runner, args.dont_disable_wifi)
+    copy_loading_screens_from_broadcaster_to_receivers()
 
     # The step install_app require a restart
     restart_hosts_if_necessary(cmd_runner, is_last_step = True)
@@ -181,6 +182,10 @@ def install_bootstrap_dependencies():
 
     print("Installing bootstrap python dependencies...")
     run_cmd_with_realtime_output(ROOT_DIR + '/install/install_dependencies.sh -p -t broadcaster')
+
+def copy_loading_screens_from_broadcaster_to_receivers():
+    from piwall2.broadcaster.loadingscreenhelper import LoadingScreenHelper
+    LoadingScreenHelper().copy_loading_screens_from_broadcaster_to_receivers()
 
 def is_program_installed(program):
     try:
