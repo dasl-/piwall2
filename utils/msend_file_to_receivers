@@ -49,13 +49,14 @@ cmd = (f'{root_dir}/bin/msend_video --end-of-video-magic-bytes {VideoBroadcaster
     f'< {shlex.quote(args.input_file)}')
 cmd_runner.run_cmd_with_realtime_output(cmd)
 
+while receive_file_proc.poll() is None:
+    time.sleep(0.1)
+
 logger.info("Restarting receiver service on receivers...")
 cmd_runner = CmdRunner()
 cmd = 'sudo systemctl restart piwall2_receiver.service'
 cmd_runner.run_dsh(cmd, include_broadcaster = False)
 
-while receive_file_proc.poll() is None:
-    time.sleep(0.1)
 if receive_file_proc.returncode != 0:
     raise Exception(f"The receive_file process exited non-zero: {receive_file_proc.returncode}.")
 
