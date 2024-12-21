@@ -38,7 +38,11 @@ class CmdRunner:
 
     # If wait_for_proc is True, returns the command's return code (integer)
     # If wait_for_proc is False, returns the process object
-    def run_dsh(self, cmd, include_broadcaster = True, raise_on_failure = True, wait_for_proc = True):
+    # If return_output is False, the output is printed to the console in realtime
+    # If return_output is True, the output is returned as a tuple: [return_code, stdout, stderr]
+    #   Note that if return_output is True, we ignore wait_for_proc.
+    def run_dsh(self, cmd, include_broadcaster = True, raise_on_failure = True, wait_for_proc = True,
+            return_output = False):
         machines_list = self.__receivers_list
         if include_broadcaster:
             machines_list = self.__broadcaster_and_receivers_list
@@ -54,14 +58,18 @@ class CmdRunner:
             f'--remoteshellopt "{self.SSH_KEY_PATH_FLAG}" ' +
             f"--show-machine-names --machine {machines_string} {shlex.quote(cmd)}")
 
-        cmd_return_code_or_proc = self.run_cmd_with_realtime_output(dsh_cmd, raise_on_failure, wait_for_proc)
-        if not wait_for_proc:
-            return cmd_return_code_or_proc
+        if return_output:
+            return_code, stdout, stderr = self.__run_cmd_and_return_output(dsh_cmd, raise_on_failure)
+            return return_code, stdout, stderr
+        else:
+            cmd_return_code_or_proc = self.run_cmd_with_realtime_output(dsh_cmd, raise_on_failure, wait_for_proc)
+            if not wait_for_proc:
+                return cmd_return_code_or_proc
 
-        if cmd_return_code_or_proc != 0 and raise_on_failure:
-            raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
-                f"{cmd_return_code_or_proc}.")
-        return cmd_return_code_or_proc
+            if cmd_return_code_or_proc != 0 and raise_on_failure:
+                raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
+                    f"{cmd_return_code_or_proc}.")
+            return cmd_return_code_or_proc
 
     def run_parallel(self, cmd, include_broadcaster = True):
         machines_list = self.__receivers_list
@@ -92,9 +100,19 @@ class CmdRunner:
         while proc.poll() is None:
             time.sleep(0.1)
         if proc.returncode != 0 and raise_on_failure:
-            raise Exception(f"The process for cmd: [{cmd}] exited non-zero: " +
-                f"{proc.returncode}.")
+            raise Exception(f"The process for cmd: [{cmd}] exited non-zero: {proc.returncode}.")
         return proc.returncode
+
+    def __run_cmd_and_return_output(self, cmd, raise_on_failure = True):
+        self.__logger.info(f"Running command: {cmd}")
+        proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash', stdout = subprocess.PIPE, stderr = subprocess.PIPE
+        )
+
+        stdout, stderr = proc.communicate()
+        if proc.returncode != 0 and raise_on_failure:
+            raise Exception(f"The process for cmd: [{cmd}] exited non-zero: {proc.returncode}.")
+        return proc.returncode, stdout, stderr
 
     def get_broadcaster_and_receivers_hostname_list(self):
         return self.__broadcaster_and_receivers_list
