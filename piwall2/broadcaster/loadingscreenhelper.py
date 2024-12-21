@@ -2,8 +2,10 @@ import hashlib
 import json
 import os
 import random
+import subprocess
 
 from piwall2.broadcaster.ffprober import Ffprober
+from piwall2.cmdrunner import CmdRunner
 from piwall2.config import Config
 from piwall2.configloader import ConfigLoader
 from piwall2.controlmessagehelper import ControlMessageHelper
@@ -49,6 +51,7 @@ class LoadingScreenHelper:
     the loading screen videos: only those where height <= 720.
     """
     __loading_screen_videos = None
+    __LOADING_SCREEN_DIRECTORY = DirectoryUtils().root_dir + '/assets/loading_screens'
     __LOADING_SCREEN_CACHE_PATH = DirectoryUtils().root_dir + '/loading_screen_config_cache.json'
 
     def __init__(self):
@@ -67,17 +70,54 @@ class LoadingScreenHelper:
         }
         self.__control_message_helper.send_msg(ControlMessageHelper.TYPE_SHOW_LOADING_SCREEN, msg)
 
+    # This method is called by setup scripts. It iterates through all loading screens in the config file.
+    # For loading screen:
+    #   1) check if it exists on the broadcaster. If not, throw an exception.
+    #   2) check if it exists on each receiver. If not, copy it to all receivers.
+    def copy_loading_screens_from_broadcaster_to_receivers(self):
+        loading_screens = self.__get_loading_screen_candidates()
+        cmd_runner = CmdRunner()
+        for loading_screen in loading_screens:
+            if not os.path.isfile(loading_screen['video_path']):
+                raise Exception(f"Loading screen does not exist: {loading_screen['video_path']}")
+
+        loading_screens_to_copy = self.__get_loading_screens_that_need_to_be_copied(loading_screens, cmd_runner)
+
     # Returns a dict with the keys: video_path, width, height
     def __choose_random_loading_screen(self):
-        if ConfigLoader().is_any_receiver_dual_video_output():
-            options = LoadingScreenHelper.__loading_screen_videos['720p']
-        else:
-            options = LoadingScreenHelper.__loading_screen_videos['all']
-        if options:
-            loading_screen_data = random.choice(options)
+        candidates = self.__get_loading_screen_candidates()
+        if candidates:
+            loading_screen_data = random.choice(candidates)
         else:
             loading_screen_data = None
         return loading_screen_data
+
+    def __get_loading_screen_candidates(self):
+        if ConfigLoader().is_any_receiver_dual_video_output():
+            candidates = LoadingScreenHelper.__loading_screen_videos['720p']
+        else:
+            candidates = LoadingScreenHelper.__loading_screen_videos['all']
+        return candidates
+
+    def __get_loading_screens_that_need_to_be_copied(self, loading_screens, cmd_runner):
+        loading_screen_paths_str = ''
+        for loading_screen in loading_screens:
+            loading_screen_paths_str += f"{loading_screen['video_path']} "
+        loading_screen_paths_str = loading_screen_paths_str.strip()
+
+        checksum = subprocess.check_output(
+            f"md5sum {loading_screen_paths_str}",
+            shell = True,
+            executable = '/usr/bin/bash',
+            stderr = subprocess.STDOUT
+        )
+
+        cmd = f"md5sum --check --strict <( echo '{checksum}' )"
+        return_code, stdout, stderr = cmd_runner.run_dsh(
+            cmd, include_broadcaster = False, raise_on_failure = False, return_output = True
+        )
+        print(stdout)
+        raise Exception("foobarr")
 
     def __load_config_if_not_loaded(self):
         if LoadingScreenHelper.__is_loaded:
@@ -110,13 +150,12 @@ class LoadingScreenHelper:
 
         self.__logger.info("Not using loading screen cache file. Cache file is either invalid or does not exist.")
         ffprober = Ffprober()
-        path_prefix = DirectoryUtils().root_dir + '/assets/loading_screens/'
         LoadingScreenHelper.__loading_screen_videos = {
             'all': [],
             '720p': [],
         }
         for loading_screen_metadata in loading_screen_config:
-            video_path = path_prefix + loading_screen_metadata['video_file']
+            video_path = self.__LOADING_SCREEN_DIRECTORY + '/' + loading_screen_metadata['video_file']
             ffprobe_metadata = ffprober.get_video_metadata(video_path, ['width', 'height'])
             this_metadata = {
                 'video_path': video_path,
