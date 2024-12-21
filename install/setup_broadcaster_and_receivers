@@ -125,7 +125,7 @@ def clone_and_pull_repo(cmd_runner, ssh_opts):
     clone_or_pull_repo_and_checkout_branch = (
         f'if [ ! -d "{ROOT_DIR}" ]; then echo "Cloning repo..." && ' +
         f'GIT_SSH_COMMAND="{ssh_opts}" git clone "{git_url}" "{ROOT_DIR}"; '
-        f'else echo "Pulling repo..." && GIT_SSH_COMMAND="{ssh_opts}" git -C "{ROOT_DIR}" pull; fi && ' +
+        f'else echo "Pulling repo..." && {{ GIT_SSH_COMMAND="{ssh_opts}" git -C "{ROOT_DIR}" pull || true }} ; fi && ' +
         f'git -C {ROOT_DIR} checkout {current_branch} && '
         # pull a second time after checking out the right branch. AFAIK, pull only updates the branch you are
         # currently on?
