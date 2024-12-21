@@ -86,7 +86,10 @@ while True:
         # We used to rate limit via a `pv --rate-limit 4M` in our pipeline. But we found that this was for some
         # not able to prevent the corruption described above. I'm not sure why -- perhaps `pv` buffers input
         # internally and can emit output in bursty chunks, which might allow transient periods where we transmit
-        # greater too quickly?? In any case, replacing the `pv` clause with this sleep seems better able to
+        # greater too quickly?? Some testing with `pv --no-splice --buffer-size 512 --rate-limit 4M` seemed to
+        # work better and might have solved the problem, but that is quite fiddly.
+        #
+        # In any case, replacing the `pv` clause with this sleep seems better able to
         # prevent the aforementioned corruption.
         time.sleep(1 / (5 * 1024 * 1024 / chunk_size))
     else:
