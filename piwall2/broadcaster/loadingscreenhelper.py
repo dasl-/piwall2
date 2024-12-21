@@ -146,7 +146,7 @@ class LoadingScreenHelper:
                     f"(matched on {match_count} of {num_receivers} receivers): {video_path}")
                 loading_screens_that_need_to_be_copied.append(video_path)
             else:
-                self.__logger.info(f"Loading screen doesn't need to be copied receivers {video_path}")
+                self.__logger.info(f"Loading screen doesn't need to be copied to receivers {video_path}")
         return loading_screens_that_need_to_be_copied
 
     def __load_config_if_not_loaded(self):
