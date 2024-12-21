@@ -82,6 +82,11 @@ class LoadingScreenHelper:
                 raise Exception(f"Loading screen does not exist: {loading_screen['video_path']}")
 
         loading_screens_to_copy = self.__get_loading_screens_that_need_to_be_copied(loading_screens, cmd_runner)
+        for loading_screen in loading_screens_to_copy:
+            self.__logger.info(f"Sending loading screen to receivers: {loading_screen}")
+            cmd = (DirectoryUtils().root_dir +
+                f'/utils/msend_file_to_receivers --input-file {loading_screen} --output-file {loading_screen}')
+            cmd_runner.run_cmd_with_realtime_output(cmd)
 
     # Returns a dict with the keys: video_path, width, height
     def __choose_random_loading_screen(self):
@@ -112,13 +117,37 @@ class LoadingScreenHelper:
             stderr = subprocess.STDOUT
         ).decode('utf-8').strip()
 
-        cmd = f"md5sum --check --strict <( echo '{checksum}' )"
-        print("dasldasl cmd: " + cmd)
+        cmd = f"md5sum --check --strict <( echo '{checksum}' ) 2>&1"
         return_code, stdout, stderr = cmd_runner.run_dsh(
             cmd, include_broadcaster = False, raise_on_failure = False, return_output = True
         )
-        print("dasldasl dshoutput: " + stdout.decode('utf-8'))
-        raise Exception("foobarr")
+
+        if return_code == 0:
+            self.__logger.info("All loading screens already exist on receivers.")
+            return []
+
+        video_to_match_count_map = {}
+        for loading_screen in loading_screens: # initialize the map
+            video_to_match_count_map[loading_screen['video_path']] = 0
+
+        for line in stdout.decode('utf-8').splitlines():
+            if line.endswith(": OK"):
+                # Line looks like:
+                # pi@piwall9.local: /home/pi/development/piwall2/assets/loading_screens/dialup.ts: OK
+                parts = line.split(':')
+                video_path = parts[1].strip()
+                video_to_match_count_map[video_path] += 1
+
+        loading_screens_that_need_to_be_copied = []
+        num_receivers = len(ConfigLoader().get_receivers_list())
+        for video_path, match_count in video_to_match_count_map.items():
+            if match_count < num_receivers:
+                self.__logger.info("Loading screen needs to be copied to one or more receivers " +
+                    f"(only matched on {match_count} of {num_receivers} receivers): {video_path}")
+                loading_screens_that_need_to_be_copied.append(video_path)
+            else:
+                self.__logger.info(f"Loading screen doesn't need to be copied receivers {video_path}")
+        return loading_screens_that_need_to_be_copied
 
     def __load_config_if_not_loaded(self):
         if LoadingScreenHelper.__is_loaded:
