@@ -311,7 +311,7 @@ class VideoBroadcaster:
         https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
         """
         youtube_dl_cmd_template = ("mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} {4} | " +
-            "pv --rate-limit 4M | mbuffer -q -Q -m {5}b")
+            "pv --rate-limit 2M | mbuffer -q -Q -m {5}b")
 
         log_opts = '--no-progress'
         if Logger.get_level() <= Logger.DEBUG:
