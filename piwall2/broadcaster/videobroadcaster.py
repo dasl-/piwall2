@@ -311,7 +311,7 @@ class VideoBroadcaster:
         https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
         """
         youtube_dl_cmd_template = ("mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} {4} | " +
-            "mbuffer -q -Q -m {5}b")
+            "pv --rate-limit {5} | mbuffer -q -Q -m {6}b")
 
         log_opts = '--no-progress'
         if Logger.get_level() <= Logger.DEBUG:
@@ -329,12 +329,14 @@ class VideoBroadcaster:
         # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
         # be enough buffer for ~139s
         video_buffer_size = 1024 * 1024 * 50
+        video_rate_limit = 1024 * 1024 * 4
         youtube_dl_video_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__VIDEO_TMP_DIR),
             shlex.quote(self.__video_url),
             shlex.quote(ytdl_video_format),
             log_opts,
             use_extractors,
+            video_rate_limit,
             video_buffer_size
         )
 
@@ -342,12 +344,14 @@ class VideoBroadcaster:
 
         # Also use a 50MB buffer, because in some cases (live videos), the audio stream we download may also contain video.
         audio_buffer_size = 1024 * 1024 * 50
+        audio_rate_limit = 1024 * 1024 * 1
         youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__AUDIO_TMP_DIR),
             shlex.quote(self.__video_url),
             shlex.quote(self.__AUDIO_FORMAT),
             log_opts,
             use_extractors,
+            audio_rate_limit,
             audio_buffer_size
         )
 
