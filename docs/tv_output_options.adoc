@@ -222,7 +222,7 @@ Finally, I tried something suggested on a https://forums.raspberrypi.com/viewtop
 ### Note on OS support
 link:pass:[raspberry pi - Troubleshooting KMS HDMI output.pdf][Reference]
 
-https://pip.raspberrypi.com/categories/685-whitepapers-app-notes/documents/RP-004341-WP/Troubleshooting-KMS-HDMI-output.pdf[dead link reference, mirrored in link above]:
+https://pip.raspberrypi.com/categories/685-whitepapers-app-notes/documents/RP-004341-WP/Troubleshooting-KMS-HDMI-output.pdf[dead link reference, mirrored in link above]
 
 * Buster: In buster, the default graphics stack is FKMS. In order to use the legacy graphics stack, we must comment out `dtoverlay=vc4-fkms-v3d`
 * Bullseye (successor to Buster): In bullseye, the default graphics stack is KMS. In order to use the legacy graphics stack, we must comment out `dtoverlay=vc4-kms-v3d`
