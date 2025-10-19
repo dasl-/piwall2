@@ -50,7 +50,7 @@ class VideoBroadcaster:
     # yt_dlp_extractors: string. Extractor names for yt-dlp to use, separated by commas.
     #   Whitelisting extractors to use can speed up video download initialization time.
     #   Refer to yt-dlp documentation for the '--use-extractors' flag for more details.
-    def __init__(self, video_url, log_uuid, show_loading_screen, yt_dlp_extractors):
+    def __init__(self, video_url, log_uuid, show_loading_screen, yt_dlp_extractors = None):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         if log_uuid:
             Logger.set_uuid(log_uuid)
