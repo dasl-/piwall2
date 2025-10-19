@@ -24,7 +24,6 @@ main(){
     doActionOnPiwallServices stop
     updateAndInstallAptPackages
     updateAndInstallPythonPackages
-    installYtdlp
     buildAndInstallOmxplayerFork
     clearYtdlpCache
 
@@ -101,12 +100,7 @@ updateAndInstallAptPackages(){
 
 updateAndInstallPythonPackages(){
     info "\\nUpdating and installing python packages..."
-    sudo python3 -m pip install --upgrade toml pyjson5 pytz
-}
-
-installYtdlp(){
-    info "\\nInstalling yt-dlp..."
-    "$BASE_DIR"/utils/update_yt-dlp.sh
+    sudo python3 -m pip install --upgrade toml pyjson5 pytz yt-dlp
 }
 
 # The 'paused' branch is a fork of omxplayer with:
