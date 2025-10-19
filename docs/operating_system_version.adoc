@@ -12,6 +12,6 @@ The receiver pis run `omxplayer` to play and crop videos that are sent by the br
 
 Furthermore, the last OS in which `omxplayer` is officially supported is Buster (Debian 10). However, it is possible to use `omxplayer` in Bullseye (Debian 11) (https://github.com/popcornmix/omxplayer/issues/810#issuecomment-981523430[1], https://github.com/popcornmix/omxplayer/issues/825#issuecomment-1367513363[2], https://forums.raspberrypi.com/viewtopic.php?p=1935387&sid=9fead3d6e07efc0a329d418739be8af9#p1935387[3]). It might even be possible to use `omxplayer` in Bookwork (Debian 12), but I've not tested this.
 
-Finally, the last OS with which we have been able to ./tv_output_options.adoc#note-on-os-support[performantly rotate videos] is Bullseye (Debian 11). As such, we currently only support using 32 bit Bullseye for the receiver OS.
+Finally, the last OS with which we have been able to link:tv_output_options.adoc#note-on-os-support[performantly rotate videos] is Bullseye (Debian 11). As such, we currently only support using 32 bit Bullseye for the receiver OS.
 
 It's been a while since we tested the performance of cropping and video rotation in VLC. It's worth giving that another shot to see if we could move off of `omxplayer` -- that might allow us to use a more recent OS. See: https://github.com/dasl-/piwall2/blob/main/docs/cropping_videos_for_streaming_playback.adoc#potential-solution-2-crop .
