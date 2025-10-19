@@ -1,0 +1,17 @@
+# Operating system version
+:toc:
+:toclevels: 5
+
+## Broadcaster
+The broadcaster pi downloads a video with `yt-dlp` and sends it to the receivers. As such, the broadcaster needs an OS that is compatible with `yt-dlp`. For now, `yt-dlp` is compatible with 32 bit Bullseye (Debain 11), however it seems likely that in the future `yt-dlp` will require `deno` which only works with a 64 bit OS. See: https://github.com/dasl-/pifi/issues/44
+
+In addition to the 64 bit OS requirement, `yt-dlp` only supports recent python versions, so we we either need an OS with a recent python version, or a workaround for this requirement. See: https://github.com/dasl-/piwall2/issues/31
+
+## Receiver
+The receiver pis run `omxplayer` to play and crop videos that are sent by the broadcaster. `omxplayer` requires a 32 bit OS (https://forums.raspberrypi.com/viewtopic.php?p=2073713#p2073713[1], https://forums.raspberrypi.com/viewtopic.php?p=1707409&sid=da7725bb8b253e2c4695b287a1a9bef3#p1707409[2], https://github.com/popcornmix/omxplayer/issues/761#issuecomment-587085103[3]).
+
+Furthermore, the last OS in which `omxplayer` is officially supported is Buster (Debian 10). However, it is possible to use `omxplayer` in Bullseye (Debian 11) (https://github.com/popcornmix/omxplayer/issues/810#issuecomment-981523430[1], https://github.com/popcornmix/omxplayer/issues/825#issuecomment-1367513363[2], https://forums.raspberrypi.com/viewtopic.php?p=1935387&sid=9fead3d6e07efc0a329d418739be8af9#p1935387[3]). It might even be possible to use `omxplayer` in Bookwork (Debian 12), but I've not tested this.
+
+Finally, the last OS with which we have been able to ./tv_output_options.adoc#note-on-os-support[performantly rotate videos] is Bullseye (Debian 11). As such, we currently only support using 32 bit Bullseye for the receiver OS.
+
+It's been a while since we tested the performance of cropping and video rotation in VLC. It's worth giving that another shot to see if we could move off of `omxplayer` -- that might allow us to use a more recent OS. See: TODO.

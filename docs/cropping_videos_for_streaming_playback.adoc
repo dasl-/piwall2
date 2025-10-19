@@ -19,7 +19,7 @@ The audio will play, but no video is displayed.
 
 Googling the errors, we find a https://forum.videolan.org/viewtopic.php?t=149455[solution from a VLC developer]. And some more https://github.com/RPi-Distro/vlc/issues/2#issuecomment-535591883[info from raspberry pi employees on github].
 
-### Potential solution
+### Potential solution 1: `--video-filter`
 The full (potential) solution:
 ....
 % cvlc today.mp4 "--video-filter=croppadd{cropleft=300}" --codec avcodec,none
@@ -66,6 +66,9 @@ Even if we use software decoding without any cropping, there are still issues:
 % cvlc Audio\ Video\ Sync\ Test-ucZl6vQ_8Uo.mp4 --codec avcodec,none
 ....
 The video is less choppy, but the audio and video are still out of sync
+
+### Potential solution: `--crop`
+See: https://github.com/RPi-Distro/vlc/issues/12#issuecomment-670591618 . I've not yet had the time to test how performant this is. See also: https://github.com/KenT2/pp-vlc .
 
 ## Cropping videos with omxplayer
 https://github.com/popcornmix/omxplayer/#readme[omxplayer is deprecated], but it still works... for now.
