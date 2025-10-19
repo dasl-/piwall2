@@ -14,4 +14,4 @@ Furthermore, the last OS in which `omxplayer` is officially supported is Buster 
 
 Finally, the last OS with which we have been able to ./tv_output_options.adoc#note-on-os-support[performantly rotate videos] is Bullseye (Debian 11). As such, we currently only support using 32 bit Bullseye for the receiver OS.
 
-It's been a while since we tested the performance of cropping and video rotation in VLC. It's worth giving that another shot to see if we could move off of `omxplayer` -- that might allow us to use a more recent OS. See: TODO.
+It's been a while since we tested the performance of cropping and video rotation in VLC. It's worth giving that another shot to see if we could move off of `omxplayer` -- that might allow us to use a more recent OS. See: https://github.com/dasl-/piwall2/blob/main/docs/cropping_videos_for_streaming_playback.adoc#potential-solution-2-crop .
