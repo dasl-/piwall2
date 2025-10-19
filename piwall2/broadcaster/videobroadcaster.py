@@ -205,16 +205,20 @@ class VideoBroadcaster:
     Note that we only download the video if the input was a youtube_url. If playing a local file, no
     download is necessary.
 
-    This command also includes a pipeline to calculate video dimensions inline with the video download.
+    This command also includes a pipeline to calculate video dimensions inline with the video download, which is enabled
+    by default (see `include_dimensions_pipeline`). This writes dimensions to a FIFO, which is read by another process
+    that sends the dimensions to the receivers. However, when using the `./utils/download_video` command, nothing
+    reads the FIFO. Writes to a FIFO block until there's another process reading them. So for the sake of commands like
+    `./utils/download_video`, where no process will be reading the FIFO, we can disable writing the dimensions to the FIFO.
     """
-    def start_download_and_convert_video_proc(self, ytdl_video_format = None):
+    def start_download_and_convert_video_proc(self, ytdl_video_format = None, include_dimensions_pipeline = True):
         if self.__get_video_url_type() == self.__VIDEO_URL_TYPE_LOCAL_FILE:
             cmd = f"< {shlex.quote(self.__video_url)} {self.__get_video_dimensions_pipeline_cmd()}"
         else:
             # Mix the best audio with the video and send via multicast
             # See: https://github.com/dasl-/piwall2/blob/main/docs/best_video_container_format_for_streaming.adoc
             # See: https://github.com/dasl-/piwall2/blob/main/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc
-            ffmpeg_input_clause = self.__get_ffmpeg_input_clause_and_video_dimensions_pipeline(ytdl_video_format)
+            ffmpeg_input_clause = self.__get_ffmpeg_input_clause_and_video_dimensions_pipeline(ytdl_video_format, include_dimensions_pipeline)
 
             # `-c:a mp2`: mp2 is believed to result in better quality audio at high bit rates: https://wiki.audacityteam.org/wiki/MP2
             #
@@ -284,7 +288,7 @@ class VideoBroadcaster:
         # https://gist.github.com/dasl-/1ad012f55f33f14b44393960f66c6b00
         return f"ffmpeg -hide_banner {log_opts} "
 
-    def __get_ffmpeg_input_clause_and_video_dimensions_pipeline(self, ytdl_video_format):
+    def __get_ffmpeg_input_clause_and_video_dimensions_pipeline(self, ytdl_video_format, include_dimensions_pipeline):
         video_url_type = self.__get_video_url_type()
         if video_url_type is not self.__VIDEO_URL_TYPE_YOUTUBE:
             raise Exception(f'Unexpected video_url_type: {video_url_type}.')
@@ -338,7 +342,9 @@ class VideoBroadcaster:
             video_buffer_size
         )
 
-        youtube_dl_video_cmd_with_dimensions_calculation = youtube_dl_video_cmd + ' | ' + self.__get_video_dimensions_pipeline_cmd()
+        youtube_dl_video_cmd_with_dimensions_calculation = youtube_dl_video_cmd
+        if include_dimensions_pipeline:
+            youtube_dl_video_cmd_with_dimensions_calculation += ' | ' + self.__get_video_dimensions_pipeline_cmd()
 
         # Also use a 50MB buffer, because in some cases (live videos), the audio stream we download may also contain video.
         audio_buffer_size = 1024 * 1024 * 50
