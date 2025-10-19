@@ -67,7 +67,7 @@ Even if we use software decoding without any cropping, there are still issues:
 ....
 The video is less choppy, but the audio and video are still out of sync
 
-### Potential solution: `--crop`
+### Potential solution 2: `--crop`
 See: https://github.com/RPi-Distro/vlc/issues/12#issuecomment-670591618 . I've not yet had the time to test how performant this is. See also: https://github.com/KenT2/pp-vlc .
 
 ## Cropping videos with omxplayer
