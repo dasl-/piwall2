@@ -17,10 +17,10 @@ main(){
 
     setTimezone
     setupSystemdServices
-    setupYoutubeDlUpdateCron
 
     # Do broadcaster stuff
     if [[ "$installation_type" == 'broadcaster' ]]; then
+        setupYtDlpUpdateCron
         updateDbSchema
         buildWebApp
         checkYoutubeApiKey
@@ -134,8 +134,8 @@ setupSystemdServices(){
     fi
 }
 
-setupYoutubeDlUpdateCron(){
-    info "Setting up youtube-dl update cron..."
+setupYtDlpUpdateCron(){
+    info "Setting up yt-dlp update cron..."
     sudo "$BASE_DIR/install/piwall2_cron.sh"
     sudo chown root:root /etc/cron.d/piwall2
     sudo chmod 644 /etc/cron.d/piwall2

@@ -5,15 +5,48 @@
 
 toc::[]
 
+# Compatible hardware
+* Raspberry Pi 4 - this is our recommended pi model. At least 2 GB of RAM is recommended.
+* Raspberry Pi 3B+
+* Raspberry Pi 5 is not compatible! (no omxplayer)
+
 # Installation and setup
-. Requires raspbian lite link:docs/operating_system_version.adoc[bullseye] (a legacy OS): https://downloads.raspberrypi.com/raspios_oldstable_lite_armhf/images/raspios_oldstable_lite_armhf-2024-10-28/[2024-10-22-raspios-bullseye-armhf-lite.img]
-. All pis should be provisioned with the username `pi`. All pis in the TV wall must use the same ssh password.
+
+## Install operating system
+. Download the link:docs/operating_system_version.adoc[required OS version] image files for the broadcaster and receiver pis. Newer operating systems are incompatible.
+. Use the official https://www.raspberrypi.com/software/[Raspberry Pi Imager] to write the disk images to your SD cards
+. Operating System > Use custom > select the appropriate `*.img` file that you downloaded in step 1.
+. OS customisation settings:
+.. General
+... Set hostname: each pi should be given a unique hostname
+... Set username and password:
+.... Username: `pi` (this username is required)
+.... Password: use the same password on all pis (the same password is required)
+... Wifi: when installing the TV wall software on your pis, we typically (https://github.com/dasl-/piwall2/blob/43faa49b390f0103735558781fbe62dc0983991d/install/install.sh#L168-L174)[disable wifi], because multicast doesn't work well over wifi. Thus, you need not enter any wifi credentials. Instead, connect to the network via an ethernet cable.
+.. Services
+... Enable SSH, and use password authentication (this is required)
+. Write OS to SD card and eject SD card
+
+## Setup Raspberry Pi
+. Connect via ssh: `ssh pi@<HOSTNAME>.local`
+. `sudo apt-get update`
+. `sudo apt-get upgrade -y`
+. `sudo apt-get install git`
+
+### Checkout Repo
+. `git clone git@github.com:dasl-/piwall2.git`
+. `cd piwall2`
+
+### Install
+Run all of these steps on your broadcaster pi
 . Create a https://gist.github.com/dasl-/b1e350648bbeb88abe636ba0402eabde[`config.toml`] file with the coordinates of the TVs
 . `./install/setup_broadcaster_and_receivers --ssh-password <your_ssh_password>`
-. https://github.com/dasl-/piwall2/blob/main/docs/setting_your_youtube_api_key.adoc[Setup your youtube API key]
+.. If it fails with an error, see: link:docs/issues_weve_seen_before.adoc#the-setup_broadcaster_and_receivers-script-fails[the setup_broadcaster_and_receivers script fails]
+. link:docs/setting_your_youtube_api_key.adoc[setup your youtube API key]
+. Optional: link:docs/setting_up_a_remote.adoc[setup a TV remote]
 
 # Architecture
 TODO
 
 # Administration
-. Log files are located in `/var/log/piwall/`
+. View logs with `journalctl`

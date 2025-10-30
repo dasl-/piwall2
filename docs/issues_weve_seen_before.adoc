@@ -156,6 +156,14 @@ You may see errors earlier in the script output like:
 pi@piwall6.local: Err:115 http://raspbian.raspberrypi.org/raspbian buster/main armhf libtevent0 armhf 0.9.37-1
 pi@piwall6.local:   Cannot initiate the connection to raspbian.raspberrypi.org:80 (2a00:1098:0:80:1000:75:0:3). - connect (101: Network is unreachable) Could not connect to raspbian.raspberrypi.org:80 (93.93.128.193), connection timed out [IP: 93.93.128.193 80]
 ....
+
+Or:
+....
+pi@piwall6.local: Fetched 91.3 MB in 53s (1,723 kB/s)
+pi@piwall6.local: E: Failed to fetch http://raspbian.mirror.constant.com/raspbian/pool/main/l/luajit/luajit_2.1.0~beta3+dfsg-5.3+deb11u1_armhf.deb  Error reading from server - read (104: Connection reset by peer) [IP: 108.61.5.87 80]
+pi@piwall6.local: E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?
+pi@piwall6.local: Error in install_dependencies.sh at line number: 100 with exit code: 100
+....
 This is likely a transient failure for the raspbian package servers. Try again.
 
 ## Video playback freezes: cause 1
