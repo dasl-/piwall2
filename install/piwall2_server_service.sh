@@ -11,9 +11,6 @@ Wants=network-online.target
 Environment=HOME=/root
 ExecStart=$BASE_DIR/bin/server
 Restart=on-failure
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=PIWALL2_SERVER
 
 [Install]
 WantedBy=multi-user.target

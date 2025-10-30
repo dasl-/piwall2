@@ -24,11 +24,13 @@ main(){
     doActionOnPiwallServices stop
     updateAndInstallAptPackages
     updateAndInstallPythonPackages
-    buildAndInstallOmxplayerFork
-    clearYtdlpCache
 
-    if [[ "$installation_type" != "receiver" ]]; then
+    if [[ "$installation_type" == "broadcaster" ]]; then
         installNode
+        setupUv
+        installYtDlp
+    elif [[ "$installation_type" == "receiver" ]]; then
+        buildAndInstallOmxplayerFork
     fi
 
     doActionOnPiwallServices restart
@@ -38,7 +40,7 @@ usage() {
     local exit_code=$1
     echo "usage: $0 -t INSTALLATION_TYPE"
     echo "    -h  display this help message"
-    echo "    -t  Installation type: either 'broadcaster', 'receiver', or 'all'"
+    echo "    -t  Installation type: either 'broadcaster' or 'receiver'"
     echo "    -p  only install python dependencies"
     echo "    -b  omxplayer branch to build. Default: $omxplayer_branch (uses https://github.com/dasl-/omxplayer/ )"
     exit "$exit_code"
@@ -49,7 +51,7 @@ parseOpts(){
         case $opt in
             h) usage 0 ;;
             t)
-                if [[ "$OPTARG" != "broadcaster" && "$OPTARG" != "receiver" && "$OPTARG" != "both" ]]; then
+                if [[ "$OPTARG" != "broadcaster" && "$OPTARG" != "receiver" ]]; then
                     echo "Invalid installation type."
                     usage 1
                 else
@@ -100,24 +102,7 @@ updateAndInstallAptPackages(){
 
 updateAndInstallPythonPackages(){
     info "\\nUpdating and installing python packages..."
-    sudo python3 -m pip install --upgrade toml pyjson5 pytz yt-dlp
-}
-
-# The 'paused' branch is a fork of omxplayer with:
-# 1) The ability to start a video paused via the `--start-paused` flag. By unpausing in sync across all receivers,
-#   we get synchronized video playback.
-# 2) Millisecond granularity in the log files. Helpful for debugging timing issues.
-buildAndInstallOmxplayerFork(){
-    info "\\nBuilding and installing omxplayer fork..."
-    "$BASE_DIR"/install/build_omxplayer.sh -b "$omxplayer_branch"
-}
-
-# Just in case the youtube-dl cache got polluted, as it has before...
-# https://github.com/ytdl-org/youtube-dl/issues/24780
-clearYtdlpCache(){
-    info "\\nClearing yt-dlp cache..."
-    # shellcheck disable=SC1083
-    parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root pi
+    sudo python3 -m pip install --upgrade toml pyjson5 pytz uv
 }
 
 installNode(){
@@ -137,6 +122,27 @@ installNode(){
     # npm command. Could npm be shelling out to node? Maybe I can figure this out by running
     # checking the process list while the next step is running, and htop to look at RAM usage.`
     npm install --prefix "$BASE_DIR/app"
+}
+
+setupUv(){
+    info "\\nSetting up uv..."
+
+    # install a version of python that is supported by the latest version of yt-dlp
+    uv python install 3.13
+}
+
+installYtDlp(){
+    info "\\nInstalling yt-dlp..."
+    "$BASE_DIR"/utils/update_yt-dlp.sh
+}
+
+# The 'paused' branch is a fork of omxplayer with:
+# 1) The ability to start a video paused via the `--start-paused` flag. By unpausing in sync across all receivers,
+#   we get synchronized video playback.
+# 2) Millisecond granularity in the log files. Helpful for debugging timing issues.
+buildAndInstallOmxplayerFork(){
+    info "\\nBuilding and installing omxplayer fork..."
+    "$BASE_DIR"/install/build_omxplayer.sh -b "$omxplayer_branch"
 }
 
 fail(){

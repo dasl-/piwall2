@@ -5,7 +5,10 @@
 # to the latest yt-dlp version, the pifi will stop working.
 
 echo "starting update_yt-dlp at $(date -u)"
-sudo python3 -m pip install --upgrade yt-dlp
+uv tool install 'yt-dlp[default]@latest'
+
+# symlink yt-dlp to a place that's on our path by default
+sudo ln -sf /home/pi/.local/bin/yt-dlp /usr/local/bin/yt-dlp
 
 # Just in case the yt-dlp cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780

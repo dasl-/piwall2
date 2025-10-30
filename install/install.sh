@@ -16,19 +16,18 @@ main(){
     parseOpts "$@"
 
     setTimezone
-    setupLogging
     setupSystemdServices
     setupYoutubeDlUpdateCron
 
     # Do broadcaster stuff
-    if [[ "$installation_type" != 'receiver' ]]; then
+    if [[ "$installation_type" == 'broadcaster' ]]; then
         updateDbSchema
         buildWebApp
         checkYoutubeApiKey
     fi
 
     # Do receiver stuff
-    if [[ "$installation_type" != 'broadcaster' ]]; then
+    if [[ "$installation_type" == 'receiver' ]]; then
         maybeAdjustCompositeVideoOutput
         maybeAdjustScreenRotateMode
     fi
@@ -54,7 +53,7 @@ usage() {
     local exit_code=$1
     echo "usage: $0 -t INSTALLATION_TYPE [-c] [-w]"
     echo "    -h  display this help message"
-    echo "    -t  Installation type: either 'broadcaster', 'receiver', or 'all'"
+    echo "    -t  Installation type: either 'broadcaster' or 'receiver'"
     echo "    -c  force enable composite video output. This will detrimentally affect performance to a small degree."
     echo "        By default, we enable composite video output automatically if it is specified in the receivers.toml"
     echo "        configuration."
@@ -67,7 +66,7 @@ parseOpts(){
         case $opt in
             h) usage 0 ;;
             t)
-                if [[ "$OPTARG" != "broadcaster" && "$OPTARG" != "receiver" && "$OPTARG" != "both" ]]; then
+                if [[ "$OPTARG" != "broadcaster" && "$OPTARG" != "receiver" ]]; then
                     echo "Invalid installation type."
                     usage 1
                 else
@@ -99,36 +98,14 @@ setTimezone(){
     sudo timedatectl set-timezone UTC
 }
 
-setupLogging(){
-    info "Setting up logging..."
-
-    # syslog
-    sudo mkdir -p /var/log/piwall2
-    if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
-        sudo touch /var/log/piwall2/server.log /var/log/piwall2/queue.log
-        sudo cp "$BASE_DIR"/install/piwall2_{queue,server}_syslog.conf /etc/rsyslog.d
-    fi
-    if [[ "$installation_type" == 'receiver' || "$installation_type" == 'all' ]]; then
-        sudo touch /var/log/piwall2/receiver.log
-        sudo cp "$BASE_DIR"/install/piwall2_receiver_syslog.conf /etc/rsyslog.d
-    fi
-    sudo touch /var/log/piwall2/update_yt-dlp.log
-    sudo systemctl restart rsyslog
-
-    # logrotate
-    sudo cp "$BASE_DIR"/install/piwall2_logrotate /etc/logrotate.d
-    sudo chown root:root /etc/logrotate.d/piwall2_logrotate
-    sudo chmod 644 /etc/logrotate.d/piwall2_logrotate
-}
-
 setupSystemdServices(){
     info "Setting up systemd services..."
 
-    if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
+    if [[ "$installation_type" == 'broadcaster' ]]; then
         sudo "$BASE_DIR/install/piwall2_queue_service.sh"
         sudo "$BASE_DIR/install/piwall2_server_service.sh"
     fi
-    if [[ "$installation_type" == 'receiver' || "$installation_type" == 'all' ]]; then
+    if [[ "$installation_type" == 'receiver' ]]; then
         sudo "$BASE_DIR/install/piwall2_receiver_service.sh"
     fi
     sudo chown root:root /etc/systemd/system/piwall2_*.service
@@ -145,12 +122,12 @@ setupSystemdServices(){
         sudo systemctl stop $piwall2_units || true
     fi
 
-    if [[ "$installation_type" == 'broadcaster' || "$installation_type" == 'all' ]]; then
+    if [[ "$installation_type" == 'broadcaster' ]]; then
         sudo systemctl enable piwall2_queue.service piwall2_server.service
         sudo systemctl daemon-reload
         sudo systemctl restart piwall2_queue.service piwall2_server.service
     fi
-    if [[ "$installation_type" == 'receiver' || "$installation_type" == 'all' ]]; then
+    if [[ "$installation_type" == 'receiver' ]]; then
         sudo systemctl enable piwall2_receiver.service
         sudo systemctl daemon-reload
         sudo systemctl restart piwall2_receiver.service
