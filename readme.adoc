@@ -22,7 +22,7 @@ toc::[]
 ... Set username and password:
 .... Username: `pi` (this username is required)
 .... Password: use the same password on all pis (the same password is required)
-... Wifi: when installing the TV wall software on your pis, we typically (https://github.com/dasl-/piwall2/blob/43faa49b390f0103735558781fbe62dc0983991d/install/install.sh#L168-L174)[disable wifi], because multicast doesn't work well over wifi. Thus, you need not enter any wifi credentials. Instead, connect to the network via an ethernet cable.
+... Wifi: when installing the TV wall software on your pis, we typically https://github.com/dasl-/piwall2/blob/43faa49b390f0103735558781fbe62dc0983991d/install/install.sh#L168-L174[disable wifi], because multicast doesn't work well over wifi. Thus, you need not enter any wifi credentials. Instead, connect the pis to the network via an ethernet cable.
 .. Services
 ... Enable SSH, and use password authentication (this is required)
 . Write OS to SD card and eject SD card
@@ -39,6 +39,7 @@ toc::[]
 
 ### Install
 Run all of these steps on your broadcaster pi
+
 . Create a https://gist.github.com/dasl-/b1e350648bbeb88abe636ba0402eabde[`config.toml`] file with the coordinates of the TVs
 . `./install/setup_broadcaster_and_receivers --ssh-password <your_ssh_password>`
 .. If it fails with an error, see: link:docs/issues_weve_seen_before.adoc#the-setup_broadcaster_and_receivers-script-fails[the setup_broadcaster_and_receivers script fails]

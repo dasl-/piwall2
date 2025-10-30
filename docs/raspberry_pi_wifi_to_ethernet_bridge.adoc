@@ -9,7 +9,7 @@ Optionally, you may use a raspberry pi as a (https://github.com/dasl-/pitools/tr
 Follow the (https://github.com/dasl-/pitools/blob/main/wifi-ethernet-bridge/readme.md#installation)[installation instructions] in the repo. We have chosen to setup the bridge on the broadcaster pi.
 
 ## Fixing multicast transmission
-When installing the TV wall software on your pis, we typically (https://github.com/dasl-/piwall2/blob/43faa49b390f0103735558781fbe62dc0983991d/install/install.sh#L168-L174)[disable wifi], because multicast doesn't work well over wifi. But the wifi to ethernet bridge requires re-enabling wifi. Once it is setup, both wifi and ethernet will be active.
+When installing the TV wall software on your pis, we typically https://github.com/dasl-/piwall2/blob/43faa49b390f0103735558781fbe62dc0983991d/install/install.sh#L168-L174[disable wifi], because multicast doesn't work well over wifi. But the wifi to ethernet bridge requires re-enabling wifi. Once it is setup, both wifi and ethernet will be active.
 
 Typically, the broadcaster will run a command like this to broadcast the video over multicast:
 ....
