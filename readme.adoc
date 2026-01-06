@@ -1,4 +1,7 @@
 # piwall2
+
+image::docs/img/demo_thumbnail.png[video wall demo, link="https://www.youtube.com/watch?v=bUiy9859JZ4"]
+
 :toc:
 :toclevels: 5
 :toc-placement!:
