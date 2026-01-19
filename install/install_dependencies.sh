@@ -27,6 +27,7 @@ main(){
 
     if [[ "$installation_type" == "broadcaster" ]]; then
         installNode
+        installDeno
         setupUv
         installYtDlp
     elif [[ "$installation_type" == "receiver" ]]; then
@@ -122,6 +123,26 @@ installNode(){
     # npm command. Could npm be shelling out to node? Maybe I can figure this out by running
     # checking the process list while the next step is running, and htop to look at RAM usage.`
     npm install --prefix "$BASE_DIR/app"
+}
+
+# yt-dlp now requires a JS interpreter. They recommend Deno:
+# https://github.com/yt-dlp/yt-dlp/wiki/EJS
+installDeno(){
+    info "\\nInstalling deno..."
+    local deno_version
+    deno_version='2.6.5'
+    if command -v deno >/dev/null 2>&1 && deno --version | head -n1 | grep -q "^deno $deno_version "; then
+        echo "Deno $deno_version is already installed"
+        return
+    fi
+
+    sudo rm -rf /tmp/deno
+    mkdir -p /tmp/deno
+    wget -P /tmp/deno "https://github.com/denoland/deno/releases/download/v$deno_version/deno-aarch64-unknown-linux-gnu.zip"
+    unzip -d /tmp/deno /tmp/deno/deno-aarch64-unknown-linux-gnu.zip
+    sudo chmod a+x /tmp/deno/deno
+    sudo mv /tmp/deno/deno /usr/bin/deno
+    sudo rm -rf /tmp/deno
 }
 
 setupUv(){
